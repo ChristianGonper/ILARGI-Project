@@ -4,9 +4,11 @@ from datetime import UTC, date, datetime, time
 from pathlib import Path
 
 import numpy as np
+import plotly.graph_objects as go
 import streamlit as st
 from spiceypy.utils.exceptions import SpiceyError
 
+from ilargi.discs import angular_radius, directions, disc_visibility
 from ilargi.horizon import (
     calculate_horizon,
     coverage_at,
@@ -32,6 +34,25 @@ def analyse(start, hours, step, lat, lon, instrument, search_km, az_step, path):
     series["horizonte_parcial_deg"] = horizon_at(horizon, series.azimut_deg)
     series["margen_parcial_deg"] = series.elevacion_deg - series.horizonte_parcial_deg
     series["cobertura_minima_vecina_m"] = coverage_at(horizon, series.azimut_deg)
+    series["radio_angular_deg"] = [
+        np.rad2deg(angular_radius(row.objetivo, row.distancia_km))
+        for row in series.itertuples()
+    ]
+    series["fraccion_sobre_horizonte"] = np.nan
+    series["fraccion_eclipsada"] = np.nan
+    series["fraccion_visible_directa"] = np.nan
+    for _, group in series.groupby("utc", sort=False):
+        earth = group[group.objetivo == "EARTH"].iloc[0]
+        for index, row in group.iterrows():
+            values = disc_visibility(row.objetivo, row, horizon, earth)
+            series.loc[
+                index,
+                [
+                    "fraccion_sobre_horizonte",
+                    "fraccion_eclipsada",
+                    "fraccion_visible_directa",
+                ],
+            ] = values
     return terrain, horizon, series
 
 
@@ -244,7 +265,7 @@ def run() -> None:
         f"Horizonte experimental y parcial: el terreno disponible alcanza entre {min_coverage:.1f} y {max_coverage:.1f} km según el azimut, frente a {horizon.requested_m / 1000:.1f} km solicitados. Según el horizonte hallado, el radio físico necesario para cerrar cada dirección varía entre {np.nanmin(required_by_az) / 1000:.1f} y {np.nanmax(required_by_az) / 1000:.1f} km ({closed_count}/{len(horizon.azimuth_deg)} direcciones cerradas; la cota del plano tangente a 0° sería {radius_info.tangent_plane_m / 1000:.1f} km solo para elevaciones ≥ 0°). {np.count_nonzero(~np.isfinite(horizon.elevation_deg))} direcciones carecen de perfil. Puede haber obstáculos fuera del recorte o entre muestras; no se certifica visibilidad."
     )
     st.caption(
-        "La altitud LOLA de DE421 ME se aproxima en DE440 ME421 para esta demostración; ambos marcos no son idénticos. Las trayectorias representan los centros de los cuerpos, sin discos ni eclipses."
+        "La altitud LOLA de DE421 ME se aproxima en DE440 ME421 para esta demostración; ambos marcos no son idénticos. Las trayectorias muestran centros; las fracciones usan discos esféricos y horizonte muestreado."
     )
     lateral_m = horizon.requested_m * np.deg2rad(360 / len(horizon.azimuth_deg))
     st.caption(
@@ -256,6 +277,75 @@ def run() -> None:
     st.plotly_chart(elevation_figure(series, horizon), width="stretch")
     st.caption(
         "Las líneas punteadas muestran el perfil muestreado hacia cada cuerpo; la línea horizontal es el plano ideal. El horizonte depende de la dirección y es incompleto."
+    )
+    st.subheader("Discos visibles y eclipse")
+    st.caption(
+        "Fracción geométrica del disco sobre el horizonte y fracción solar directa tras ocultación por la Tierra. La atmósfera terrestre no se modela. El horizonte parcial puede sobrestimar la visibilidad; los valores vacíos indican falta de perfil."
+    )
+    st.line_chart(
+        series.pivot(
+            index="utc", columns="objetivo", values="fraccion_visible_directa"
+        ),
+        y_label="Fracción visible",
+    )
+    instant = st.select_slider(
+        "Instante de los discos (UTC)", options=list(series.utc.unique())
+    )
+    selected = series[series.utc == instant]
+    earth = selected[selected.objetivo == "EARTH"].iloc[0]
+    cols = st.columns(2)
+    for col, body in zip(cols, ("SUN", "EARTH"), strict=True):
+        row = selected[selected.objetivo == body].iloc[0]
+        rays = directions(
+            row.azimut_deg, row.elevacion_deg, angular_radius(body, row.distancia_km)
+        )
+        az = np.rad2deg(np.arctan2(rays[:, 1], rays[:, 0])) % 360
+        el = np.rad2deg(np.arcsin(np.clip(rays[:, 2], -1, 1)))
+        x = ((az - row.azimut_deg + 180) % 360 - 180) * np.cos(
+            np.deg2rad(row.elevacion_deg)
+        )
+        y = el - row.elevacion_deg
+        height = horizon_at(horizon, az)
+        state = np.where(
+            np.isfinite(height),
+            np.where(el > height, "Visible", "Relieve"),
+            "Sin datos",
+        )
+        if body == "SUN":
+            eaz, eel = np.deg2rad([earth.azimut_deg, earth.elevacion_deg])
+            earth_center = np.array(
+                [np.cos(eel) * np.cos(eaz), np.cos(eel) * np.sin(eaz), np.sin(eel)]
+            )
+            eclipsed = rays @ earth_center >= np.cos(
+                angular_radius("EARTH", earth.distancia_km)
+            )
+            state = np.where(eclipsed, "Tierra", state)
+        fig = go.Figure()
+        for label, color in (
+            ("Visible", "#f4bb43" if body == "SUN" else "#478dec"),
+            ("Relieve", "#515968"),
+            ("Tierra", "#2464ae"),
+            ("Sin datos", "#c65353"),
+        ):
+            mask = state == label
+            if np.any(mask):
+                fig.add_scattergl(
+                    x=x[mask],
+                    y=y[mask],
+                    mode="markers",
+                    marker={"size": 3, "color": color},
+                    name=label,
+                )
+        fig.update_layout(
+            title="Sol" if body == "SUN" else "Tierra",
+            xaxis_title="Desplazamiento angular (°)",
+            yaxis_title="Elevación relativa (°)",
+            height=360,
+        )
+        fig.update_yaxes(scaleanchor="x", scaleratio=1)
+        col.plotly_chart(fig, width="stretch")
+    st.caption(
+        "Cada disco se representa ampliado por separado; los ejes están en grados y la escala es la misma dentro de cada gráfico. El relieve parcial puede ocultar obstáculos no muestreados."
     )
     with st.expander("Datos del escenario"):
         st.dataframe(series, hide_index=True, width="stretch")

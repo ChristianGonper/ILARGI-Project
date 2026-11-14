@@ -1,6 +1,6 @@
 # Trayectorias y horizonte experimental
 
-El prototipo evalúa una serie de posiciones aparentes desde un solo emplazamiento. Selecciona fecha UTC, duración, paso temporal, coordenadas y altura del instrumento. En cada instante emplea `spkcpo` con `LT+S`, observador en superficie y marco `MOON_ME_DE440_ME421`. Se muestran centros puntuales: no se calculan discos, eclipses ni eventos entre muestras.
+El prototipo evalúa una serie de posiciones aparentes desde un solo emplazamiento. Selecciona fecha UTC, duración, paso temporal, coordenadas y altura del instrumento. En cada instante emplea `spkcpo` con `LT+S`, observador en superficie y marco `MOON_ME_DE440_ME421`. Las trayectorias muestran los centros; también se calculan y representan discos aparentes y eclipses geométricos en cada muestra. No se calculan eventos entre muestras.
 
 El paso temporal es un múltiplo de 10 minutos, con un mínimo de 10 minutos. El final se incluye si dista al menos 10 minutos de la muestra anterior; de lo contrario, la serie termina en la muestra regular anterior.
 
@@ -29,3 +29,7 @@ En el emplazamiento 89,5° S, 0° E, con instrumento a 2 m sobre el píxel de ca
 El CSV incluye, para cada posición, el alcance común de los dos rayos vecinos, la resolución nominal y el paso angular. Un alcance parcial no prueba ausencia de obstáculos más lejos. Los DEM compatibles deben tener CRS lunar esférico en metros y orientación norte arriba; se aplican escala, desplazamiento y unidades verticales conocidas. Si el archivo no declara unidad vertical se asumen metros, como exige el contrato de entrada de los productos incluidos.
 
 Al comparar el perfil de 80 m con rayos cada 2° frente a otro con rayos cada 0,5°, en el mismo lugar y con búsqueda de 20 km, la diferencia absoluta alcanzó aproximadamente 0,74° al interpolar el perfil grueso sobre el fino. No es una cota de error: muestra que el paso angular de 2° puede pasar por alto relieve. Incluso 0,5° deja huecos entre rayos y se debe estudiar la convergencia según el emplazamiento.
+
+## Discos y eclipses
+
+El radio angular es asin(radio físico / distancia al centro), con radios esféricos de 695 700 km para el Sol y 6 371 km para la Tierra. Una cuadrícula de 61 × 61 en el plano tangente muestrea cada disco. Para cada dirección se interpola el horizonte; los rayos solares también se comparan con el disco terrestre, combinando ambas ocultaciones sin contar dos veces su intersección. Las fracciones son aproximaciones geométricas con brillo solar uniforme; no son potencia eléctrica y no incluyen refracción ni dispersión atmosférica terrestre. Las direcciones sin perfil producen fracción desconocida. Un horizonte incompleto puede sobrestimar visibilidad, incluso donde existe perfil. Las gráficas de discos muestran un instante de la serie; sus ejes están en grados y cada disco se amplía por separado. Las fracciones se exportan en el CSV.
