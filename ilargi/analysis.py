@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from ilargi.discs import angular_radius, disc_visibility
 from ilargi.horizon import (
     Horizon,
     calculate_horizon,
@@ -481,6 +482,26 @@ def analyze_site(
     series["horizonte_efectivo_deg"] = effective_h
     series["margen_efectivo_deg"] = series["elevacion_deg"] - effective_h
     series["visible"] = series["margen_efectivo_deg"] > 0.0
+    series["radio_angular_deg"] = [
+        float(np.rad2deg(angular_radius(row.objetivo, row.distancia_km)))
+        for row in series.itertuples()
+    ]
+    earth_by_utc = {
+        row.utc: row for row in series[series["objetivo"] == "EARTH"].itertuples()
+    }
+    above_frac: list[float] = []
+    eclipsed_frac: list[float] = []
+    visible_frac: list[float] = []
+    for row in series.itertuples():
+        above, eclipsed, visible = disc_visibility(
+            row.objetivo, row, horizon, earth_by_utc.get(row.utc)
+        )
+        above_frac.append(above)
+        eclipsed_frac.append(eclipsed)
+        visible_frac.append(visible)
+    series["fraccion_sobre_horizonte"] = above_frac
+    series["fraccion_eclipsada"] = eclipsed_frac
+    series["fraccion_visible_directa"] = visible_frac
 
     sun_track = series[series["objetivo"] == "SUN"].sort_values("utc")
     earth_track = series[series["objetivo"] == "EARTH"].sort_values("utc")

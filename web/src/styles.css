@@ -904,3 +904,50 @@ body {
   gap: 6px;
   flex-wrap: wrap;
 }
+
+.disc-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.disc-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.disc-controls-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.disc-slider {
+  width: 100%;
+  accent-color: var(--cyan);
+  cursor: pointer;
+}
+
+.disc-metrics-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.disc-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.disc-caption {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}

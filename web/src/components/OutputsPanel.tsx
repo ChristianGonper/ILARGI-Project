@@ -8,6 +8,7 @@ import {
 } from "../api";
 import type { SiteAnalysisResult } from "../types";
 import { DailyEvolutionPlot } from "./DailyEvolutionPlot";
+import { DiscVisibilityPanel } from "./DiscVisibilityPanel";
 import { SkyAzimuthPlot } from "./SkyAzimuthPlot";
 
 interface OutputsPanelProps {
@@ -17,15 +18,16 @@ interface OutputsPanelProps {
 
 function downloadSeriesCsv(result: SiteAnalysisResult) {
   const header =
-    "body,utc,azimuth_deg,elevation_deg,horizon_deg,margin_deg,visible,range_km\n";
+    "body,utc,azimuth_deg,elevation_deg,horizon_deg,margin_deg,visible,range_km,angular_radius_deg,above_horizon_fraction,eclipsed_fraction,direct_visible_fraction\n";
+  const fmtOpt = (v: number | null) => (v === null ? "" : String(v));
   const rows = [
     ...result.series.sun.map(
       (s) =>
-        `SUN,${s.utc},${s.azimuth_deg},${s.elevation_deg},${s.horizon_deg},${s.margin_deg},${s.visible},${s.range_km}`,
+        `SUN,${s.utc},${s.azimuth_deg},${s.elevation_deg},${s.horizon_deg},${s.margin_deg},${s.visible},${s.range_km},${s.angular_radius_deg},${fmtOpt(s.above_horizon_fraction)},${fmtOpt(s.eclipsed_fraction)},${fmtOpt(s.direct_visible_fraction)}`,
     ),
     ...result.series.earth.map(
       (s) =>
-        `EARTH,${s.utc},${s.azimuth_deg},${s.elevation_deg},${s.horizon_deg},${s.margin_deg},${s.visible},${s.range_km}`,
+        `EARTH,${s.utc},${s.azimuth_deg},${s.elevation_deg},${s.horizon_deg},${s.margin_deg},${s.visible},${s.range_km},${s.angular_radius_deg},${fmtOpt(s.above_horizon_fraction)},${fmtOpt(s.eclipsed_fraction)},${fmtOpt(s.direct_visible_fraction)}`,
     ),
   ].join("\n");
   const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
@@ -115,6 +117,8 @@ export function OutputsPanel({ result, onClose }: OutputsPanelProps) {
       <div className="chart-card">
         <DailyEvolutionPlot result={result} height={230} />
       </div>
+
+      <DiscVisibilityPanel result={result} />
 
       <div className="telemetry-list">
         <div className="telemetry-item">

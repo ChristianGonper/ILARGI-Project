@@ -119,3 +119,21 @@ def test_materials_summary_outside_south_pole():
     out = summarize_materials(10.0, 20.0)
     assert out.in_coverage is False
     assert out.elements == {}
+
+
+def test_analyze_site_computes_disc_visibility_and_eclipse():
+    eclipse_start = datetime(2025, 3, 14, 6, 58, tzinfo=UTC)
+    analysis = analyze_site(
+        label="E1",
+        site_name="Centro Lunar",
+        latitude_deg=0.0,
+        longitude_east_deg=0.0,
+        start_utc=eclipse_start,
+        duration_hours=1.0,
+        step_minutes=60,
+        dem_mode="ideal",
+    )
+    sun = analysis.series[analysis.series["objetivo"] == "SUN"].iloc[0]
+    assert sun.radio_angular_deg > 0.2
+    assert sun.fraccion_eclipsada == pytest.approx(1.0)
+    assert sun.fraccion_visible_directa == pytest.approx(0.0)

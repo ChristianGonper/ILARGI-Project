@@ -138,9 +138,24 @@ def _serialize_analysis(analysis: SiteAnalysis) -> dict:
                 "margin_deg": float(row.margen_efectivo_deg),
                 "visible": bool(row.visible),
                 "range_km": float(row.distancia_km),
+                "angular_radius_deg": float(row.radio_angular_deg),
+                "above_horizon_fraction": _finite_or_none(row.fraccion_sobre_horizonte),
+                "eclipsed_fraction": _finite_or_none(row.fraccion_eclipsada),
+                "direct_visible_fraction": _finite_or_none(
+                    row.fraccion_visible_directa
+                ),
             }
             for row in sub.itertuples()
         ]
+
+    sun_eclipsed = analysis.series.loc[
+        analysis.series["objetivo"] == "SUN", "fraccion_eclipsada"
+    ].to_numpy(dtype=float)
+    finite_eclipsed = sun_eclipsed[np.isfinite(sun_eclipsed)]
+    max_eclipse_pct = (
+        float(100.0 * np.max(finite_eclipsed)) if finite_eclipsed.size > 0 else 0.0
+    )
+    eclipse_samples = int(np.count_nonzero(finite_eclipsed > 0.0))
 
     def _serialize_event(ev) -> dict:
         return {
@@ -200,6 +215,8 @@ def _serialize_analysis(analysis: SiteAnalysis) -> dict:
             "sun_hours": float(analysis.sun_visible_hours),
             "earth_hours": float(analysis.earth_visible_hours),
             "both_hours": float(analysis.both_visible_hours),
+            "max_eclipse_pct": max_eclipse_pct,
+            "eclipse_samples": eclipse_samples,
         },
         "events": {
             "sunsets": [_serialize_event(e) for e in analysis.sunsets],

@@ -34,6 +34,10 @@ export interface SkySample {
   margin_deg: number;
   visible: boolean;
   range_km: number;
+  angular_radius_deg: number;
+  above_horizon_fraction: number | null;
+  eclipsed_fraction: number | null;
+  direct_visible_fraction: number | null;
 }
 
 export interface VisibilityEvent {
@@ -90,6 +94,8 @@ export interface SiteAnalysisResult {
     sun_hours: number;
     earth_hours: number;
     both_hours: number;
+    max_eclipse_pct: number;
+    eclipse_samples: number;
   };
   events: {
     sunsets: VisibilityEvent[];

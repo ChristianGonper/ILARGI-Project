@@ -67,11 +67,17 @@ def test_analyze_single_and_multipoint_payload():
     assert "Sin datos" in p1["materials"]["water_status"]
     assert len(p1["series"]["sun"]) == 49
     assert len(p1["series"]["earth"]) == 49
+    assert p1["series"]["sun"][0]["angular_radius_deg"] > 0.2
+    assert "direct_visible_fraction" in p1["series"]["sun"][0]
+    assert "max_eclipse_pct" in p1["visibility"]
 
     assert p2["label"] == "P2"
     assert p2["search_radius_km"] > 100.0
     assert p2["materials"]["in_coverage"] is False
     assert "Sin modelo" in p2["temperature_status"]
+    assert p2["series"]["sun"][0]["above_horizon_fraction"] is not None
+    assert p2["series"]["sun"][0]["eclipsed_fraction"] is not None
+    assert p2["series"]["sun"][0]["direct_visible_fraction"] is not None
 
 
 def test_analyze_enforces_max_10_points_and_step_validation():
