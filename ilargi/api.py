@@ -66,11 +66,11 @@ def _cached_materials_overlay() -> dict:
         },
         {
             "id": "WEH",
-            "label": "Agua / Hielo (WEH · futura)",
-            "unit": "% en masa",
+            "label": "Hidrógeno equivalente en agua (WEH)",
+            "unit": "ppm H₂O equivalente",
             "color": "#22D3EE",
-            "available": False,
-            "status": "Sin datos WEH validados en esta versión",
+            "available": True,
+            "status": "Estimación a partir de hidrógeno; no identifica hielo",
         },
     ]
     regions = [

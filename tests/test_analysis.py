@@ -96,7 +96,7 @@ def test_analyze_site_lola_and_ideal_fallback():
     assert south.horizon.requested_m > 100_000.0
     assert south.materials.in_coverage is True
     assert "Al" in south.materials.elements
-    assert "Sin datos" in south.materials.water_status
+    assert "ppm H₂O equivalente" in south.materials.water_status
 
     apollo = analyze_site(
         label="P2",

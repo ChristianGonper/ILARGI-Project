@@ -49,7 +49,7 @@ export function HomeScreen({ health, onSelectMode }: HomeScreenProps) {
           <div className="home-mascot-box">
             <IlargiMascot
               speakerMood="¡Hola, tripulación!"
-              message="¡Bienvenidos a ILARGI! Soy vuestro guía lunar. Si queréis gráficas científicas, horizontes LOLA y comparar hasta 10 zonas, elegid Modo PRO. Si preferís ver el día lunar como una película, buscar agua helada, descubrir los espejos de la Luna y simular los 3 cuerpos, ¡venid conmigo al Modo Educación!"
+              message="¡Bienvenidos a ILARGI! Soy vuestro guía lunar. Si queréis gráficas científicas, horizontes LOLA y comparar hasta 10 zonas, elegid Modo PRO. Si preferís ver el día lunar como una película, explorar el hidrógeno lunar, descubrir los espejos de la Luna y simular los 3 cuerpos, ¡venid conmigo al Modo Educación!"
               showFunFacts
             />
           </div>
@@ -79,9 +79,9 @@ export function HomeScreen({ health, onSelectMode }: HomeScreenProps) {
                 permanente (<strong>NASA PGDA LOLA 69</strong>).
               </li>
               <li>
-                Capa exclusiva de <strong>Agua / Hielo polar</strong> en trampas
-                frías y explicación interactiva del{" "}
-                <strong>Espejo de la Luna</strong>.
+                Capa global de{" "}
+                <strong>hidrógeno equivalente en agua (WEH)</strong>y
+                explicación interactiva del <strong>Espejo de la Luna</strong>.
               </li>
               <li>
                 Simulación simultánea y ampliable de las órbitas de los{" "}

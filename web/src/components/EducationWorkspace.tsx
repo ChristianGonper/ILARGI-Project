@@ -196,8 +196,8 @@ export function EducationWorkspace() {
     setShowWaterLayer(next);
     if (next) {
       setIlargiOverride({
-        mood: "Agua y Hielo Lunar",
-        text: "¡Capa de Agua activada! En la Luna no hay ríos ni nubes, pero en las regiones en sombra permanente (PSR) de NASA PGDA 69 la temperatura cae bajo −163 °C y el hielo de agua queda atrapado durante millones de años, como confirmó LCROSS en Cabeus.",
+        mood: "Hidrógeno equivalente en agua",
+        text: "La capa muestra WEH: una forma de expresar cuánto hidrógeno se ha estimado, como si formara agua. Los tonos más intensos indican más WEH, pero no confirman que haya agua o hielo. Los datos proceden de Lunar Prospector (Lawrence y colaboradores, 2022).",
       });
     } else {
       setIlargiOverride(null);
@@ -461,14 +461,14 @@ export function EducationWorkspace() {
 
           {/* MATERIALES: SOLO AGUA + EXPLICACIÓN ESPEJO DE LA LUNA */}
           <div className="edu-extras-box">
-            <div className="eyebrow">3. AGUA Y FENÓMENOS LUNARES</div>
+            <div className="eyebrow">3. WEH Y FENÓMENOS LUNARES</div>
             <button
               type="button"
               className={`btn-secondary edu-feature-btn ${showWaterLayer ? "active" : ""}`}
               onClick={handleToggleWater}
             >
               <Droplets size={15} className="tag-earth" />
-              <span>Agua / Hielo Polar (Solo agua · PSR)</span>
+              <span>Hidrógeno equivalente en agua (WEH)</span>
               <span className="pill pill-cyan">
                 {showWaterLayer ? "ON" : "OFF"}
               </span>
@@ -595,7 +595,7 @@ export function EducationWorkspace() {
                       Coordenadas seleccionadas directamente sobre la esfera
                       lunar. Usa la película del ciclo lunar para observar cómo
                       varía la elevación solar y activa la capa de{" "}
-                      <strong>Agua / Trampas Frías</strong> para ubicar los PSR
+                      <strong>WEH</strong> para explorar el hidrógeno estimado
                       polares.
                     </p>
                   )}

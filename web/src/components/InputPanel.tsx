@@ -334,7 +334,7 @@ export function InputPanel({
       </div>
 
       <div className="minerals-section">
-        <div className="eyebrow">Minerales (máscara 3D)</div>
+        <div className="eyebrow">Materiales y WEH (máscara 3D)</div>
         <div className="mineral-list">
           {mineralElements.map((el) => {
             const checked = selectedMinerals.includes(el.id);
@@ -344,7 +344,9 @@ export function InputPanel({
                 className={`mineral-item ${checked ? "checked" : ""}`}
                 title={
                   el.available
-                    ? `Mostrar regiones LP-GRS de ${el.label}`
+                    ? el.id === "WEH"
+                      ? "WEH global estimado: más intensidad indica mayor abundancia"
+                      : `Mostrar regiones LP-GRS de ${el.label}`
                     : (el.status ?? "Sin datos validados aún")
                 }
               >
@@ -377,6 +379,12 @@ export function InputPanel({
             );
           })}
         </div>
+        {selectedMinerals.includes("WEH") && (
+          <p>
+            WEH: más intensidad indica mayor abundancia; no confirma hielo.
+            Lawrence et al. (2022).
+          </p>
+        )}
       </div>
 
       <button

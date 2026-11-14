@@ -1,6 +1,6 @@
 import pytest
 
-from ilargi.materials import load_regions, region_at
+from ilargi.materials import load_regions, region_at, weh_at
 
 
 def test_polar_values_and_boundaries():
@@ -24,3 +24,11 @@ def test_global_lookup_and_longitude_wrapping():
     assert region_at(data, 90, 180) is not None
     assert region_at(data, 10, 340).id == region_at(data, 10, -20).id
     assert region_at(data, 91, 0) is None
+
+
+def test_weh_matches_published_grid_and_wraps_longitude():
+    factor = 18.01528 / (2 * 1.00794)
+    assert weh_at(-89.75, -179.75) == pytest.approx(88.90607 * factor, rel=1e-6)
+    assert weh_at(-89.75, 180.25) == pytest.approx(weh_at(-89.75, -179.75))
+    assert weh_at(90, 0) is not None
+    assert weh_at(91, 0) is None

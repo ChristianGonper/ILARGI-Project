@@ -10,4 +10,10 @@ Al y Ca se derivan de las fracciones en masa de Al₂O₃ y CaO por sus proporci
 
 Para cada variable se calculan los percentiles 33,3 y 66,7 sobre los valores válidos de todas las celdas globales, con igual peso por celda. Baja comprende valores hasta el primer corte, media hasta el segundo y alta los superiores. Son categorías relativas, no umbrales de viabilidad; empates pueden producir categorías desiguales. Las incertidumbres y correlaciones de la matriz original no se propagan a estas categorías.
 
-El hidrógeno equivalente en agua (WEH) queda sin datos: aún no se ha identificado y validado un producto polar concreto con su documentación, unidades y cobertura. WEH es un indicador de hidrógeno, no una detección directa de hielo.
+## Hidrógeno equivalente en agua (WEH)
+
+El mapa global procede de la figura 6 de [Lawrence et al. (2022)](https://doi.org/10.1029/2022JE007197), [datos originales](https://doi.org/10.48732/GRC2-4B57), licencia CC BY 4.0. El instrumento Lunar Prospector Neutron Spectrometer estima hidrógeno en el regolito a partir de neutrones, corrigiendo la composición y calibrando con muestras Apollo. La incertidumbre sistemática indicada es de aproximadamente 10 ppm de hidrógeno. La malla tiene celdas de 0,5°; la huella espacial es aproximadamente 50 km y no permite interpretar detalles locales del tamaño de un cráter.
+
+La aplicación convierte ppm en masa de hidrógeno a ppm de agua equivalente multiplicando por 18,01528 / (2 × 1,00794). Esta equivalencia supone que todo ese hidrógeno formara H₂O: **no demuestra la presencia de agua o hielo ni su concentración real**. La consulta utiliza la celda que contiene el punto, sin interpolar. La textura global usa una escala lineal de transparencia de 0 a 120 ppm de H (aproximadamente 0 a 1072 ppm de WEH): más intensidad indica mayor abundancia. Los dos modos usan la misma malla y escala.
+
+Para regenerar la malla comprimida y la textura desde el ZIP original: `uv run python scripts/prepare_wehr_map.py ruta/al/archivo.zip`.

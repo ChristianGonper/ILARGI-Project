@@ -219,7 +219,7 @@ export function formatIncidenceSummary(r: SiteAnalysisResult): string {
 export function formatMaterialsSummary(r: SiteAnalysisResult): string {
   const mat = r.materials;
   if (!mat.in_coverage) {
-    return "Sin datos LP-GRS para esta ubicación · WEH: Sin datos validados";
+    return `Sin datos LP-GRS para esta ubicación · WEH: ${mat.water_status}`;
   }
   const parts = Object.entries(mat.elements).map(([sym, el]) => {
     if (el.value === null) return `${sym}: s/d`;

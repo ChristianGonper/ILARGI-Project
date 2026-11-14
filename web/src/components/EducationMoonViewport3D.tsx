@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { POLAR_WATER_COLD_TRAPS } from "../data/educationFacts";
 import {
   LUNAR_RADIUS_KM,
   latLonToThreeVector,
@@ -311,39 +310,24 @@ export function EducationMoonViewport3D({
     scene.add(sitesGroup);
     scene.add(focusGroup);
 
-    // Construir parches de trampas frías polares (Agua / PSR · PGDA 69)
-    for (const trap of POLAR_WATER_COLD_TRAPS) {
-      const pos = latLonToThreeVector(trap.latDeg, trap.lonEastDeg, 1.005);
-      const normal = pos.clone().normalize();
-      const radiusWorld = Math.max(0.035, trap.radiusDeg * 0.025);
-      const disc = new THREE.Mesh(
-        new THREE.CircleGeometry(radiusWorld, 28),
-        new THREE.MeshBasicMaterial({
-          color: 0x22d3ee,
-          transparent: true,
-          opacity: 0.42,
-          side: THREE.DoubleSide,
-          depthWrite: false,
-        }),
-      );
-      disc.position.copy(pos);
-      disc.lookAt(normal.clone().multiplyScalar(2));
-      waterGroup.add(disc);
-
-      const border = new THREE.Mesh(
-        new THREE.RingGeometry(radiusWorld * 0.92, radiusWorld * 1.15, 28),
-        new THREE.MeshBasicMaterial({
-          color: 0x67e8f9,
-          transparent: true,
-          opacity: 0.85,
-          side: THREE.DoubleSide,
-          depthWrite: false,
-        }),
-      );
-      border.position.copy(pos);
-      border.lookAt(normal.clone().multiplyScalar(2));
-      waterGroup.add(border);
-    }
+    // La misma estimación global de WEH que se muestra en el modo científico.
+    const wehGeometry = new THREE.SphereGeometry(1.0025, 128, 96);
+    wehGeometry.rotateY(-Math.PI / 2);
+    const wehTexture = loader.load(
+      "/textures/weh_lawrence2022.png",
+      (texture) => {
+        if (disposed) texture.dispose();
+      },
+    );
+    wehTexture.colorSpace = THREE.SRGBColorSpace;
+    const wehMaterial = new THREE.MeshStandardMaterial({
+      map: wehTexture,
+      transparent: true,
+      depthWrite: false,
+      roughness: 0.95,
+    });
+    waterGroup.add(new THREE.Mesh(wehGeometry, wehMaterial));
+    waterGroup.visible = false;
 
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
@@ -460,6 +444,9 @@ export function EducationMoonViewport3D({
       fallbackTex.dispose();
       loadedColor?.dispose();
       loadedBump?.dispose();
+      wehGeometry.dispose();
+      wehTexture.dispose();
+      wehMaterial.dispose();
       sphereGeo.dispose();
       sphereMat.dispose();
       starGeo.dispose();
@@ -516,7 +503,7 @@ export function EducationMoonViewport3D({
     }
   }, [currentFrame, selectedSite, manualCoords, showMirrorLaser]);
 
-  // Mostrar/ocultar capa de Agua / Trampas Frías PSR (PGDA 69)
+  // Mostrar/ocultar capa global WEH
   useEffect(() => {
     if (waterGroupRef.current) {
       waterGroupRef.current.visible = showWaterLayer;
@@ -642,7 +629,7 @@ export function EducationMoonViewport3D({
           </span>
           {showWaterLayer && (
             <span className="pill pill-cyan">
-              Capa Agua / Trampas Frías PSR (PGDA 69)
+              WEH global · más intensidad = mayor abundancia
             </span>
           )}
           {(showMirrorLaser || selectedSite?.category === "mirror") && (
