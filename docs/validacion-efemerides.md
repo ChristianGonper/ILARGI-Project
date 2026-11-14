@@ -21,3 +21,5 @@ La norma de la diferencia es aproximadamente **0,00222 km**. La prueba automatiz
 ## Comprobaciones incluidas
 
 Las pruebas contrastan la referencia guardada de Horizons, la coherencia al cambiar de origen, distancias plausibles, rechazo de entradas ambiguas y ejecución de ambas vistas de Streamlit. El dibujo usa posiciones, no tamaños físicos; no se han verificado observaciones desde la superficie ni resultados topográficos.
+
+En el mismo instante y con las mismas opciones se contrastaron también el Sol relativo al centro lunar (residuo 0,00154 km) y la Tierra relativa al centro solar (0,00069 km). Ambos vectores de referencia se conservan en las pruebas; siguen siendo ejemplos puntuales con DE441, no una validación de todo el intervalo.
