@@ -115,18 +115,29 @@ def terrain_figure(sample: TerrainSample | None = None, path=SAMPLE) -> go.Figur
     return fig
 
 
-def sky_figure(series: pd.DataFrame, horizon: Horizon) -> go.Figure:
+def sky_figure(
+    series: pd.DataFrame, horizon: Horizon, center_deg: float | None = None
+) -> go.Figure:
     """Trayectorias sobre el perfil topográfico parcial, vistas desde el sitio."""
+    if center_deg is None:
+        angles = np.deg2rad(series.azimut_deg.to_numpy() % 360)
+        center_deg = float(np.rad2deg(np.angle(np.mean(np.exp(1j * angles)))) % 360)
+
+    def centered(azimuth):
+        return (np.asarray(azimuth) - center_deg + 180) % 360 - 180
+
+    horizon_x = centered(horizon.azimuth_deg)
+    order = np.argsort(horizon_x)
     fig = go.Figure()
     fig.add_trace(
         go.Scatter(
-            x=np.append(horizon.azimuth_deg, 360),
-            y=np.append(horizon.elevation_deg, horizon.elevation_deg[0]),
+            x=horizon_x[order],
+            y=horizon.elevation_deg[order],
             name="Horizonte muestreado (parcial)",
             mode="lines+markers",
             marker={"size": 3},
             line={"color": "#b78247"},
-            customdata=np.append(horizon.coverage_m, horizon.coverage_m[0]) / 1000,
+            customdata=horizon.coverage_m[order] / 1000,
             hovertemplate="Azimut: %{x:.1f}°<br>Elevación: %{y:.2f}°<br>Alcance muestreado: %{customdata:.2f} km<extra></extra>",
         )
     )
@@ -140,7 +151,7 @@ def sky_figure(series: pd.DataFrame, horizon: Horizon) -> go.Figure:
     ) & np.isfinite(horizon.elevation_deg)
     fig.add_trace(
         go.Scatter(
-            x=horizon.azimuth_deg[truncated],
+            x=centered(horizon.azimuth_deg[truncated]),
             y=horizon.elevation_deg[truncated],
             mode="markers",
             marker={"size": 4, "color": "#cf5538"},
@@ -154,7 +165,7 @@ def sky_figure(series: pd.DataFrame, horizon: Horizon) -> go.Figure:
         azimuth, elevation, times = [], [], []
         previous = None
         for az, el, utc in zip(
-            track.azimut_deg, track.elevacion_deg, track.utc, strict=True
+            centered(track.azimut_deg), track.elevacion_deg, track.utc, strict=True
         ):
             if previous is not None and abs(az - previous) > 180:
                 azimuth.append(None)
@@ -178,9 +189,9 @@ def sky_figure(series: pd.DataFrame, horizon: Horizon) -> go.Figure:
         )
     fig.update_layout(
         height=480,
-        xaxis_title="Azimut desde el norte hacia el este (°)",
+        xaxis_title=f"Azimut relativo al centro ({center_deg:.1f}°) (°)",
         yaxis_title="Elevación local (°)",
-        xaxis_range=[0, 360],
+        xaxis_range=[-180, 180],
         hovermode="closest",
     )
     return fig
@@ -205,7 +216,10 @@ def elevation_figure(series: pd.DataFrame, horizon: Horizon) -> go.Figure:
                 name=f"Terreno hacia {LABELS[body]} (parcial)",
                 mode="lines+markers",
                 marker={"size": 3},
-                line={"color": COLORS[body], "dash": "dot"},
+                line={
+                    "color": "#e74c3c" if body == "SUN" else "#2ecc71",
+                    "dash": "dot",
+                },
             )
         )
     fig.add_hline(y=0, line_dash="dash", annotation_text="Plano horizontal ideal")

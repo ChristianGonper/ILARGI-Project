@@ -7,7 +7,7 @@ from streamlit.testing.v1 import AppTest
 
 from ilargi.horizon import Horizon
 from ilargi.terrain import SAMPLE
-from ilargi.ui.app import SAMPLE_20
+from ilargi.ui.app import SAMPLE_20, analyse
 from ilargi.ui.presentation import sky_figure, terrain_figure
 
 
@@ -48,9 +48,27 @@ def test_sky_figure_does_not_mark_physically_closed_rays_as_truncated():
             },
         ]
     )
-    fig = sky_figure(series, horizon)
+    fig = sky_figure(series, horizon, center_deg=0.0)
     truncated_trace = fig.data[1]
     assert list(truncated_trace.x) == [90.0]
+
+
+def test_sky_figure_horizon_has_no_wraparound_jump():
+    _, horizon, series = analyse(
+        datetime(2026, 4, 2, 15, 0, tzinfo=UTC),
+        24,
+        60,
+        -89.5,
+        0.0,
+        2.0,
+        20.0,
+        2.0,
+        str(SAMPLE_20),
+    )
+    fig = sky_figure(series, horizon, center_deg=120.0)
+    horizon_x = np.asarray(fig.data[0].x, dtype=float)
+    assert np.all(np.diff(horizon_x) > 0)
+    assert np.max(np.diff(horizon_x)) <= 2.0
 
 
 def test_app_calculates_landing_site_scenario():
