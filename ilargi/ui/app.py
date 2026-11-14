@@ -7,7 +7,7 @@ import streamlit as st
 from spiceypy.utils.exceptions import SpiceyError
 
 from ilargi.ephemeris import positions
-from ilargi.ui.presentation import make_figure, position_table
+from ilargi.ui.presentation import format_km, make_figure, position_table
 
 
 def run() -> None:
@@ -40,9 +40,9 @@ def run() -> None:
         st.stop()
 
     a, b, c = st.columns(3)
-    a.metric("Sol – Tierra", f"{np.linalg.norm(heliocentric['EARTH']):,.0f} km")
-    b.metric("Tierra – Luna", f"{np.linalg.norm(geocentric['MOON']):,.0f} km")
-    c.metric("Sol – Luna", f"{np.linalg.norm(heliocentric['MOON']):,.0f} km")
+    a.metric("Sol – Tierra", f"{format_km(np.linalg.norm(heliocentric['EARTH']))} km")
+    b.metric("Tierra – Luna", f"{format_km(np.linalg.norm(geocentric['MOON']))} km")
+    c.metric("Sol – Luna", f"{format_km(np.linalg.norm(heliocentric['MOON']))} km")
     view = st.radio(
         "Vista", ["Sistema Sol–Tierra", "Detalle Tierra–Luna"], horizontal=True
     )
@@ -56,12 +56,13 @@ def run() -> None:
     )
     origin = "Sol" if view == "Sistema Sol–Tierra" else "Tierra"
     st.subheader(f"Coordenadas respecto al centro de {origin}")
-    frame = position_table(data)
+    frame = position_table({body: data[body] for body in shown})
     st.dataframe(frame, hide_index=True, width="stretch")
     export = frame.assign(
         instante_utc=instant.isoformat(),
         origen=origin,
-        marco="J2000",
+        origen_naif=10 if origin == "Sol" else 399,
+        marco="SPICE J2000 (ICRF para DE440)",
         correccion="NONE",
         efemeride="DE440s",
     )
@@ -73,6 +74,9 @@ def run() -> None:
     )
     st.caption(
         f"Instante: {instant.isoformat()} · DE440s · SPICE J2000 · posiciones geométricas sin correcciones de luz o aberración."
+    )
+    st.caption(
+        "Las cifras del CSV conservan precisión numérica y no representan una incertidumbre demostrada."
     )
     st.caption(
         "Para fechas posteriores al último segundo intercalar conocido, SPICE supone que no se añaden otros; las conversiones futuras de UTC pueden cambiar."

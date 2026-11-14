@@ -33,6 +33,12 @@ def test_moon_vector_against_saved_horizons_reference():
     )  # km; comparison tolerance, not an accuracy claim
 
 
+def test_second_time_against_horizons():
+    reference = [-372862.4214535002, -109793.7858401453, -73138.51244819227]
+    result = positions(datetime(2026, 4, 2, 16, tzinfo=UTC), "EARTH")["MOON"]
+    assert np.linalg.norm(result - reference) < 0.01
+
+
 @pytest.mark.parametrize(
     ("target", "origin", "reference"),
     [

@@ -25,7 +25,7 @@ uv run ruff check .
 
 Las posiciones son simultáneas y geométricas, en kilómetros, con ejes inerciales SPICE J2000 y efeméride DE440s. Los marcadores están ampliados; la separación entre cuerpos se representa a escala en cada vista. La tabla indica el origen y el CSV incorpora instante, origen, marco, corrección y efeméride. Para fechas futuras se usa la última tabla de segundos intercalares disponible; un nuevo segundo intercalar puede cambiar la conversión de UTC.
 
-No se ha implementado todavía un observador sobre la Luna, ni posiciones aparentes, relieve LOLA, sombras, iluminación o visibilidad. El PCK y FK lunares descargados quedan preparados para trabajo posterior; no intervienen en las posiciones geométricas actuales. Los resultados no son una evaluación de seguridad ni de comunicaciones.
+No se ha implementado todavía un observador sobre la Luna, ni posiciones aparentes, relieve LOLA, sombras, iluminación o visibilidad. El PCK y FK lunares descargados no intervienen en las posiciones geométricas actuales ni configuran por sí solos el marco lunar predeterminado para cálculos futuros. Los resultados no son una evaluación de seguridad ni de comunicaciones.
 
 Consulta [la validación y los datos](docs/validacion-efemerides.md) y [el planteamiento inicial](docs/planteamiento-inicial.md) para convenciones, fuentes y próximos pasos.
 

@@ -13,3 +13,4 @@ def test_app_displays_both_views():
     app.radio[0].set_value("Detalle Tierra–Luna").run()
     assert not app.exception
     assert not app.error
+    assert app.dataframe[0].value["Cuerpo"].tolist() == ["Tierra", "Luna"]
