@@ -130,8 +130,13 @@ def sky_figure(series: pd.DataFrame, horizon: Horizon) -> go.Figure:
             hovertemplate="Azimut: %{x:.1f}°<br>Elevación: %{y:.2f}°<br>Alcance muestreado: %{customdata:.2f} km<extra></extra>",
         )
     )
+    effective_target_m = (
+        horizon.requested_m
+        if horizon.required_m is None
+        else np.minimum(horizon.requested_m, horizon.required_m)
+    )
     truncated = (
-        horizon.coverage_m < horizon.requested_m - horizon.pixel_m
+        horizon.coverage_m < effective_target_m - horizon.pixel_m
     ) & np.isfinite(horizon.elevation_deg)
     fig.add_trace(
         go.Scatter(

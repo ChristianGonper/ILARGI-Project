@@ -7,7 +7,12 @@ import numpy as np
 import streamlit as st
 from spiceypy.utils.exceptions import SpiceyError
 
-from ilargi.horizon import calculate_horizon, coverage_at, horizon_at
+from ilargi.horizon import (
+    calculate_horizon,
+    coverage_at,
+    estimate_search_radius,
+    horizon_at,
+)
 from ilargi.series import sky_series
 from ilargi.terrain import SAMPLE, sample_elevation
 from ilargi.terrain_image import render_terrain_png
@@ -95,7 +100,7 @@ def run() -> None:
             search = st.number_input(
                 "Distancia de búsqueda del horizonte (km)",
                 min_value=1.0,
-                max_value=100.0,
+                max_value=500.0,
                 value=20.0,
                 step=1.0,
             )
@@ -142,16 +147,34 @@ def run() -> None:
     st.caption(
         f"Lugar: {lat:.3f}° latitud, {lon:.3f}° longitud este · inicio {start.isoformat()} · SPICE MOON_ME_DE440_ME421 · LT+S"
     )
-    c1, c2, c3 = st.columns(3)
+    radius_info = estimate_search_radius(
+        horizon.observer_m, min_elevation_deg=horizon.elevation_deg
+    )
+    required_by_az = (
+        np.asarray(radius_info.required_m, dtype=float)
+        if horizon.required_m is None
+        else horizon.required_m
+    )
+    physical_max_km = (
+        horizon.physical_max_m
+        if horizon.physical_max_m is not None
+        else radius_info.spherical_horizon_m
+    ) / 1000
+    closed_count = int(np.count_nonzero(horizon.coverage_m >= required_by_az))
+    c1, c2, c3, c4 = st.columns(4)
     c1.metric("Altura del terreno sobre la esfera", f"{terrain.elevation_m:.1f} m")
     c2.metric("Altura del instrumento sobre el terreno", f"{instrument:.1f} m")
     c3.metric("Resolución nominal del DEM", f"{horizon.pixel_m:.0f} m/píxel")
+    c4.metric(
+        "Radio físico máx. (relieve global)",
+        f"{physical_max_km:.1f} km",
+    )
     min_coverage, max_coverage = (
         np.min(horizon.coverage_m) / 1000,
         np.max(horizon.coverage_m) / 1000,
     )
     st.warning(
-        f"Horizonte experimental y parcial: el terreno disponible alcanza entre {min_coverage:.1f} y {max_coverage:.1f} km según el azimut, frente a {horizon.requested_m / 1000:.1f} km solicitados. {np.count_nonzero(~np.isfinite(horizon.elevation_deg))} direcciones carecen de perfil. Puede haber obstáculos fuera del recorte o entre muestras; no se certifica visibilidad."
+        f"Horizonte experimental y parcial: el terreno disponible alcanza entre {min_coverage:.1f} y {max_coverage:.1f} km según el azimut, frente a {horizon.requested_m / 1000:.1f} km solicitados. Según el horizonte hallado, el radio físico necesario para cerrar cada dirección varía entre {np.nanmin(required_by_az) / 1000:.1f} y {np.nanmax(required_by_az) / 1000:.1f} km ({closed_count}/{len(horizon.azimuth_deg)} direcciones cerradas; la cota del plano tangente a 0° sería {radius_info.tangent_plane_m / 1000:.1f} km solo para elevaciones ≥ 0°). {np.count_nonzero(~np.isfinite(horizon.elevation_deg))} direcciones carecen de perfil. Puede haber obstáculos fuera del recorte o entre muestras; no se certifica visibilidad."
     )
     st.caption(
         "La altitud LOLA de DE421 ME se aproxima en DE440 ME421 para esta demostración; ambos marcos no son idénticos. Las trayectorias representan los centros de los cuerpos, sin discos ni eclipses."
