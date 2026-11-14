@@ -19,8 +19,9 @@ from ilargi.analysis import (
     analyze_site,
     dem_availability,
 )
+from ilargi.education import compute_education_cycle
 from ilargi.materials import load_regions
-from ilargi.sites import HISTORICAL_SITES
+from ilargi.sites import EDUCATION_SITES, HISTORICAL_SITES
 
 WEB_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
 
@@ -107,6 +108,14 @@ class AnalyzeRequest(BaseModel):
     dem_mode: Literal["auto", "polar", "global", "sample20", "sample80", "ideal"] = (
         "auto"
     )
+
+
+class EducationCycleRequest(BaseModel):
+    latitude_deg: float = Field(gt=-90.0, lt=90.0)
+    longitude_east_deg: float = Field(ge=-180.0, le=360.0)
+    start_utc: datetime
+    duration_hours: float = Field(default=709.0, ge=1.0, le=1440.0)
+    step_minutes: int = Field(default=180, ge=30, le=720)
 
 
 def _finite_or_none(value: float | None) -> float | None:
@@ -342,6 +351,47 @@ def create_app() -> FastAPI:
         except (ValueError, OSError, SpiceyError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         return {"results": results}
+
+    @app.get("/api/education/sites")
+    def list_education_sites() -> list[dict]:
+        return [
+            {
+                "id": s.id,
+                "name": s.name,
+                "category": s.category,
+                "category_label": s.category_label,
+                "mission_or_source": s.mission_or_source,
+                "latitude_deg": s.latitude_deg,
+                "longitude_east_deg": s.longitude_east_deg,
+                "region": s.region,
+                "illumination_note": s.illumination_note,
+                "earth_visibility_note": s.earth_visibility_note,
+                "water_note": s.water_note,
+                "ilargi_story": s.ilargi_story,
+            }
+            for s in EDUCATION_SITES
+        ]
+
+    @app.post("/api/education/cycle")
+    async def education_cycle(payload: EducationCycleRequest) -> dict:
+        def _run() -> dict:
+            start = (
+                payload.start_utc.replace(tzinfo=UTC)
+                if payload.start_utc.tzinfo is None
+                else payload.start_utc.astimezone(UTC)
+            )
+            return compute_education_cycle(
+                latitude_deg=payload.latitude_deg,
+                longitude_east_deg=payload.longitude_east_deg,
+                start_utc=start,
+                duration_hours=payload.duration_hours,
+                step_minutes=payload.step_minutes,
+            )
+
+        try:
+            return await run_in_threadpool(_run)
+        except (ValueError, OSError, SpiceyError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     if WEB_DIST.is_dir():
         app.mount("/", StaticFiles(directory=str(WEB_DIST), html=True), name="web")

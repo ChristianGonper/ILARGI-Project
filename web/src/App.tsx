@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Home } from "lucide-react";
 import {
   analyzePoints,
   fetchHealth,
@@ -6,11 +7,14 @@ import {
   fetchMaterialsOverlay,
 } from "./api";
 import { ComparisonPanel } from "./components/ComparisonPanel";
+import { EducationWorkspace } from "./components/EducationWorkspace";
+import { HomeScreen } from "./components/HomeScreen";
 import { InputPanel, MAX_POINTS } from "./components/InputPanel";
 import { MoonViewport3D } from "./components/MoonViewport3D";
 import { OutputsPanel } from "./components/OutputsPanel";
 import type {
   AnalysisParams,
+  AppMode,
   HealthResponse,
   HistoricalSite,
   MaterialsOverlayResponse,
@@ -43,6 +47,7 @@ function makeManualPoint(uid: number, lat = -89.5, lon = 0): PointDraft {
 }
 
 export function App() {
+  const [mode, setMode] = useState<AppMode>("home");
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [historicalSites, setHistoricalSites] = useState<HistoricalSite[]>([]);
   const [mineralOverlay, setMineralOverlay] =
@@ -228,6 +233,12 @@ export function App() {
     }
   };
 
+  if (mode === "home") {
+    return (
+      <HomeScreen health={health} onSelectMode={(chosen) => setMode(chosen)} />
+    );
+  }
+
   const singleResult = results && results.length === 1 ? results[0] : null;
   const multiResults = results && results.length > 1 ? results : null;
 
@@ -235,8 +246,32 @@ export function App() {
     <div className="app-shell">
       <header className="topbar">
         <div className="topbar-left">
+          <button
+            type="button"
+            className="btn-mini home-back-btn"
+            onClick={() => setMode("home")}
+            title="Volver a la pantalla inicial"
+          >
+            <Home size={13} />
+            Inicio
+          </button>
           <span className="brand-title">ILARGI</span>
-          <span className="badge-pro">PRO</span>
+          <div className="mode-switch-group" role="group" aria-label="Modo">
+            <button
+              type="button"
+              className={`mode-switch-btn ${mode === "education" ? "active edu" : ""}`}
+              onClick={() => setMode("education")}
+            >
+              Educación
+            </button>
+            <button
+              type="button"
+              className={`mode-switch-btn ${mode === "pro" ? "active pro" : ""}`}
+              onClick={() => setMode("pro")}
+            >
+              PRO
+            </button>
+          </div>
           <span className="brand-sub">
             Interactive Lunar Analyzer for Radiance, Geometry, and
             Intervisibility
@@ -259,81 +294,89 @@ export function App() {
         </div>
       </header>
 
-      {errorMsg && (
-        <div className="error-banner" role="alert">
-          <span>{errorMsg}</span>
-          <button
-            type="button"
-            className="btn-icon"
-            onClick={() => setErrorMsg(null)}
+      {mode === "education" ? (
+        <EducationWorkspace />
+      ) : (
+        <>
+          {errorMsg && (
+            <div className="error-banner" role="alert">
+              <span>{errorMsg}</span>
+              <button
+                type="button"
+                className="btn-icon"
+                onClick={() => setErrorMsg(null)}
+              >
+                ×
+              </button>
+            </div>
+          )}
+
+          <main
+            className={`workspace-grid ${singleResult ? "with-outputs" : "globe-wide"}`}
           >
-            ×
-          </button>
-        </div>
-      )}
+            <InputPanel
+              points={points}
+              historicalSites={historicalSites}
+              mineralElements={mineralOverlay?.elements ?? []}
+              selectedMinerals={selectedMinerals}
+              params={params}
+              focusedIndex={focusedIndex}
+              pinMode={pinMode}
+              loading={loading}
+              onToggleMineral={(id) =>
+                setSelectedMinerals((prev) =>
+                  prev.includes(id)
+                    ? prev.filter((m) => m !== id)
+                    : [...prev, id],
+                )
+              }
+              onTogglePinMode={() => setPinMode((v) => !v)}
+              onFocusPoint={setFocusedIndex}
+              onChangePoint={handleChangePoint}
+              onSelectPreset={handleSelectPreset}
+              onAddPoint={handleAddPoint}
+              onRemovePoint={handleRemovePoint}
+              onChangeParams={(patch) => setParams((p) => ({ ...p, ...patch }))}
+              onLaunch={() => void runAnalysis(points, params)}
+            />
 
-      <main
-        className={`workspace-grid ${singleResult ? "with-outputs" : "globe-wide"}`}
-      >
-        <InputPanel
-          points={points}
-          historicalSites={historicalSites}
-          mineralElements={mineralOverlay?.elements ?? []}
-          selectedMinerals={selectedMinerals}
-          params={params}
-          focusedIndex={focusedIndex}
-          pinMode={pinMode}
-          loading={loading}
-          onToggleMineral={(id) =>
-            setSelectedMinerals((prev) =>
-              prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id],
-            )
-          }
-          onTogglePinMode={() => setPinMode((v) => !v)}
-          onFocusPoint={setFocusedIndex}
-          onChangePoint={handleChangePoint}
-          onSelectPreset={handleSelectPreset}
-          onAddPoint={handleAddPoint}
-          onRemovePoint={handleRemovePoint}
-          onChangeParams={(patch) => setParams((p) => ({ ...p, ...patch }))}
-          onLaunch={() => void runAnalysis(points, params)}
-        />
+            <section className="panel moon-panel">
+              <MoonViewport3D
+                historicalSites={historicalSites}
+                activePoints={points}
+                focusedIndex={singleResult ? 0 : focusedIndex}
+                pinMode={pinMode}
+                mineralOverlay={mineralOverlay}
+                selectedMinerals={selectedMinerals}
+                onSelectHistoricalSite={handleGlobeHistoricalClick}
+                onSelectActivePoint={(idx) => setFocusedIndex(idx)}
+                onSurfacePick={handleSurfacePick}
+              />
+            </section>
 
-        <section className="panel moon-panel">
-          <MoonViewport3D
-            historicalSites={historicalSites}
-            activePoints={points}
-            focusedIndex={singleResult ? 0 : focusedIndex}
-            pinMode={pinMode}
-            mineralOverlay={mineralOverlay}
-            selectedMinerals={selectedMinerals}
-            onSelectHistoricalSite={handleGlobeHistoricalClick}
-            onSelectActivePoint={(idx) => setFocusedIndex(idx)}
-            onSurfacePick={handleSurfacePick}
-          />
-        </section>
+            {singleResult && (
+              <OutputsPanel
+                result={singleResult}
+                onClose={() => setResults(null)}
+              />
+            )}
+          </main>
 
-        {singleResult && (
-          <OutputsPanel
-            result={singleResult}
-            onClose={() => setResults(null)}
-          />
-        )}
-      </main>
-
-      {multiResults && (
-        <ComparisonPanel
-          results={multiResults}
-          comparedLabels={comparedLabels}
-          onTogglePlot={(label) =>
-            setComparedLabels((prev) =>
-              prev.includes(label)
-                ? prev.filter((l) => l !== label)
-                : [...prev, label],
-            )
-          }
-          onClearPlots={() => setComparedLabels([])}
-        />
+          {multiResults && (
+            <ComparisonPanel
+              results={multiResults}
+              comparedLabels={comparedLabels}
+              onTogglePlot={(label) =>
+                setComparedLabels((prev) =>
+                  prev.includes(label)
+                    ? prev.filter((l) => l !== label)
+                    : [...prev, label],
+                )
+              }
+              onClearPlots={() => setComparedLabels([])}
+            />
+          )}
+        </>
       )}
     </div>
   );
