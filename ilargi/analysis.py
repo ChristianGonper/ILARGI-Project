@@ -10,7 +10,9 @@ import pandas as pd
 from ilargi.horizon import Horizon, calculate_horizon, horizon_at
 from ilargi.materials import MATERIALS, load_regions, region_at
 from ilargi.series import sky_series
-from ilargi.terrain import SAMPLE, TerrainSample, sample_elevation
+from ilargi.terrain import GLOBAL, POLAR, SAMPLE, TerrainSample, sample_elevation
+
+SAMPLE_20 = SAMPLE.with_name("lola_20m_south_pole_sample.tif")
 
 
 @dataclass(frozen=True)
@@ -308,6 +310,50 @@ def summarize_materials(
     )
 
 
+def dem_availability() -> dict[str, bool]:
+    """Indica qué productos topográficos LOLA están presentes en disco."""
+    return {
+        "polar_80m": POLAR.is_file() and POLAR.stat().st_size == 189158392,
+        "global_240m": (
+            GLOBAL.is_file()
+            and GLOBAL.with_suffix(".img").is_file()
+            and GLOBAL.with_suffix(".img").stat().st_size == 2123366400
+        ),
+        "sample_20m": SAMPLE_20.is_file(),
+        "sample_80m": SAMPLE.is_file(),
+    }
+
+
+def _resolve_dem_candidates(
+    latitude_deg: float, dem_mode: str, dem_path: Path | None
+) -> list[Path]:
+    if dem_path is not None:
+        return [dem_path]
+    avail = dem_availability()
+    if dem_mode == "ideal":
+        return []
+    if dem_mode == "polar":
+        return (
+            [POLAR] if avail["polar_80m"] else ([SAMPLE] if avail["sample_80m"] else [])
+        )
+    if dem_mode == "global":
+        return [GLOBAL] if avail["global_240m"] else []
+    if dem_mode == "sample20":
+        return [SAMPLE_20] if avail["sample_20m"] else []
+    if dem_mode == "sample80":
+        return [SAMPLE] if avail["sample_80m"] else []
+    # Modo automático: mejor resolución disponible que cubra la latitud.
+    candidates: list[Path] = []
+    if latitude_deg <= -80.0:
+        if avail["polar_80m"]:
+            candidates.append(POLAR)
+        if avail["sample_80m"]:
+            candidates.append(SAMPLE)
+    if avail["global_240m"]:
+        candidates.append(GLOBAL)
+    return candidates
+
+
 def analyze_site(
     *,
     label: str,
@@ -320,33 +366,38 @@ def analyze_site(
     instrument_height_m: float = 2.0,
     search_km: float = 20.0,
     azimuth_step_deg: float = 1.0,
-    dem_path: Path | None = SAMPLE,
+    dem_path: Path | None = None,
+    dem_mode: str = "auto",
     regions: pd.DataFrame | None = None,
 ) -> SiteAnalysis:
     """Ejecuta el análisis completo de un punto lunar con fallback a horizonte ideal."""
     terrain: TerrainSample | None = None
+    horizon: Horizon | None = None
     horizon_mode = "ideal"
-    horizon_label = "Esfera ideal (0°) — fuera del recorte LOLA"
+    horizon_label = "Esfera ideal (0°) — sin cobertura DEM"
 
-    if dem_path is not None:
+    for candidate in _resolve_dem_candidates(latitude_deg, dem_mode, dem_path):
         try:
-            terrain = sample_elevation(latitude_deg, longitude_east_deg, dem_path)
+            terrain = sample_elevation(latitude_deg, longitude_east_deg, candidate)
             horizon = calculate_horizon(
                 latitude_deg,
                 longitude_east_deg,
                 instrument_height_m=instrument_height_m,
                 max_distance_m=search_km * 1000.0,
                 azimuth_step_deg=azimuth_step_deg,
-                path=dem_path,
+                path=candidate,
             )
             horizon_mode = "lola"
-            horizon_label = f"LOLA {int(horizon.pixel_m)} m/píxel (parcial)"
+            res_tag = (
+                "≈237" if candidate == GLOBAL else f"{int(round(horizon.pixel_m))}"
+            )
+            horizon_label = f"LOLA {res_tag} m/píxel ({candidate.stem})"
+            break
         except ValueError:
             terrain = None
-            horizon = ideal_horizon(
-                observer_m=instrument_height_m, azimuth_step_deg=azimuth_step_deg
-            )
-    else:
+            horizon = None
+
+    if horizon is None:
         horizon = ideal_horizon(
             observer_m=instrument_height_m, azimuth_step_deg=azimuth_step_deg
         )

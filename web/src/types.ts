@@ -1,0 +1,150 @@
+export interface HistoricalSite {
+  id: string;
+  name: string;
+  mission: string;
+  latitude_deg: number;
+  longitude_east_deg: number;
+  region: string;
+  in_lola_sample: boolean;
+}
+
+export interface PointDraft {
+  uid: number;
+  presetId: string;
+  siteName: string;
+  latitudeDeg: number;
+  longitudeEastDeg: number;
+  startDate: string; // YYYY-MM-DD
+  startTime: string; // HH:MM
+}
+
+export interface AnalysisParams {
+  durationHours: number;
+  stepMinutes: number;
+  instrumentHeightM: number;
+  searchKm: number;
+  azimuthStepDeg: number;
+  demMode: "auto" | "polar" | "global" | "sample20" | "sample80" | "ideal";
+}
+
+export interface SkySample {
+  utc: string;
+  azimuth_deg: number;
+  elevation_deg: number;
+  horizon_deg: number;
+  margin_deg: number;
+  visible: boolean;
+  range_km: number;
+}
+
+export interface VisibilityEvent {
+  body: string;
+  event_type: string;
+  utc: string;
+  azimuth_deg: number;
+  horizon_deg: number;
+}
+
+export interface ShadowSpan {
+  body: string;
+  start_utc: string;
+  end_utc: string;
+  duration_hours: number;
+  bounded_start: boolean;
+  bounded_end: boolean;
+}
+
+export interface ElementData {
+  value: number | null;
+  unit: string;
+  category: string;
+}
+
+export interface SiteAnalysisResult {
+  label: string;
+  site_name: string;
+  latitude_deg: number;
+  longitude_east_deg: number;
+  start_utc: string;
+  duration_hours: number;
+  step_minutes: number;
+  instrument_height_m: number;
+  horizon_mode: "lola" | "ideal";
+  horizon_label: string;
+  ground_elevation_m: number | null;
+  pixel_m: number;
+  horizon_profile: {
+    azimuth_deg: number[];
+    elevation_deg: (number | null)[];
+    coverage_km: number[];
+    truncated: boolean[];
+  };
+  series: {
+    sun: SkySample[];
+    earth: SkySample[];
+  };
+  visibility: {
+    sun_pct: number;
+    earth_pct: number;
+    both_pct: number;
+    sun_hours: number;
+    earth_hours: number;
+    both_hours: number;
+  };
+  events: {
+    sunsets: VisibilityEvent[];
+    sunrises: VisibilityEvent[];
+    earthsets: VisibilityEvent[];
+    earthrises: VisibilityEvent[];
+  };
+  nights: {
+    longest: ShadowSpan | null;
+    others: ShadowSpan[];
+    earth_outages: ShadowSpan[];
+  };
+  incidence: {
+    min_deg: number | null;
+    max_deg: number | null;
+    mean_deg: number | null;
+    median_deg: number | null;
+    std_deg: number | null;
+    max_sun_elevation_deg: number;
+    min_sun_elevation_deg: number;
+    sunlit_samples: number;
+    total_samples: number;
+  };
+  materials: {
+    in_coverage: boolean;
+    region_id: number | null;
+    elements: Record<string, ElementData>;
+    water_status: string;
+  };
+  temperature_status: string;
+}
+
+export interface HealthResponse {
+  status: string;
+  kernels: string;
+  frame: string;
+  abcorr: string;
+  dem: {
+    polar_80m: boolean;
+    global_240m: boolean;
+    sample_20m: boolean;
+    sample_80m: boolean;
+  };
+}
+
+/**
+ * Contrato de adaptador para el visor lunar 3D.
+ * Permite intercambiar Three.js por CesiumJS (o combinarlos) sin cambiar el resto de la app.
+ */
+export interface MoonViewport3DProps {
+  historicalSites: HistoricalSite[];
+  activePoints: PointDraft[];
+  focusedIndex: number | null;
+  pinMode: boolean;
+  onSelectHistoricalSite: (site: HistoricalSite) => void;
+  onSelectActivePoint?: (index: number) => void;
+  onSurfacePick?: (latitudeDeg: number, longitudeEastDeg: number) => void;
+}
