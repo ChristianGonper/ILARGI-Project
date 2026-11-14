@@ -6,6 +6,8 @@ Este proyecto es ILARGI, (Interactive Lunar Analyzer for Radiance, Geometry, and
 
 Usa mensajes en inglés sin prefijo estilo fix(engine), y usa frases descriptivas de lo que se incluye en el commit. Haz commits según vayas trabajando, siguiendo prácticas adecuadas
 
+Crea una pull request para cada trabajo y desarrolla los cambios directamente en su rama, actualizando la misma pull request hasta completar el trabajo.
+
 # Herramientas y comprobaciones
 
 - Usa Ruff para comprobar y formatear Python

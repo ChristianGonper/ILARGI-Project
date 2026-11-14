@@ -17,7 +17,7 @@ def test_series_includes_final_instant_and_both_targets():
 
 def test_series_rejects_excessive_sampling():
     with pytest.raises(ValueError, match="3000"):
-        sky_series(datetime(2026, 4, 2, tzinfo=UTC), 90 * 24, 15, -89.5, 0, 0)
+        sky_series(datetime(2026, 4, 2, tzinfo=UTC), 90 * 24, 10, -89.5, 0, 0)
 
 
 def test_series_uses_surface_height_in_metres_and_apparent_corrections():
@@ -29,3 +29,9 @@ def test_series_uses_surface_height_in_metres_and_apparent_corrections():
         row = result[(result.utc == instant) & (result.objetivo == body)].iloc[0]
         assert row.elevacion_deg == pytest.approx(reference.target(body).elevation_deg)
         assert row.azimut_deg == pytest.approx(reference.target(body).azimuth_deg)
+
+
+@pytest.mark.parametrize("step", [1, 9, 15])
+def test_series_rejects_invalid_step(step):
+    with pytest.raises(ValueError, match="10 minutos"):
+        sky_series(datetime(2026, 4, 2, tzinfo=UTC), 1, step, -89.5, 0, 0)
