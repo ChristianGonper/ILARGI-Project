@@ -33,6 +33,16 @@ y ejecuta `npm ci` una vez; el mismo hook comprueba el formato de los archivos
 preparados. Para formatear un archivo, usa `npx prettier --write ruta/al/archivo`.
 Prettier comprueba formato, no errores de lógica o validez de HTML.
 
+## Relieve del globo 3D
+
+El relieve aparece directamente sobre la Luna del explorador al acercar la cámara con la rueda o un gesto de pinza. No hay un botón ni una vista adicional. La geometría se subdivide automáticamente cerca de la cámara y conserva la textura LROC, la selección de coordenadas y la máscara de minerales sobre el terreno. Los marcadores se ajustan a la altura y al zoom.
+
+El globo incluye un DEM global de visualización derivado de `ldem_16_uint.tif` del [NASA CGI Moon Kit](https://svs.gsfc.nasa.gov/4720/), con crédito a NASA's Scientific Visualization Studio / LRO LOLA. Se ha reducido de 16 a 8 muestras por grado por promedio de bloques de 2 × 2 y se distribuye comprimido con la web (unos 7,6 MB). Su espaciado es de unos 3,8 km en latitud y en el ecuador; no representa cráteres pequeños ni detalle métrico. La interpolación bilineal y la subdivisión suavizan la visualización sin añadir datos medidos. Las alturas conservan la escala real y la referencia al radio de 1 737 400 m.
+
+La procedencia, unidades y hashes están en `web/public/textures/moon_height.json`. Para reproducir el activo, descarga el TIFF indicado allí y ejecuta `uv run python -m ilargi.build_globe_terrain ruta/ldem_16_uint.tif`; se verifica el SHA-256 de la fuente. Si falla la carga del relieve se mantiene la esfera texturizada y se indica el fallo en el visor.
+
+La iluminación es ilustrativa y no calcula sombras solares para la fecha seleccionada. El DEM de visualización no sustituye los DEM usados en los análisis ni modifica alturas, horizontes o resultados científicos. El registro cartográfico LOLA ME DE421 se aproxima al marco ME DE440 del globo.
+
 `uv.lock` fija las dependencias. Las pruebas necesitan los kernels descargados y `.venv` se genera automáticamente.
 
 La vista de materiales permite comparar abundancias regionales en el polo sur. Las fuentes, conversiones y límites se describen en [materiales del polo sur](docs/materiales-polo-sur.md).
