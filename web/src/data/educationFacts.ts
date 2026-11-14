@@ -1,35 +1,85 @@
 /** Educational background; sources and schematic overlay limits are documented in docs/sources.md. */
 export interface IlargiFact {
   id: string;
-  tag: string;
+  question: string;
   text: string;
 }
 
 export const ILARGI_FUN_FACTS: IlargiFact[] = [
   {
-    id: "fact-lunar-day",
-    tag: "Lunar cycle",
-    text: "A full lunar solar day lasts about 29.53 Earth days. Near the equator, daylight and darkness each last roughly two weeks.",
+    id: "fact-01",
+    question: "The Moon is moving away",
+    text: "It drifts about 1.5 inches (3.8 cm) farther from Earth every year, about as fast as your fingernails grow. Billions of years ago it was much closer and looked huge in the sky.",
   },
   {
-    id: "fact-tilt",
-    tag: "Polar sunlight",
-    text: "The Moon has a small axial tilt, so the Sun stays low near its poles. Local terrain can keep some crater interiors in shadow.",
+    id: "fact-02",
+    question: "A changing view of the Moon",
+    text: "The Moon wobbles a little, like it’s gently shaking its head, so over time we get to peek at nearly 60% of it.",
   },
   {
-    id: "fact-mirror-drift",
-    tag: "Lunar ranging",
-    text: "Laser ranging shows that the Moon is moving away from Earth at about 3.8 centimeters (1.5 inches) per year.",
+    id: "fact-03",
+    question: "The far side gets sunlight too",
+    text: "The far side of the Moon gets just as much sunlight as the side we see. People call it “dark” only because we can’t see it from Earth.",
   },
   {
-    id: "fact-coldest-place",
-    tag: "Cold traps",
-    text: "Shadowed polar terrain can be extremely cold. Surface temperature requires a thermal model; the globe animation shows geometry.",
+    id: "fact-04",
+    question: "Footprints that last",
+    text: "Astronaut footprints on the Moon could stay there for millions of years, because there’s no wind or rain to erase them.",
   },
   {
-    id: "fact-earth-sky",
-    tag: "Earth in the sky",
-    text: "From much of the near side, Earth stays in a similar part of the sky. Libration and terrain can still change local visibility.",
+    id: "fact-05",
+    question: "Walking on the Moon",
+    text: "Twelve Apollo astronauts walked on the Moon between 1969 and 1972.",
+  },
+  {
+    id: "fact-06",
+    question: "A lighter step",
+    text: "Lunar gravity is about one-sixth of Earth's. Your mass stays the same, but your weight would be much smaller and jumping would feel different.",
+  },
+  {
+    id: "fact-07",
+    question: "From an oven to a freezer",
+    text: "🥶 Daytime on the Moon can hit 250°F (120°C), and nights can drop below −280°F (−173°C). There’s no air to hold in the heat.",
+  },
+  {
+    id: "fact-08",
+    question: "A very long lunar day",
+    text: "A lunar solar day lasts about 29.5 Earth days. Near the equator, that means roughly two weeks of sunlight followed by two weeks of darkness.",
+  },
+  {
+    id: "fact-09",
+    question: "A giant collision",
+    text: "It probably formed when a planet the size of Mars smashed into Earth about 4.5 billion years ago. The leftover pieces clumped together to make the Moon.",
+  },
+  {
+    id: "fact-10",
+    question: "The Moon and the tides",
+    text: "Its gravity pulls on Earth’s water and causes the tides. The Sun helps a little, but the Moon does most of the pulling.",
+  },
+  {
+    id: "fact-11",
+    question: "A dark daytime sky",
+    text: "The sky there is always black. With no air to scatter sunlight, it can’t turn blue.",
+  },
+  {
+    id: "fact-12",
+    question: "The smell of Moon dust",
+    text: "Astronauts said it smelled like burnt gunpowder. It’s also super fine and sharp, almost like crushed glass.",
+  },
+  {
+    id: "fact-13",
+    question: "Moonquakes",
+    text: "The Moon has its own earthquakes, called moonquakes! They happen because Earth’s gravity squeezes and stretches the Moon, and because the Moon is slowly shrinking as its insides cool down. Some of them can last more than an hour.",
+  },
+  {
+    id: "fact-14",
+    question: "Ice near the poles",
+    text: "Some dark craters near the Moon’s poles never see sunlight, and they hold ice. One day, astronauts might use it for drinking water or even rocket fuel.",
+  },
+  {
+    id: "fact-15",
+    question: "Golf on the Moon",
+    text: "Astronauts left golf balls on the Moon, plus nearly 100 bags of poop! Alan Shepard hit two golf balls there during Apollo 14 in 1971.",
   },
 ];
 
