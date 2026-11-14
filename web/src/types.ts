@@ -31,6 +31,7 @@ export interface SkySample {
   azimuth_deg: number;
   elevation_deg: number;
   horizon_deg: number;
+  horizon_source: "terrain" | "ideal" | "ideal_fallback";
   margin_deg: number;
   visible: boolean;
   range_km: number;

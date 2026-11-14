@@ -55,6 +55,8 @@ El DEM polar de 80 m cubre 80–90° S; el global LDEM_128 cubre toda la Luna, c
 
 La [guía de trayectorias y horizonte](docs/trayectorias-y-horizonte.md), la [guía interactiva anterior](docs/recorrido.html), [geometría aparente](docs/geometria-aparente.md), [validación](docs/validacion-efemerides.md) y [procedencia del recorte LOLA](data/terrain/README.md) describen las convenciones, contrastes y límites. El [planteamiento inicial](docs/planteamiento-inicial.md) recoge los próximos pasos.
 
+The current interpretation of visibility, missing terrain and exported samples is documented in [Scientific results and limitations](docs/scientific-results.md). Some older guides describe previous versions.
+
 ## Organización
 
 - `main.py` e `ilargi/api.py`: servidor FastAPI y punto de entrada web (`http://127.0.0.1:8000`).

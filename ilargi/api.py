@@ -144,6 +144,13 @@ def _serialize_analysis(analysis: SiteAnalysis) -> dict:
                 "azimuth_deg": float(row.azimut_deg),
                 "elevation_deg": float(row.elevacion_deg),
                 "horizon_deg": float(row.horizonte_efectivo_deg),
+                "horizon_source": (
+                    "ideal"
+                    if analysis.horizon_mode == "ideal"
+                    else "terrain"
+                    if np.isfinite(row.horizonte_parcial_deg)
+                    else "ideal_fallback"
+                ),
                 "margin_deg": float(row.margen_efectivo_deg),
                 "visible": bool(row.visible),
                 "range_km": float(row.distancia_km),

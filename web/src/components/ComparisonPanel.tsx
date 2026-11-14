@@ -89,6 +89,10 @@ export function ComparisonPanel({
             Pulsa el botón de gráfico al final de cada fila para mostrar y
             apilar los diagramas Acimut vs Elevación debajo.
           </div>
+          <div className="panel-sub">
+            Visibility and events are estimates. Terrain coverage may be
+            partial; missing horizon samples use an ideal 0° horizon.
+          </div>
         </div>
         <div className="comp-actions">
           <button

@@ -18,16 +18,16 @@ interface OutputsPanelProps {
 
 function downloadSeriesCsv(result: SiteAnalysisResult) {
   const header =
-    "body,utc,azimuth_deg,elevation_deg,horizon_deg,margin_deg,visible,range_km,angular_radius_deg,above_horizon_fraction,eclipsed_fraction,direct_visible_fraction\n";
+    "body,utc,azimuth_deg,elevation_deg,horizon_deg,horizon_source,margin_deg,visible,range_km,angular_radius_deg,above_horizon_fraction,eclipsed_fraction,direct_visible_fraction\n";
   const fmtOpt = (v: number | null) => (v === null ? "" : String(v));
   const rows = [
     ...result.series.sun.map(
       (s) =>
-        `SUN,${s.utc},${s.azimuth_deg},${s.elevation_deg},${s.horizon_deg},${s.margin_deg},${s.visible},${s.range_km},${s.angular_radius_deg},${fmtOpt(s.above_horizon_fraction)},${fmtOpt(s.eclipsed_fraction)},${fmtOpt(s.direct_visible_fraction)}`,
+        `SUN,${s.utc},${s.azimuth_deg},${s.elevation_deg},${s.horizon_deg},${s.horizon_source},${s.margin_deg},${s.visible},${s.range_km},${s.angular_radius_deg},${fmtOpt(s.above_horizon_fraction)},${fmtOpt(s.eclipsed_fraction)},${fmtOpt(s.direct_visible_fraction)}`,
     ),
     ...result.series.earth.map(
       (s) =>
-        `EARTH,${s.utc},${s.azimuth_deg},${s.elevation_deg},${s.horizon_deg},${s.margin_deg},${s.visible},${s.range_km},${s.angular_radius_deg},${fmtOpt(s.above_horizon_fraction)},${fmtOpt(s.eclipsed_fraction)},${fmtOpt(s.direct_visible_fraction)}`,
+        `EARTH,${s.utc},${s.azimuth_deg},${s.elevation_deg},${s.horizon_deg},${s.horizon_source},${s.margin_deg},${s.visible},${s.range_km},${s.angular_radius_deg},${fmtOpt(s.above_horizon_fraction)},${fmtOpt(s.eclipsed_fraction)},${fmtOpt(s.direct_visible_fraction)}`,
     ),
   ].join("\n");
   const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
@@ -83,6 +83,14 @@ export function OutputsPanel({ result, onClose }: OutputsPanelProps) {
         <SkyAzimuthPlot result={result} height={290} />
       </div>
 
+      {result.horizon_mode === "lola" && (
+        <p className="panel-sub">
+          Visibility and events are estimates from sampled terrain. Where
+          horizon data is missing, the calculation uses an ideal 0° horizon;
+          incomplete terrain coverage can also miss obstacles. The CSV
+          identifies the horizon source for each sample.
+        </p>
+      )}
       <div className="kpi-grid">
         <div className="kpi-box">
           <div className="kpi-label">Visibilidad Sol</div>

@@ -1,5 +1,10 @@
 # Datos y contraste inicial de efemérides
 
+> Historical notes: some references to the application and its capabilities are
+> out of date. See [Scientific results and limitations](scientific-results.md)
+> for the current model. The recorded Horizons comparisons remain useful as
+> implementation checks under the stated conditions.
+
 ## Cálculo
 
 SPICE transforma el instante UTC a ET/TDB con `naif0012.tls`; `spkpos` consulta centros de cuerpos `SUN` (10), `EARTH` (399) y `MOON` (301) en `J2000`, con corrección `NONE`. Las posiciones se dan relativas al centro seleccionado. Para efemérides JPL, SPICE utiliza J2000 como denominación del marco alineado con ICRF. La interfaz limita deliberadamente las fechas a 1972–2100 UTC, dentro de la cobertura de DE440s; no presenta fechas anteriores como UTC histórico.
