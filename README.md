@@ -45,7 +45,7 @@ La iluminación es ilustrativa y no calcula sombras solares para la fecha selecc
 
 `uv.lock` fija las dependencias. Las pruebas necesitan los kernels descargados y `.venv` se genera automáticamente.
 
-La vista de materiales permite comparar abundancias regionales en el polo sur. Las fuentes, conversiones y límites se describen en [materiales del polo sur](docs/materiales-polo-sur.md).
+La vista de materiales permite comparar abundancias regionales en toda la Luna. Las fuentes, conversiones y límites se describen en [materiales lunares](docs/materiales-polo-sur.md).
 
 ## Qué calcula y qué no
 

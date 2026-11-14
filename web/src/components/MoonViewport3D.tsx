@@ -586,6 +586,16 @@ export function MoonViewport3D({
     };
   }, []);
 
+  const [wehTexture, setWehTexture] = useState<HTMLImageElement | null>(null);
+  useEffect(() => {
+    const image = new Image();
+    image.onload = () => setWehTexture(image);
+    image.src = "/textures/weh_lawrence2022.png";
+    return () => {
+      image.onload = null;
+    };
+  }, []);
+
   // Actualizar máscara transparente de minerales LP-GRS cuando cambia la selección.
   useEffect(() => {
     const ov = overlayRef.current;
@@ -609,6 +619,13 @@ export function MoonViewport3D({
     for (const id of selectedMinerals) {
       const meta = mineralOverlay.elements.find((e) => e.id === id);
       if (!meta || !meta.available) continue;
+      if (id === "WEH") {
+        if (wehTexture) {
+          ctx.drawImage(wehTexture, 0, 0, w, h);
+          painted = true;
+        }
+        continue;
+      }
       const [r, g, b] = hexToRgb(meta.color);
 
       for (const reg of mineralOverlay.regions) {
@@ -628,7 +645,7 @@ export function MoonViewport3D({
     tex.needsUpdate = true;
     (mesh.material as THREE.Material).visible = painted;
     mesh.visible = painted && moonMeshRef.current?.visible === true;
-  }, [mineralOverlay, selectedMinerals]);
+  }, [mineralOverlay, selectedMinerals, wehTexture]);
 
   // Actualizar marcadores históricos cuando cambia la lista.
   useEffect(() => {

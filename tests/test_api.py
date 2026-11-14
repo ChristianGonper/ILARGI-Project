@@ -24,7 +24,7 @@ def test_health_and_sites_endpoints():
     elem_ids = [e["id"] for e in ov["elements"]]
     assert elem_ids == ["Al", "Ca", "FeO", "Th", "WEH"]
     weh = next(e for e in ov["elements"] if e["id"] == "WEH")
-    assert weh["available"] is False
+    assert weh["available"] is True
     assert len(ov["regions"]) == 1790
 
 
@@ -64,7 +64,7 @@ def test_analyze_single_and_multipoint_payload():
     assert p1["search_radius_km"] > 100.0
     assert p1["materials"]["in_coverage"] is True
     assert "Al" in p1["materials"]["elements"]
-    assert "Sin datos" in p1["materials"]["water_status"]
+    assert "ppm H₂O equivalente" in p1["materials"]["water_status"]
     assert len(p1["series"]["sun"]) == 49
     assert len(p1["series"]["earth"]) == 49
     assert p1["series"]["sun"][0]["angular_radius_deg"] > 0.2
@@ -73,7 +73,7 @@ def test_analyze_single_and_multipoint_payload():
 
     assert p2["label"] == "P2"
     assert p2["search_radius_km"] > 100.0
-    assert p2["materials"]["in_coverage"] is False
+    assert p2["materials"]["in_coverage"] is True
     assert "Sin modelo" in p2["temperature_status"]
     assert p2["series"]["sun"][0]["above_horizon_fraction"] is not None
     assert p2["series"]["sun"][0]["eclipsed_fraction"] is not None

@@ -96,7 +96,7 @@ def test_analyze_site_lola_and_ideal_fallback():
     assert south.horizon.requested_m > 100_000.0
     assert south.materials.in_coverage is True
     assert "Al" in south.materials.elements
-    assert "Sin datos" in south.materials.water_status
+    assert "ppm H₂O equivalente" in south.materials.water_status
 
     apollo = analyze_site(
         label="P2",
@@ -111,14 +111,14 @@ def test_analyze_site_lola_and_ideal_fallback():
     assert apollo.horizon_mode == "ideal"
     assert apollo.terrain is None
     assert np.allclose(apollo.horizon.elevation_deg, 0.0)
-    assert apollo.materials.in_coverage is False
+    assert apollo.materials.in_coverage is True
     assert format_events_summary(()) == "Sin evento en el periodo evaluado"
 
 
 def test_materials_summary_outside_south_pole():
     out = summarize_materials(10.0, 20.0)
-    assert out.in_coverage is False
-    assert out.elements == {}
+    assert out.in_coverage is True
+    assert "Al" in out.elements
 
 
 def test_analyze_site_computes_disc_visibility_and_eclipse():
