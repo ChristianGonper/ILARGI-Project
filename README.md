@@ -9,10 +9,12 @@ Se necesitan Python 3.13, [uv](https://docs.astral.sh/uv/) y conexión a interne
 ```powershell
 uv sync
 uv run python -m ilargi.kernels
-uv run streamlit run main.py
+npm --prefix web ci
+npm --prefix web run build
+uv run python main.py
 ```
 
-Abre la dirección local que muestre Streamlit. Los kernels se descargan desde NAIF a `data/kernels/` y se verifican con SHA-256. La primera descarga ocupa unos 45 MB. Para incorporar el DEM polar completo y el global, ejecuta `uv run python -m ilargi.download_terrain` (aproximadamente 2,3 GB). Las muestras locales siguen incluidas en el repositorio. Para ejecutar las comprobaciones:
+Abre `http://127.0.0.1:8000` en tu navegador (o usa `npm --prefix web run dev` en `http://localhost:5173` durante desarrollo con recarga en caliente frente a FastAPI). Los kernels se descargan desde NAIF a `data/kernels/` y se verifican con SHA-256. La primera descarga ocupa unos 45 MB. Para incorporar el DEM polar completo y el global, ejecuta `uv run python -m ilargi.download_terrain` (aproximadamente 2,3 GB). Las muestras locales siguen incluidas en el repositorio. Para ejecutar las comprobaciones:
 
 ```powershell
 uv run pytest -q
@@ -45,16 +47,14 @@ La [guía de trayectorias y horizonte](docs/trayectorias-y-horizonte.md), la [gu
 
 ## Organización
 
-- `main.py`: entrada de Streamlit.
+- `main.py` e `ilargi/api.py`: servidor FastAPI y punto de entrada web (`http://127.0.0.1:8000`).
 - `ilargi/apparent.py`: geometría lunar aparente y observador superficial.
 - `ilargi/ephemeris.py` y `ilargi/kernels.py`: infraestructura SPICE y kernels.
 - `ilargi/terrain.py`, `ilargi/horizon.py` y `data/terrain/`: consulta LOLA y horizonte parcial.
-- `ilargi/series.py`: series temporales desde el emplazamiento.
+- `ilargi/series.py`, `ilargi/analysis.py` e `ilargi/sites.py`: series temporales, detección de eventos/noches, incidencia y puntos históricos.
 - `ilargi/terrain_image.py`: imágenes PNG de terreno con Matplotlib.
-- `ilargi/ui/`: prototipo y visualizaciones.
+- `web/`: aplicación web React + TypeScript + Three.js (adaptador lunar 3D preparado para CesiumJS) + Plotly.js.
 - `tests/` y `docs/`: pruebas y evidencia.
-
-El motor no depende de Streamlit. Streamlit y Plotly son herramientas de prototipado; se evaluarán tanto una interfaz web como una basada en Python cuando estén más claros los requisitos de visualización 3D y distribución.
 
 ## Exportar un mapa LOLA en PNG
 

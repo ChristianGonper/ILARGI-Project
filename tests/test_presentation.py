@@ -1,14 +1,15 @@
 from datetime import UTC, datetime
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from streamlit.testing.v1 import AppTest
 
-from ilargi.horizon import Horizon
-from ilargi.terrain import SAMPLE
-from ilargi.ui.app import SAMPLE_20, analyse
-from ilargi.ui.presentation import sky_figure, terrain_figure
+from ilargi.horizon import Horizon, calculate_horizon, coverage_at, horizon_at
+from ilargi.series import sky_series
+from ilargi.sites import HISTORICAL_SITES
+from ilargi.terrain import SAMPLE, sample_elevation
+from ilargi.ui.presentation import moon_globe_figure, sky_figure, terrain_figure
+
+SAMPLE_20 = SAMPLE.with_name("lola_20m_south_pole_sample.tif")
 
 
 def test_terrain_plots_keep_native_grid_without_smoothing():
@@ -54,41 +55,30 @@ def test_sky_figure_does_not_mark_physically_closed_rays_as_truncated():
 
 
 def test_sky_figure_horizon_has_no_wraparound_jump():
-    _, horizon, series = analyse(
+    terrain = sample_elevation(-89.5, 0.0, SAMPLE_20)
+    horizon = calculate_horizon(-89.5, 0.0, 2.0, 20_000.0, 2.0, SAMPLE_20)
+    series = sky_series(
         datetime(2026, 4, 2, 15, 0, tzinfo=UTC),
         24,
         60,
         -89.5,
         0.0,
-        2.0,
-        20.0,
-        2.0,
-        str(SAMPLE_20),
+        terrain.elevation_m + 2.0,
     )
+    series["horizonte_parcial_deg"] = horizon_at(horizon, series.azimut_deg)
+    series["cobertura_minima_vecina_m"] = coverage_at(horizon, series.azimut_deg)
     fig = sky_figure(series, horizon, center_deg=120.0)
     horizon_x = np.asarray(fig.data[0].x, dtype=float)
     assert np.all(np.diff(horizon_x) > 0)
     assert np.max(np.diff(horizon_x)) <= 2.0
 
 
-def test_app_calculates_landing_site_scenario():
-    app = AppTest.from_file(
-        Path(__file__).resolve().parent.parent / "main.py", default_timeout=30
-    ).run()
-    assert not app.exception
-    app.button[0].click().run(timeout=30)
-    assert not app.exception
-    assert not app.error
-    assert len(app.get("plotly_chart")) == 5
-    assert len(app.get("image")) == 1
-    assert len(app.metric) == 4
-    assert "Radio físico máx." in app.metric[3].label
-    assert "parcial" in app.warning[0].value
-    assert "direcciones cerradas" in app.warning[0].value
-    assert "cota del plano tangente" in app.warning[0].value
-    assert set(app.dataframe[0].value["objetivo"]) == {"SUN", "EARTH"}
-    app.radio[0].set_value("Relieve sombreado")
-    app.radio[1].set_value("Detalle de 5 km")
-    app.run(timeout=30)
-    assert not app.exception
-    assert len(app.get("image")) == 1
+def test_moon_globe_figure_renders_surface_and_markers():
+    fig = moon_globe_figure(
+        HISTORICAL_SITES,
+        [{"lat": -89.5, "lon": 0.0, "name": "Test", "start_str": "2026-04-02"}],
+        highlight_single=True,
+    )
+    assert fig.data[0].type == "surface"
+    assert any(trace.name == "Puntos históricos" for trace in fig.data)
+    assert any(trace.name == "Puntos activos" for trace in fig.data)

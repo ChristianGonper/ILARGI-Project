@@ -17,8 +17,8 @@ MATERIALS = {
 }
 
 
-def load_regions(path=DATA):
-    """Lee los campos de ancho fijo y conserva las celdas que cruzan 80° S."""
+def load_regions(path=DATA, *, south_pole_only: bool = True):
+    """Lee los campos de ancho fijo de LP-GRS y calcula categorías por terciles."""
     widths = [10, 7, 7, 7, 7] + [15] * 11
     names = [
         "id",
@@ -39,7 +39,10 @@ def load_regions(path=DATA):
         "u",
     ]
     data = pd.read_fwf(path, widths=widths, names=names, usecols=range(16))
-    data = data[(data.south < -80) & (data.north > -90)].copy()
+    if south_pole_only:
+        data = data[(data.south < -80) & (data.north > -90)].copy()
+    else:
+        data = data.copy()
     data["Al"] = data.al2o3 * 100 * (2 * 26.9815385) / (2 * 26.9815385 + 3 * 15.999)
     data["Ca"] = data.cao * 100 * 40.078 / (40.078 + 15.999)
     data["FeO"] = data.feo * 100

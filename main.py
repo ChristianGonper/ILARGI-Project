@@ -1,5 +1,6 @@
-"""Arranca la interfaz con `uv run streamlit run main.py`."""
+"""Arranca el servidor web FastAPI de ILARGI con `uv run python main.py`."""
 
-from ilargi.ui.app import run
+from ilargi.api import serve
 
-run()
+if __name__ == "__main__":
+    serve()
