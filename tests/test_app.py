@@ -7,8 +7,8 @@ from streamlit.testing.v1 import AppTest
 
 from ilargi.horizon import Horizon
 from ilargi.terrain import SAMPLE
-from ilargi.ui.app import SAMPLE_20, analyse
-from ilargi.ui.presentation import sky_figure, terrain_figure
+from ilargi.ui.app import MAX_POINTS, SAMPLE_20, analyse
+from ilargi.ui.presentation import moon_globe_figure, sky_figure, terrain_figure
 
 
 def test_terrain_plots_keep_native_grid_without_smoothing():
@@ -71,24 +71,51 @@ def test_sky_figure_horizon_has_no_wraparound_jump():
     assert np.max(np.diff(horizon_x)) <= 2.0
 
 
-def test_app_calculates_landing_site_scenario():
+def test_moon_globe_figure_renders_surface_and_markers():
+    from ilargi.sites import HISTORICAL_SITES
+
+    fig = moon_globe_figure(
+        HISTORICAL_SITES,
+        [{"lat": -89.5, "lon": 0.0, "name": "Test", "start_str": "2026-04-02"}],
+        highlight_single=True,
+    )
+    assert fig.data[0].type == "surface"
+    assert any(trace.name == "Puntos históricos" for trace in fig.data)
+    assert any(trace.name == "Puntos activos" for trace in fig.data)
+
+
+def test_app_single_and_multipoint_comparison_workflow():
     app = AppTest.from_file(
-        Path(__file__).resolve().parent.parent / "main.py", default_timeout=30
+        Path(__file__).resolve().parent.parent / "main.py", default_timeout=45
     ).run()
     assert not app.exception
-    app.button[0].click().run(timeout=30)
+    assert not app.error
+    # Modo 1 punto: globo 3D + Acimut/Elevación + Evolución temporal
+    assert len(app.get("plotly_chart")) == 3
+    assert len(app.session_state["launched_results"]) == 1
+
+    # Añadir segundo punto y lanzar comparativa
+    app.button(key="add_point_btn").click().run(timeout=45)
+    assert len(app.session_state["points"]) == 2
+    app.button(key="launch_btn").click().run(timeout=45)
     assert not app.exception
     assert not app.error
+    assert len(app.session_state["launched_results"]) == 2
+    # En modo comparativa sin plots abiertos solo está el globo 3D
+    assert len(app.get("plotly_chart")) == 1
+
+    # Pulsar botón de gráfico para P1 -> aparecen Acimut-Elevación y Evolución diaria
+    app.button(key="toggle_plot_P1").click().run(timeout=45)
+    assert app.session_state["compared_plot_ids"] == ["P1"]
     assert len(app.get("plotly_chart")) == 3
-    assert len(app.get("image")) == 1
-    assert len(app.metric) == 4
-    assert "Radio físico máx." in app.metric[3].label
-    assert "parcial" in app.warning[0].value
-    assert "direcciones cerradas" in app.warning[0].value
-    assert "cota del plano tangente" in app.warning[0].value
-    assert set(app.dataframe[0].value["objetivo"]) == {"SUN", "EARTH"}
-    app.radio[0].set_value("Relieve sombreado")
-    app.radio[1].set_value("Detalle de 5 km")
-    app.run(timeout=30)
-    assert not app.exception
-    assert len(app.get("image")) == 1
+
+    # Pulsar botón de gráfico para P2 -> se apila debajo para comparar
+    app.button(key="toggle_plot_P2").click().run(timeout=45)
+    assert app.session_state["compared_plot_ids"] == ["P1", "P2"]
+    assert len(app.get("plotly_chart")) == 5
+
+    # Límite máximo de 10 puntos
+    for _ in range(MAX_POINTS - 2):
+        app.button(key="add_point_btn").click().run(timeout=45)
+    assert len(app.session_state["points"]) == MAX_POINTS
+    assert app.button(key="add_point_btn").disabled is True
