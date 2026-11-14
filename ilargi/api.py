@@ -22,7 +22,6 @@ from ilargi.analysis import (
 from ilargi.education import compute_education_cycle
 from ilargi.materials import load_regions
 from ilargi.sites import EDUCATION_SITES, HISTORICAL_SITES
-from ilargi.terrain_mesh import terrain_patch
 
 WEB_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
 
@@ -117,12 +116,6 @@ class EducationCycleRequest(BaseModel):
     start_utc: datetime
     duration_hours: float = Field(default=709.0, ge=1.0, le=1440.0)
     step_minutes: int = Field(default=180, ge=30, le=720)
-
-
-class TerrainPatchRequest(BaseModel):
-    latitude_deg: float = Field(ge=-90, le=90, allow_inf_nan=False)
-    longitude_east_deg: float = Field(ge=-180, le=360, allow_inf_nan=False)
-    width_km: float = Field(default=10, ge=2, le=20, allow_inf_nan=False)
 
 
 def _finite_or_none(value: float | None) -> float | None:
@@ -300,15 +293,6 @@ def create_app() -> FastAPI:
             "abcorr": "LT+S",
             "dem": dem_availability(),
         }
-
-    @app.post("/api/terrain/patch")
-    def local_terrain(payload: TerrainPatchRequest) -> dict:
-        try:
-            return terrain_patch(
-                payload.latitude_deg, payload.longitude_east_deg, payload.width_km
-            )
-        except ValueError as exc:
-            raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     @app.get("/api/sites")
     def list_sites() -> list[dict]:

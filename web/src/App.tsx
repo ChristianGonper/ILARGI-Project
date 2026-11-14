@@ -11,7 +11,6 @@ import { EducationWorkspace } from "./components/EducationWorkspace";
 import { HomeScreen } from "./components/HomeScreen";
 import { InputPanel, MAX_POINTS } from "./components/InputPanel";
 import { MoonViewport3D } from "./components/MoonViewport3D";
-import { LocalTerrain3D } from "./components/LocalTerrain3D";
 import { OutputsPanel } from "./components/OutputsPanel";
 import type {
   AnalysisParams,
@@ -68,7 +67,6 @@ export function App() {
   const [nextUid, setNextUid] = useState(2);
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
   const [pinMode, setPinMode] = useState(false);
-  const [terrainOpen, setTerrainOpen] = useState(false);
 
   const [params, setParams] = useState<AnalysisParams>({
     durationHours: 720,
@@ -343,19 +341,6 @@ export function App() {
             />
 
             <section className="panel moon-panel">
-              <button
-                type="button"
-                className="terrain-toggle"
-                aria-expanded={terrainOpen}
-                onClick={() => setTerrainOpen((open) => !open)}
-              >
-                {terrainOpen
-                  ? "Cerrar relieve local"
-                  : "Explorar relieve local 3D"}
-              </button>
-              {terrainOpen && (
-                <LocalTerrain3D point={points[focusedIndex ?? 0]} />
-              )}
               <MoonViewport3D
                 historicalSites={historicalSites}
                 activePoints={points}

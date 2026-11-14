@@ -33,15 +33,15 @@ y ejecuta `npm ci` una vez; el mismo hook comprueba el formato de los archivos
 preparados. Para formatear un archivo, usa `npx prettier --write ruta/al/archivo`.
 Prettier comprueba formato, no errores de lógica o validez de HTML.
 
-## Relieve local 3D
+## Relieve del globo 3D
 
-En el explorador, selecciona un punto y pulsa **Explorar relieve local 3D**. La vista sigue el punto enfocado (o el primero si no hay foco), permite girar, acercar y desplazar la cámara y ofrece ventanas de 5, 10 y 20 km. El punto azul señala la ubicación seleccionada. La escala vertical inicial es real; ×2 y ×5 exageran únicamente las alturas para facilitar la lectura. Restablecer cámara recupera el encuadre inicial.
+El relieve aparece directamente sobre la Luna del explorador al acercar la cámara con la rueda o un gesto de pinza. No hay un botón ni una vista adicional. La geometría se subdivide automáticamente cerca de la cámara y conserva la textura LROC, la selección de coordenadas y la máscara de minerales sobre el terreno. Los marcadores se ajustan a la altura y al zoom.
 
-La geometría usa alturas LOLA, no la imagen lunar: selecciona el primer DEM que cubra el centro entre muestra de 20 m, muestra de 80 m, polar completo y global. No fusiona fuentes. Sin los productos completos, solo se pueden explorar los recortes incluidos; fuera de cobertura aparece un mensaje. Los píxeles ausentes dejan huecos visibles y la vista indica el porcentaje de cobertura.
+El globo incluye un DEM global de visualización derivado de `ldem_16_uint.tif` del [NASA CGI Moon Kit](https://svs.gsfc.nasa.gov/4720/), con crédito a NASA's Scientific Visualization Studio / LRO LOLA. Se ha reducido de 16 a 8 muestras por grado por promedio de bloques de 2 × 2 y se distribuye comprimido con la web (unos 7,6 MB). Su espaciado es de unos 3,8 km en latitud y en el ecuador; no representa cráteres pequeños ni detalle métrico. La interpolación bilineal y la subdivisión suavizan la visualización sin añadir datos medidos. Las alturas conservan la escala real y la referencia al radio de 1 737 400 m.
 
-`POST /api/terrain/patch` recibe `latitude_deg`, `longitude_east_deg` y `width_km` (2–20). Devuelve una cuadrícula local equidistante de hasta 129 × 129 muestras, alturas en metros (o `null`), fuente, espaciado y cobertura. Lee el píxel original que contiene cada muestra y aplica su escala y desplazamiento vertical. El espaciado de la malla puede superar el del DEM: la vista es una representación reducida, no una herramienta para medir pendientes finas. La malla usa una aproximación local de la curvatura lunar y alturas relativas al centro; las cifras de altura mostradas conservan la referencia al radio de 1 737 400 m.
+La procedencia, unidades y hashes están en `web/public/textures/moon_height.json`. Para reproducir el activo, descarga el TIFF indicado allí y ejecuta `uv run python -m ilargi.build_globe_terrain ruta/ldem_16_uint.tif`; se verifica el SHA-256 de la fuente. Si falla la carga del relieve se mantiene la esfera texturizada y se indica el fallo en el visor.
 
-La iluminación es ilustrativa, sin sombras solares calculadas para la fecha seleccionada. El marco cartográfico es ME DE421, aproximado respecto al ME DE440 del globo; esta vista no modifica las alturas, horizontes ni resultados de los análisis.
+La iluminación es ilustrativa y no calcula sombras solares para la fecha seleccionada. El DEM de visualización no sustituye los DEM usados en los análisis ni modifica alturas, horizontes o resultados científicos. El registro cartográfico LOLA ME DE421 se aproxima al marco ME DE440 del globo.
 
 `uv.lock` fija las dependencias. Las pruebas necesitan los kernels descargados y `.venv` se genera automáticamente.
 
