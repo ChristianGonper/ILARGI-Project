@@ -1,5 +1,8 @@
 import type {
   AnalysisParams,
+  EducationCycleFrame,
+  EducationCycleResponse,
+  EducationSite,
   HealthResponse,
   HistoricalSite,
   MaterialsOverlayResponse,
@@ -23,6 +26,123 @@ export async function fetchHistoricalSites(): Promise<HistoricalSite[]> {
     throw new Error(`Error al consultar /api/sites (${res.status})`);
   }
   return res.json() as Promise<HistoricalSite[]>;
+}
+
+export async function fetchEducationSites(): Promise<EducationSite[]> {
+  const res = await fetch("/api/education/sites");
+  if (!res.ok) {
+    throw new Error(`Error al consultar /api/education/sites (${res.status})`);
+  }
+  return res.json() as Promise<EducationSite[]>;
+}
+
+export async function fetchEducationCycle(params: {
+  latitudeDeg: number;
+  longitudeEastDeg: number;
+  startDate: string;
+  startTime: string;
+  durationHours?: number;
+  stepMinutes?: number;
+}): Promise<EducationCycleResponse> {
+  const res = await fetch("/api/education/cycle", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      latitude_deg: params.latitudeDeg,
+      longitude_east_deg: params.longitudeEastDeg,
+      start_utc: `${params.startDate}T${params.startTime}:00Z`,
+      duration_hours: params.durationHours ?? 709.0,
+      step_minutes: params.stepMinutes ?? 180,
+    }),
+  });
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { detail?: string };
+    throw new Error(
+      body.detail ?? `Error en /api/education/cycle (${res.status})`,
+    );
+  }
+  return res.json() as Promise<EducationCycleResponse>;
+}
+
+function lerpVec3(
+  a: [number, number, number],
+  b: [number, number, number],
+  t: number,
+  normalizeUnit = false,
+): [number, number, number] {
+  const x = a[0] + (b[0] - a[0]) * t;
+  const y = a[1] + (b[1] - a[1]) * t;
+  const z = a[2] + (b[2] - a[2]) * t;
+  if (!normalizeUnit) return [x, y, z];
+  const len = Math.hypot(x, y, z) || 1;
+  return [x / len, y / len, z / len];
+}
+
+export function interpolateEducationFrame(
+  frames: EducationCycleFrame[],
+  hours: number,
+): EducationCycleFrame | null {
+  if (frames.length === 0) return null;
+  if (hours <= frames[0].hours_from_start) return frames[0];
+  const last = frames[frames.length - 1];
+  if (hours >= last.hours_from_start) return last;
+
+  let lo = 0;
+  let hi = frames.length - 1;
+  while (lo + 1 < hi) {
+    const mid = (lo + hi) >> 1;
+    if (frames[mid].hours_from_start <= hours) {
+      lo = mid;
+    } else {
+      hi = mid;
+    }
+  }
+  const f0 = frames[lo];
+  const f1 = frames[hi];
+  const span = Math.max(1e-6, f1.hours_from_start - f0.hours_from_start);
+  const t = Math.max(0, Math.min(1, (hours - f0.hours_from_start) / span));
+
+  const t0Ms = Date.parse(f0.utc);
+  const t1Ms = Date.parse(f1.utc);
+  const interpUtc = new Date(t0Ms + (t1Ms - t0Ms) * t).toISOString();
+
+  const sunEl =
+    f0.sun_elevation_deg + (f1.sun_elevation_deg - f0.sun_elevation_deg) * t;
+  const earthEl =
+    f0.earth_elevation_deg +
+    (f1.earth_elevation_deg - f0.earth_elevation_deg) * t;
+  const sunHor =
+    f0.sun_horizon_deg + (f1.sun_horizon_deg - f0.sun_horizon_deg) * t;
+  const earthHor =
+    f0.earth_horizon_deg + (f1.earth_horizon_deg - f0.earth_horizon_deg) * t;
+
+  return {
+    utc: interpUtc,
+    hours_from_start: hours,
+    sun_me_unit: lerpVec3(f0.sun_me_unit, f1.sun_me_unit, t, true),
+    earth_me_unit: lerpVec3(f0.earth_me_unit, f1.earth_me_unit, t, true),
+    sun_azimuth_deg: t < 0.5 ? f0.sun_azimuth_deg : f1.sun_azimuth_deg,
+    sun_elevation_deg: sunEl,
+    sun_horizon_deg: sunHor,
+    sun_visible: sunEl > sunHor,
+    earth_azimuth_deg: t < 0.5 ? f0.earth_azimuth_deg : f1.earth_azimuth_deg,
+    earth_elevation_deg: earthEl,
+    earth_horizon_deg: earthHor,
+    earth_visible: earthEl > earthHor,
+    sun_earth_km: lerpVec3(f0.sun_earth_km, f1.sun_earth_km, t),
+    sun_moon_km: lerpVec3(f0.sun_moon_km, f1.sun_moon_km, t),
+    earth_moon_km: lerpVec3(f0.earth_moon_km, f1.earth_moon_km, t),
+    sun_earth_dist_km:
+      f0.sun_earth_dist_km + (f1.sun_earth_dist_km - f0.sun_earth_dist_km) * t,
+    earth_moon_dist_km:
+      f0.earth_moon_dist_km +
+      (f1.earth_moon_dist_km - f0.earth_moon_dist_km) * t,
+    sun_moon_dist_km:
+      f0.sun_moon_dist_km + (f1.sun_moon_dist_km - f0.sun_moon_dist_km) * t,
+    illumination_fraction:
+      f0.illumination_fraction +
+      (f1.illumination_fraction - f0.illumination_fraction) * t,
+  };
 }
 
 export async function fetchMaterialsOverlay(): Promise<MaterialsOverlayResponse> {

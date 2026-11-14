@@ -102,3 +102,34 @@ def test_analyze_enforces_max_10_points_and_step_validation():
         },
     )
     assert bad_step.status_code == 422
+
+
+def test_education_sites_and_cycle_endpoint():
+    sites_resp = client.get("/api/education/sites")
+    assert sites_resp.status_code == 200
+    edu_sites = sites_resp.json()
+    categories = {s["category"] for s in edu_sites}
+    assert {"landing", "eternal_light", "psr", "mirror"}.issubset(categories)
+
+    cycle_resp = client.post(
+        "/api/education/cycle",
+        json={
+            "latitude_deg": -84.678,
+            "longitude_east_deg": -48.693,
+            "start_utc": "2026-04-02T15:00:00Z",
+            "duration_hours": 709.0,
+            "step_minutes": 360,
+        },
+    )
+    assert cycle_resp.status_code == 200
+    data = cycle_resp.json()
+    assert data["lunar_day_hours"] > 700.0
+    assert len(data["frames"]) >= 100
+    first = data["frames"][0]
+    assert len(first["sun_me_unit"]) == 3
+    assert len(first["earth_me_unit"]) == 3
+    assert len(first["sun_earth_km"]) == 3
+    assert len(first["sun_moon_km"]) == 3
+    assert len(first["earth_moon_km"]) == 3
+    assert 350_000.0 <= first["earth_moon_dist_km"] <= 415_000.0
+    assert 140_000_000.0 <= first["sun_earth_dist_km"] <= 155_000_000.0

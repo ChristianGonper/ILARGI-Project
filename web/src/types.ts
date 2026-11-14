@@ -178,3 +178,58 @@ export interface MoonViewport3DProps {
   onSelectActivePoint?: (index: number) => void;
   onSurfacePick?: (latitudeDeg: number, longitudeEastDeg: number) => void;
 }
+
+export type AppMode = "home" | "pro" | "education";
+
+export type EducationCategory = "landing" | "eternal_light" | "psr" | "mirror";
+
+export interface EducationSite {
+  id: string;
+  name: string;
+  category: EducationCategory;
+  category_label: string;
+  mission_or_source: string;
+  latitude_deg: number;
+  longitude_east_deg: number;
+  region: string;
+  illumination_note: string;
+  earth_visibility_note: string;
+  water_note: string;
+  ilargi_story: string;
+}
+
+export interface EducationCycleFrame {
+  utc: string;
+  hours_from_start: number;
+  sun_me_unit: [number, number, number];
+  earth_me_unit: [number, number, number];
+  sun_azimuth_deg: number;
+  sun_elevation_deg: number;
+  sun_horizon_deg: number;
+  sun_visible: boolean;
+  earth_azimuth_deg: number;
+  earth_elevation_deg: number;
+  earth_horizon_deg: number;
+  earth_visible: boolean;
+  sun_earth_km: [number, number, number];
+  sun_moon_km: [number, number, number];
+  earth_moon_km: [number, number, number];
+  sun_earth_dist_km: number;
+  earth_moon_dist_km: number;
+  sun_moon_dist_km: number;
+  illumination_fraction: number;
+}
+
+export interface EducationCycleResponse {
+  start_utc: string;
+  duration_hours: number;
+  step_minutes: number;
+  lunar_day_hours: number;
+  site: {
+    latitude_deg: number;
+    longitude_east_deg: number;
+    ground_elevation_m: number | null;
+    horizon_mode: "lola" | "ideal";
+  };
+  frames: EducationCycleFrame[];
+}
