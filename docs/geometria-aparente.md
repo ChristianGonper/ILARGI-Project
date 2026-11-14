@@ -2,10 +2,10 @@
 
 Este cálculo da la dirección aparente de la Tierra y del Sol el 2 de abril de 2026 y en otros instantes de prueba. Hay dos observadores y no son intercambiables.
 
-| Observador | Punto | Función | Salida |
-| --- | --- | --- | --- |
-| Centro lunar | Centro de masa `MOON` (301), el de `de440s.bsp` | `apparent_from_lunar_center` | Vector en `MOON_ME_DE440_ME421` |
-| Superficie | Punto de una esfera ideal, con latitud, longitud este y altura radial | `apparent_from_lunar_surface` | Ese mismo vector y el acimut y la elevación locales |
+| Observador   | Punto                                                                 | Función                       | Salida                                              |
+| ------------ | --------------------------------------------------------------------- | ----------------------------- | --------------------------------------------------- |
+| Centro lunar | Centro de masa `MOON` (301), el de `de440s.bsp`                       | `apparent_from_lunar_center`  | Vector en `MOON_ME_DE440_ME421`                     |
+| Superficie   | Punto de una esfera ideal, con latitud, longitud este y altura radial | `apparent_from_lunar_surface` | Ese mismo vector y el acimut y la elevación locales |
 
 La altura cero está sobre la esfera, a 1737,4 km del centro. No es el observador del centro. El centro no tiene horizonte, así que no devuelve acimut ni elevación.
 
@@ -65,28 +65,28 @@ Consulta del 14 de noviembre de 2026 a la [API de Horizons](https://ssd.jpl.nasa
 
 Vectores: `EPHEM_TYPE=VECTORS`, `REF_PLANE=FRAME`, `REF_SYSTEM=ICRF`, `VEC_CORR=LT+S`, `OUT_UNITS=KM-S`, `TIME_TYPE=UT`. El centro es `500@301`. La superficie es `coord@301`, `COORD_TYPE=GEODETIC` y `SITE_COORD` con longitud este, latitud y altura en km. El vector de SPICE, calculado en `MOON_ME_DE440_ME421`, se gira a `J2000` en el instante de observación antes de restarlo. Para estos kernels, `J2000` nombra el ICRF.
 
-| Caso | Residuo del vector |
-| --- | ---: |
-| Tierra, centro, 2026-04-02 15:00 y 16:00 UTC | 2,45 m y 2,47 m |
-| Sol, centro, los mismos instantes | 9,28 m y 9,08 m |
-| Tierra en (0° E, 0° N, 0 km), 15:00 UTC | 2,45 m |
-| Sol en (348,8° E, 43,3° S, 0 km), 15:00 UTC | 9,26 m |
-| Sol en (90° E, 45° N, 2 km), 15:00 UTC | 9,35 m |
-| Tierra en (0° E, 89,5° S, 0 km), 16:00 UTC | 2,47 m |
+| Caso                                         | Residuo del vector |
+| -------------------------------------------- | -----------------: |
+| Tierra, centro, 2026-04-02 15:00 y 16:00 UTC |    2,45 m y 2,47 m |
+| Sol, centro, los mismos instantes            |    9,28 m y 9,08 m |
+| Tierra en (0° E, 0° N, 0 km), 15:00 UTC      |             2,45 m |
+| Sol en (348,8° E, 43,3° S, 0 km), 15:00 UTC  |             9,26 m |
+| Sol en (90° E, 45° N, 2 km), 15:00 UTC       |             9,35 m |
+| Tierra en (0° E, 89,5° S, 0 km), 16:00 UTC   |             2,47 m |
 
 `REF_PLANE=BODY` de Horizons es el ecuador y el nodo de la fecha, no el marco fijo al cuerpo. No se usan esas componentes cartesianas como referencia de `MOON_ME_DE440_ME421`.
 
 Acimut y elevación: `EPHEM_TYPE=OBSERVER`, `QUANTITIES=4,20`, `ANG_FORMAT=DEG`, `APPARENT=AIRLESS`, `RANGE_UNITS=KM`, `EXTRA_PREC=YES`. La cabecera de la muestra dice `Center pole/equ : MEAN_ME (high precision)`, radios `1737.4, 1737.4, 1737.4` y `Atmos refraction: NO (AIRLESS)`. Horizons describe ese acimut como horario desde el norte y corregido por tiempo de luz, deflexión gravitatoria y aberración estelar. SPICE `LT+S` no aplica la deflexión gravitatoria. El residuo de abajo incluye esa diferencia de modelo y la de DE440s frente a DE441; no las separa.
 
-| Caso | Δacimut · cos(elevación) | Δelevación | Δalcance |
-| --- | ---: | ---: | ---: |
-| Tierra, ecuador, 2026-04-02 15:00 UTC | −0,00092″ | +0,00091″ | −0,14 m |
-| Sol, ecuador, el mismo instante | +0,00006″ | +0,00005″ | +3,7 m |
-| Tierra, 348,8° E, 43,3° S | −0,00122″ | +0,00042″ | −0,14 m |
-| Sol, 0° E, 89,5° S | +0,00006″ | −0,00004″ | +1,8 m |
-| Tierra, 90° E, 45° N, 2 km | +0,00083″ | −0,00099″ | −0,13 m |
-| Sol, el mismo punto, 2024-06-21 12:00 UTC | +0,00005″ | 0,00000″ | −4,7 m |
-| Tierra, 222,5° E, 88,2° S, 0,01 km, ese instante | −0,00108″ | +0,00007″ | +0,06 m |
+| Caso                                             | Δacimut · cos(elevación) | Δelevación | Δalcance |
+| ------------------------------------------------ | -----------------------: | ---------: | -------: |
+| Tierra, ecuador, 2026-04-02 15:00 UTC            |                −0,00092″ |  +0,00091″ |  −0,14 m |
+| Sol, ecuador, el mismo instante                  |                +0,00006″ |  +0,00005″ |   +3,7 m |
+| Tierra, 348,8° E, 43,3° S                        |                −0,00122″ |  +0,00042″ |  −0,14 m |
+| Sol, 0° E, 89,5° S                               |                +0,00006″ |  −0,00004″ |   +1,8 m |
+| Tierra, 90° E, 45° N, 2 km                       |                +0,00083″ |  −0,00099″ |  −0,13 m |
+| Sol, el mismo punto, 2024-06-21 12:00 UTC        |                +0,00005″ |   0,00000″ |   −4,7 m |
+| Tierra, 222,5° E, 88,2° S, 0,01 km, ese instante |                −0,00108″ |  +0,00007″ |  +0,06 m |
 
 El acimut sin el coseno de la elevación llega a 0,009″ en el primer caso porque la Tierra está a 84° de elevación: el paralelo de acimut es corto. La componente que mide dirección en el cielo es la multiplicada por el coseno.
 

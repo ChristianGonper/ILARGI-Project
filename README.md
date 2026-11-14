@@ -24,7 +24,12 @@ Para activar las comprobaciones de Python antes de cada commit, ejecuta una vez
 `uv run pre-commit install`. El hook revisa los archivos preparados; si falla el
 formato, aplica `uv run ruff format .` y vuelve a preparar los cambios. Para
 comprobar todos los archivos, usa `uv run pre-commit run --all-files`. Ruff no
-comprueba ni formatea HTML; actualmente no hay un formateador HTML configurado.
+comprueba ni formatea HTML.
+
+Para HTML, CSS, JavaScript, JSON, Markdown y YAML se usa Prettier. Instala Node.js
+y ejecuta `npm ci` una vez; el mismo hook comprueba el formato de los archivos
+preparados. Para formatear un archivo, usa `npx prettier --write ruta/al/archivo`.
+Prettier comprueba formato, no errores de lógica o validez de HTML.
 
 `uv.lock` fija las dependencias. Las pruebas necesitan los kernels descargados y `.venv` se genera automáticamente.
 

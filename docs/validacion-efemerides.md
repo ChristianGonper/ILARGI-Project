@@ -11,10 +11,10 @@ Los kernels, URL y hashes exactos están en [ilargi/kernels.py](../ilargi/kernel
 Consulta realizada el 14 de noviembre de 2026 mediante la [API de Horizons](https://ssd-api.jpl.nasa.gov/doc/horizons.html): Luna (301) relativa al centro de la Tierra (399), 2026-04-02 15:00 UTC, vectores geométricos, ICRF, kilómetros y segundos. Parámetros relevantes: `EPHEM_TYPE=VECTORS`, `CENTER=500@399`, `TIME_TYPE=UT`, `REF_PLANE=FRAME`, `REF_SYSTEM=ICRF`, `VEC_CORR=NONE`, `OUT_UNITS=KM-S`, `VEC_TABLE=2`. Horizons identificó **DE441** como fuente.
 
 | Componente | Horizons DE441 (km) | SPICE DE440s (km), redondeado |
-| --- | ---: | ---: |
-| X | -373910.6664632003 | -373910.66710442 |
-| Y | -106746.2116582052 | -106746.20977303 |
-| Z | -71540.67909399251 | -71540.67810391 |
+| ---------- | ------------------: | ----------------------------: |
+| X          |  -373910.6664632003 |              -373910.66710442 |
+| Y          |  -106746.2116582052 |              -106746.20977303 |
+| Z          |  -71540.67909399251 |               -71540.67810391 |
 
 La norma de la diferencia es aproximadamente **0,00222 km**. La prueba automatizada conserva la referencia y emplea una tolerancia de 0,01 km para este caso concreto. Es un contraste de implementación, no una garantía general de exactitud: las efemérides DE440 y DE441 están relacionadas y Horizons puede cambiar su modelo. Se ha añadido una segunda referencia lunar una hora después. Estas filas siguen siendo geométricas, en ICRF y sin aberración. El tiempo de luz, la aberración estelar, el marco `MOON_ME_DE440_ME421` y los observadores de centro y de superficie están contrastados aparte, con las mismas opciones en ambos lados, en [geometria-aparente.md](geometria-aparente.md).
 

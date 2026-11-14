@@ -17,13 +17,13 @@ Construir un motor reproducible común a las futuras experiencias divulgativa y 
 
 Obtenerlos de NAIF, registrar URL, nombre, versión, SHA-256, fecha y cobertura y cargarlos mediante un manifiesto reproducible. No versionar automáticamente archivos grandes ni descargar en cada ejecución. La cobertura válida es la intersección de todos los kernels y datos usados; validarla antes de calcular.
 
-| Función | Archivo inicial | Fuente |
-| --- | --- | --- |
-| Efemérides planetarias | `de440s.bsp` | [SPK planetarios](https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/) |
-| Orientación lunar | `moon_pa_de440_200625.bpc` | [PCK y comentario de cobertura](https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/moon_pa_de440_200625.cmt) |
-| Marcos lunares | `moon_de440_250416.tf` | [FK lunar compatible](https://naif.jpl.nasa.gov/pub/naif/generic_kernels/fk/satellites/moon_de440_250416.tf) |
-| Tiempo UTC/TDB | `naif0012.tls` o LSK vigente, fijado por versión | [LSK de NAIF](https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/) |
-| Constantes físicas, cuando sean necesarias | `pck00011.tpc` | [PCK genéricos](https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/) |
+| Función                                    | Archivo inicial                                  | Fuente                                                                                                           |
+| ------------------------------------------ | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| Efemérides planetarias                     | `de440s.bsp`                                     | [SPK planetarios](https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/)                               |
+| Orientación lunar                          | `moon_pa_de440_200625.bpc`                       | [PCK y comentario de cobertura](https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/moon_pa_de440_200625.cmt) |
+| Marcos lunares                             | `moon_de440_250416.tf`                           | [FK lunar compatible](https://naif.jpl.nasa.gov/pub/naif/generic_kernels/fk/satellites/moon_de440_250416.tf)     |
+| Tiempo UTC/TDB                             | `naif0012.tls` o LSK vigente, fijado por versión | [LSK de NAIF](https://naif.jpl.nasa.gov/pub/naif/generic_kernels/lsk/)                                           |
+| Constantes físicas, cuando sean necesarias | `pck00011.tpc`                                   | [PCK genéricos](https://naif.jpl.nasa.gov/pub/naif/generic_kernels/pck/)                                         |
 
 El PCK binario citado cubre desde finales de 1549 hasta enero de 2650 en ET; DE440s tiene una cobertura menor. Comprobar límites exactos programáticamente y conservarlos en el manifiesto. El PCK de texto no sustituye a la orientación lunar de alta precisión. No cargar kernels de orientación alternativos sin controlar su prioridad.
 

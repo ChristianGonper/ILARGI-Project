@@ -1,0 +1,7 @@
+{
+  "name": "space-apps-2026",
+  "private": true,
+  "devDependencies": {
+    "prettier": "3.10.1"
+  }
+}
