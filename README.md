@@ -52,3 +52,14 @@ La [guía de trayectorias y horizonte](docs/trayectorias-y-horizonte.md), la [gu
 - `tests/` y `docs/`: pruebas y evidencia.
 
 El motor no depende de Streamlit. Streamlit y Plotly son herramientas de prototipado; se evaluarán tanto una interfaz web como una basada en Python cuando estén más claros los requisitos de visualización 3D y distribución.
+
+## Exportar un mapa LOLA en PNG
+
+Para producir una imagen con Matplotlib, sin interpolar el LDEM:
+
+```powershell
+uv run python -m ilargi.terrain_image --dem 20 --output salidas/lola-20m.png
+uv run python -m ilargi.terrain_image --dem 20 --relief --window-km 5 --output salidas/lola-20m-detalle.png
+```
+
+La segunda imagen representa un área de 5 km centrada por defecto en 89,5° S, 0° E; puede cambiarse con `--latitude` y `--longitude` si la ventana cabe en el recorte. `--relief` añade sombreado calculado de las pendientes con una exageración vertical de 2× para apreciar formas. Es un recurso gráfico: no muestra la iluminación solar real, no cambia las alturas ni mejora la resolución científica. La barra corresponde a los colores base de altura; el sombreado modifica su brillo. La imagen descargada conserva más píxeles que la vista ajustada al ancho de la pantalla.

@@ -10,7 +10,8 @@ from spiceypy.utils.exceptions import SpiceyError
 from ilargi.horizon import calculate_horizon, coverage_at, horizon_at
 from ilargi.series import sky_series
 from ilargi.terrain import SAMPLE, sample_elevation
-from ilargi.ui.presentation import elevation_figure, sky_figure, terrain_figure
+from ilargi.terrain_image import render_terrain_png
+from ilargi.ui.presentation import elevation_figure, sky_figure
 
 SAMPLE_20 = SAMPLE.with_name("lola_20m_south_pole_sample.tif")
 
@@ -184,7 +185,25 @@ def run() -> None:
             "text/csv",
         )
     st.subheader("Muestra de topografía LOLA")
-    st.plotly_chart(terrain_figure(terrain, Path(path)), width="stretch")
+    style = st.radio(
+        "Representación del terreno", ["Altura", "Relieve sombreado"], horizontal=True
+    )
+    zoom = st.radio(
+        "Extensión", ["Recorte completo", "Detalle de 5 km"], horizontal=True
+    )
+    try:
+        png = render_terrain_png(
+            Path(path),
+            terrain,
+            relief=style == "Relieve sombreado",
+            window_km=5 if zoom == "Detalle de 5 km" else None,
+        )
+        st.image(png, width="stretch")
+        st.download_button(
+            "Descargar imagen PNG", png, "ilargi-topografia-lola.png", "image/png"
+        )
+    except ValueError as exc:
+        st.warning(str(exc))
     st.caption(
-        "Los recortes incluidos se muestran a su resolución de píxel nativa, sin suavizado: 20 o 80 m/píxel. El tamaño de píxel no equivale a precisión del terreno."
+        "PNG generado con Matplotlib sin interpolar los píxeles del DEM. En pantalla puede reducirse para ajustarse; descarga la imagen para verla ampliada. El sombreado es ilustrativo y no representa la iluminación solar calculada."
     )

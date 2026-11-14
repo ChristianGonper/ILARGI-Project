@@ -22,6 +22,12 @@ def test_app_calculates_landing_site_scenario():
     app.button[0].click().run(timeout=30)
     assert not app.exception
     assert not app.error
-    assert len(app.get("plotly_chart")) == 3
+    assert len(app.get("plotly_chart")) == 2
+    assert len(app.get("image")) == 1
     assert "parcial" in app.warning[0].value
     assert set(app.dataframe[0].value["objetivo"]) == {"SUN", "EARTH"}
+    app.radio[0].set_value("Relieve sombreado")
+    app.radio[1].set_value("Detalle de 5 km")
+    app.run(timeout=30)
+    assert not app.exception
+    assert len(app.get("image")) == 1
