@@ -79,7 +79,7 @@ def test_app_calculates_landing_site_scenario():
     app.button[0].click().run(timeout=30)
     assert not app.exception
     assert not app.error
-    assert len(app.get("plotly_chart")) == 3
+    assert len(app.get("plotly_chart")) == 5
     assert len(app.get("image")) == 1
     assert len(app.metric) == 4
     assert "Radio físico máx." in app.metric[3].label
