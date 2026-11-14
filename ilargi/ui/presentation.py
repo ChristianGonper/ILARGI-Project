@@ -227,3 +227,47 @@ def elevation_figure(series: pd.DataFrame, horizon: Horizon) -> go.Figure:
         height=420, xaxis_title="Fecha y hora UTC", yaxis_title="Elevación local (°)"
     )
     return fig
+
+
+def materials_figure(regions, column, unit):
+    """Dibuja los límites originales en una vista polar esquemática."""
+    fig = go.Figure()
+    colors = {
+        "Baja": "#659bd3",
+        "Media": "#e5b954",
+        "Alta": "#c65d45",
+        "Sin datos": "#aaaaaa",
+    }
+    shown = set()
+    for _, row in regions.iterrows():
+        angles = np.deg2rad(np.linspace(row.west, row.east, 100))
+        inner = 90 + row.south
+        outer = 90 + min(row.north, -80)
+        radii = np.r_[np.full(len(angles), outer), np.full(len(angles), inner)]
+        theta = np.r_[angles, angles[::-1]]
+        category = row[column + "_category"]
+        value = row[column]
+        display = "Sin datos" if np.isnan(value) else f"{value:.2f} {unit} · {category}"
+        fig.add_trace(
+            go.Scatter(
+                x=radii * np.sin(theta),
+                y=radii * np.cos(theta),
+                mode="lines",
+                fill="toself",
+                fillcolor=colors[category],
+                line={"color": "white", "width": 1},
+                name=category,
+                legendgroup=category,
+                showlegend=category not in shown,
+                hovertemplate=f"Región {int(row.id)}<br>{display}<extra></extra>",
+            )
+        )
+        shown.add(category)
+    fig.update_layout(
+        height=520,
+        margin={"l": 0, "r": 0, "t": 10, "b": 0},
+        xaxis={"visible": False},
+        yaxis={"visible": False, "scaleanchor": "x", "scaleratio": 1},
+        legend_title_text="Abundancia relativa",
+    )
+    return fig

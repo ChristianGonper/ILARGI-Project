@@ -13,10 +13,11 @@ from ilargi.horizon import (
     estimate_search_radius,
     horizon_at,
 )
+from ilargi.materials import MATERIALS, load_regions, region_at
 from ilargi.series import sky_series
 from ilargi.terrain import SAMPLE, sample_elevation
 from ilargi.terrain_image import render_terrain_png
-from ilargi.ui.presentation import elevation_figure, sky_figure
+from ilargi.ui.presentation import elevation_figure, materials_figure, sky_figure
 
 SAMPLE_20 = SAMPLE.with_name("lola_20m_south_pole_sample.tif")
 
@@ -47,6 +48,41 @@ def run() -> None:
     st.write(
         "Explora las trayectorias aparentes del Sol y la Tierra desde un emplazamiento lunar y compáralas con el relieve muestreado."
     )
+    st.subheader("Materiales del polo sur")
+    st.caption(
+        "Abundancia regional estimada entre 80° S y 90° S; no describe una parcela concreta."
+    )
+    try:
+        regions = load_regions()
+        material = st.selectbox("Material", list(MATERIALS))
+        column, unit = MATERIALS[material]
+        st.plotly_chart(materials_figure(regions, column, unit), width="stretch")
+        with st.expander("Consultar una región por coordenadas"):
+            ml, mn = st.columns(2)
+            material_lat = ml.number_input(
+                "Latitud regional (°)",
+                min_value=-90.0,
+                max_value=-80.0,
+                value=-89.5,
+                format="%.2f",
+            )
+            material_lon = mn.number_input(
+                "Longitud regional este (°)",
+                min_value=-180.0,
+                max_value=180.0,
+                value=0.0,
+                format="%.2f",
+            )
+            region = region_at(regions, material_lat, material_lon)
+            if region is None or not np.isfinite(region[column]):
+                st.write("Sin datos para esta ubicación.")
+            else:
+                st.write(
+                    f"Región {int(region.id)} · {region[column]:.2f} {unit} · abundancia {region[column + '_category'].lower()}"
+                )
+        st.caption("Hidrógeno equivalente en agua: sin datos disponibles.")
+    except (OSError, ValueError) as exc:
+        st.warning(f"No se han podido cargar los materiales: {exc}")
     with st.form("scenario"):
         st.subheader("Escenario")
         a, b, c = st.columns(3)

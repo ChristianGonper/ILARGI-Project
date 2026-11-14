@@ -33,6 +33,8 @@ Prettier comprueba formato, no errores de lógica o validez de HTML.
 
 `uv.lock` fija las dependencias. Las pruebas necesitan los kernels descargados y `.venv` se genera automáticamente.
 
+La vista de materiales permite comparar abundancias regionales en el polo sur. Las fuentes, conversiones y límites se describen en [materiales del polo sur](docs/materiales-polo-sur.md).
+
 ## Qué calcula y qué no
 
 Los objetivos son la Tierra (399) y el Sol (10), vistos desde la Luna (301). El marco explícito es `MOON_ME_DE440_ME421`, con efemérides DE440s y corrección `LT+S` para tiempo de luz y aberración estelar. El observador superficial se calcula por separado: latitud planetocéntrica, longitud este y altura respecto a una esfera de radio 1.737,4 km. El acimut se mide desde el norte hacia el este; el plano horizontal es el de la esfera, no un horizonte topográfico. El azimut exacto en los polos se rechaza por indeterminación del norte.
