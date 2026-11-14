@@ -40,3 +40,5 @@ Consulta [la validación y los datos](docs/validacion-efemerides.md) y [el plant
 - `data/kernels/`: datos locales reproducibles, excluidos de Git.
 
 El motor no depende de Streamlit y puede reutilizarse en una API o en otras interfaces. Se ampliará por dominios según se incorporen el terreno, los observadores y los eventos.
+
+Streamlit y Plotly son herramientas de prototipado para esta primera entrega, no una decisión sobre la interfaz definitiva. Se evaluarán tanto un ecosistema web como uno basado en Python cuando estén más claros los requisitos de interacción, visualización 3D y distribución.
