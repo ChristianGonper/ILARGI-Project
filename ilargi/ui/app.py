@@ -7,7 +7,7 @@ import numpy as np
 import streamlit as st
 from spiceypy.utils.exceptions import SpiceyError
 
-from ilargi.horizon import calculate_horizon, horizon_at
+from ilargi.horizon import calculate_horizon, coverage_at, horizon_at
 from ilargi.series import sky_series
 from ilargi.terrain import SAMPLE, sample_elevation
 from ilargi.ui.presentation import elevation_figure, sky_figure, terrain_figure
@@ -24,6 +24,7 @@ def analyse(start, hours, step, lat, lon, instrument, search_km, az_step, path):
     series = sky_series(start, hours, step, lat, lon, terrain.elevation_m + instrument)
     series["horizonte_parcial_deg"] = horizon_at(horizon, series.azimut_deg)
     series["margen_parcial_deg"] = series.elevacion_deg - series.horizonte_parcial_deg
+    series["cobertura_minima_vecina_m"] = coverage_at(horizon, series.azimut_deg)
     return terrain, horizon, series
 
 
@@ -92,6 +93,11 @@ def run() -> None:
                 value=20.0,
                 step=1.0,
             )
+        az_step = st.selectbox(
+            "Separación angular de los rayos",
+            [0.5, 0.25, 0.1, 1.0, 2.0],
+            format_func=lambda value: f"{value:g}°",
+        )
         submitted = st.form_submit_button("Calcular escenario", type="primary")
     if not submitted and "scenario_result" not in st.session_state:
         st.info("Configura el emplazamiento y pulsa «Calcular escenario».")
@@ -108,7 +114,7 @@ def run() -> None:
                 "6 horas": 360,
             }[step]
             terrain, horizon, series = analyse(
-                start, hours, minutes, lat, lon, instrument, search, 2.0, str(path)
+                start, hours, minutes, lat, lon, instrument, search, az_step, str(path)
             )
             st.session_state.scenario_result = (
                 terrain,
@@ -139,10 +145,14 @@ def run() -> None:
         np.max(horizon.coverage_m) / 1000,
     )
     st.warning(
-        f"Horizonte experimental y parcial: el terreno disponible alcanza entre {min_coverage:.1f} y {max_coverage:.1f} km según el azimut, frente a {horizon.requested_m / 1000:.1f} km solicitados. Puede haber obstáculos fuera del recorte o entre muestras; no se certifica visibilidad."
+        f"Horizonte experimental y parcial: el terreno disponible alcanza entre {min_coverage:.1f} y {max_coverage:.1f} km según el azimut, frente a {horizon.requested_m / 1000:.1f} km solicitados. {np.count_nonzero(~np.isfinite(horizon.elevation_deg))} direcciones carecen de perfil. Puede haber obstáculos fuera del recorte o entre muestras; no se certifica visibilidad."
     )
     st.caption(
         "La altitud LOLA de DE421 ME se aproxima en DE440 ME421 para esta demostración; ambos marcos no son idénticos. Las trayectorias representan los centros de los cuerpos, sin discos ni eclipses."
+    )
+    lateral_m = horizon.requested_m * np.deg2rad(360 / len(horizon.azimuth_deg))
+    st.caption(
+        f"A la distancia solicitada, los rayos están separados unos {lateral_m:.0f} m: entre ellos pueden faltar obstáculos. Reduce el paso angular y compara los perfiles para estudiar la sensibilidad."
     )
     st.subheader("Trayectorias sobre el horizonte del lugar")
     st.plotly_chart(sky_figure(series, horizon), width="stretch")
@@ -158,6 +168,8 @@ def run() -> None:
             longitud_este_deg=lon,
             instrumento_sobre_terreno_m=instrument,
             terreno_m=terrain.elevation_m,
+            resolucion_nominal_dem_m=horizon.pixel_m,
+            paso_azimut_deg=360 / len(horizon.azimuth_deg),
             marco="MOON_ME_DE440_ME421",
             correccion="LT+S",
             dem=Path(path).name,

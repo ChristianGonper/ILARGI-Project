@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 import rasterio
 
 from ilargi.horizon import Horizon, horizon_at
-from ilargi.terrain import SAMPLE, TerrainSample
+from ilargi.terrain import SAMPLE, TerrainSample, dem_metadata
 
 LABELS = {"SUN": "Sol", "EARTH": "Tierra", "MOON": "Luna"}
 COLORS = {"SUN": "#f4bb43", "EARTH": "#478dec", "MOON": "#bfc7d1"}
@@ -69,12 +69,16 @@ def position_table(data: dict[str, np.ndarray]) -> pd.DataFrame:
 def terrain_figure(sample: TerrainSample | None = None, path=SAMPLE) -> go.Figure:
     """Muestra la zona disponible de LOLA; no representa un horizonte local."""
     with rasterio.open(path) as dataset:
+        _, vertical_scale, vertical_offset = dem_metadata(dataset)
         scale = min(1.0, 1024 / max(dataset.width, dataset.height))
         shape = (
             max(1, int(dataset.height * scale)),
             max(1, int(dataset.width * scale)),
         )
-        data = dataset.read(1, out_shape=shape, masked=True).filled(np.nan)
+        data = (
+            dataset.read(1, out_shape=shape, masked=True).astype(float).filled(np.nan)
+        )
+        data = data * vertical_scale + vertical_offset
         bounds = dataset.bounds
     dx = (bounds.right - bounds.left) / data.shape[1]
     dy = (bounds.top - bounds.bottom) / data.shape[0]
@@ -119,8 +123,23 @@ def sky_figure(series: pd.DataFrame, horizon: Horizon) -> go.Figure:
             x=np.append(horizon.azimuth_deg, 360),
             y=np.append(horizon.elevation_deg, horizon.elevation_deg[0]),
             name="Horizonte muestreado (parcial)",
-            mode="lines",
+            mode="lines+markers",
+            marker={"size": 3},
             line={"color": "#b78247"},
+            customdata=np.append(horizon.coverage_m, horizon.coverage_m[0]) / 1000,
+            hovertemplate="Azimut: %{x:.1f}°<br>Elevación: %{y:.2f}°<br>Alcance muestreado: %{customdata:.2f} km<extra></extra>",
+        )
+    )
+    truncated = (
+        horizon.coverage_m < horizon.requested_m - horizon.pixel_m
+    ) & np.isfinite(horizon.elevation_deg)
+    fig.add_trace(
+        go.Scatter(
+            x=horizon.azimuth_deg[truncated],
+            y=horizon.elevation_deg[truncated],
+            mode="markers",
+            marker={"size": 4, "color": "#cf5538"},
+            name="Terreno interrumpido antes de la distancia solicitada",
         )
     )
     fig.add_hline(y=0, line_dash="dot", annotation_text="Plano horizontal ideal")
@@ -179,6 +198,8 @@ def elevation_figure(series: pd.DataFrame, horizon: Horizon) -> go.Figure:
                 x=track.utc,
                 y=horizon_at(horizon, track.azimut_deg),
                 name=f"Terreno hacia {LABELS[body]} (parcial)",
+                mode="lines+markers",
+                marker={"size": 3},
                 line={"color": COLORS[body], "dash": "dot"},
             )
         )

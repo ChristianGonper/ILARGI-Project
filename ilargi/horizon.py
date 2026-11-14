@@ -5,12 +5,10 @@ from pathlib import Path
 
 import numpy as np
 import rasterio
-from pyproj import CRS, Transformer
+from pyproj import Transformer
 from rasterio.windows import Window
 
-from ilargi.terrain import SAMPLE, sample_elevation
-
-RADIUS_M = 1_737_400.0
+from ilargi.terrain import RADIUS_M, SAMPLE, dem_metadata, sample_elevation
 
 
 @dataclass(frozen=True)
@@ -43,22 +41,20 @@ def calculate_horizon(
         raise ValueError("Paso angular o latitud fuera de rango")
     ground = sample_elevation(latitude, longitude, path)
     with rasterio.open(path) as ds:
-        crs = CRS.from_user_input(ds.crs)
-        if (
-            not crs.is_projected
-            or abs(crs.geodetic_crs.ellipsoid.semi_major_metre - RADIUS_M) > 0.1
-        ):
-            raise ValueError("El DEM debe usar proyección lunar y esfera de 1737400 m")
-        if abs(ds.transform.b) > 1e-9 or abs(ds.transform.d) > 1e-9:
-            raise ValueError("No se admiten DEM con píxeles girados")
+        crs, scale, offset = dem_metadata(ds)
         pixel = abs(ds.transform.a)
         if not np.isclose(pixel, abs(ds.transform.e)) or pixel <= 0:
             raise ValueError("El DEM debe tener píxeles cuadrados")
         n_az = int(np.ceil(360 / azimuth_step_deg))
-        az = np.arange(n_az) * 360 / n_az
-        distance = np.arange(pixel, max_distance_m + 0.001, pixel)
-        if distance.size == 0:
+        n_distance = int(np.floor((max_distance_m + 0.001) / pixel))
+        if n_distance == 0:
             raise ValueError("La distancia debe superar la resolución del DEM")
+        if n_az * n_distance > 4_000_000:
+            raise ValueError(
+                "Demasiadas muestras de horizonte; aumenta el paso angular o reduce la distancia"
+            )
+        az = np.arange(n_az) * 360 / n_az
+        distance = np.arange(1, n_distance + 1) * pixel
         a = np.deg2rad(az)[:, None]
         theta = distance[None, :] / RADIUS_M
         lat = np.deg2rad(latitude)
@@ -87,11 +83,15 @@ def calculate_horizon(
             raise ValueError(
                 "El área solicitada supera el límite de memoria; reduce la distancia o usa un DEM más grueso"
             )
-        grid = ds.read(1, window=Window(c0, r0, c1 - c0, r1 - r0), masked=True).filled(
-            np.nan
+        grid = (
+            ds.read(1, window=Window(c0, r0, c1 - c0, r1 - r0), masked=True)
+            .astype(float)
+            .filled(np.nan)
         )
+        grid = grid * scale + offset
         heights = np.full(rows.shape, np.nan)
         heights[in_bounds] = grid[rows[in_bounds] - r0, cols[in_bounds] - c0]
+        observer_row, observer_col = ds.index(ground.x_m, ground.y_m)
     # Un hueco de datos interrumpe el rayo: no tratar terreno posterior como continuo.
     valid = np.isfinite(heights) & np.logical_and.accumulate(
         np.isfinite(heights), axis=1
@@ -99,7 +99,8 @@ def calculate_horizon(
     observer = ground.elevation_m + instrument_height_m
     up = (RADIUS_M + heights) * np.cos(theta) - (RADIUS_M + observer)
     horizontal = (RADIUS_M + heights) * np.sin(theta)
-    angles = np.where(valid, np.rad2deg(np.arctan2(up, horizontal)), -np.inf)
+    obstacle = valid & ((rows != observer_row) | (cols != observer_col))
+    angles = np.where(obstacle, np.rad2deg(np.arctan2(up, horizontal)), -np.inf)
     horizon = angles.max(axis=1)
     horizon[~np.isfinite(horizon)] = np.nan
     coverage = np.where(valid, distance[None, :], 0).max(axis=1)
@@ -112,4 +113,22 @@ def horizon_at(profile: Horizon, azimuth_deg: np.ndarray) -> np.ndarray:
     """Interpolación circular, únicamente donde ambos rayos vecinos tienen datos."""
     az = np.append(profile.azimuth_deg, 360.0)
     elev = np.append(profile.elevation_deg, profile.elevation_deg[0])
-    return np.interp(np.asarray(azimuth_deg) % 360, az, elev)
+    values = np.asarray(azimuth_deg) % 360
+    left = np.minimum(
+        np.searchsorted(az, values, side="right") - 1, len(profile.azimuth_deg) - 1
+    )
+    interpolated = np.interp(values, az, elev)
+    return np.where(
+        np.isfinite(elev[left]) & np.isfinite(elev[left + 1]), interpolated, np.nan
+    )
+
+
+def coverage_at(profile: Horizon, azimuth_deg: np.ndarray) -> np.ndarray:
+    """Alcance común conservador de los rayos que rodean cada dirección."""
+    az = np.append(profile.azimuth_deg, 360.0)
+    coverage = np.append(profile.coverage_m, profile.coverage_m[0])
+    left = np.minimum(
+        np.searchsorted(az, np.asarray(azimuth_deg) % 360, side="right") - 1,
+        len(profile.azimuth_deg) - 1,
+    )
+    return np.minimum(coverage[left], coverage[left + 1])
