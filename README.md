@@ -33,6 +33,16 @@ y ejecuta `npm ci` una vez; el mismo hook comprueba el formato de los archivos
 preparados. Para formatear un archivo, usa `npx prettier --write ruta/al/archivo`.
 Prettier comprueba formato, no errores de lógica o validez de HTML.
 
+## Relieve local 3D
+
+En el explorador, selecciona un punto y pulsa **Explorar relieve local 3D**. La vista sigue el punto enfocado (o el primero si no hay foco), permite girar, acercar y desplazar la cámara y ofrece ventanas de 5, 10 y 20 km. El punto azul señala la ubicación seleccionada. La escala vertical inicial es real; ×2 y ×5 exageran únicamente las alturas para facilitar la lectura. Restablecer cámara recupera el encuadre inicial.
+
+La geometría usa alturas LOLA, no la imagen lunar: selecciona el primer DEM que cubra el centro entre muestra de 20 m, muestra de 80 m, polar completo y global. No fusiona fuentes. Sin los productos completos, solo se pueden explorar los recortes incluidos; fuera de cobertura aparece un mensaje. Los píxeles ausentes dejan huecos visibles y la vista indica el porcentaje de cobertura.
+
+`POST /api/terrain/patch` recibe `latitude_deg`, `longitude_east_deg` y `width_km` (2–20). Devuelve una cuadrícula local equidistante de hasta 129 × 129 muestras, alturas en metros (o `null`), fuente, espaciado y cobertura. Lee el píxel original que contiene cada muestra y aplica su escala y desplazamiento vertical. El espaciado de la malla puede superar el del DEM: la vista es una representación reducida, no una herramienta para medir pendientes finas. La malla usa una aproximación local de la curvatura lunar y alturas relativas al centro; las cifras de altura mostradas conservan la referencia al radio de 1 737 400 m.
+
+La iluminación es ilustrativa, sin sombras solares calculadas para la fecha seleccionada. El marco cartográfico es ME DE421, aproximado respecto al ME DE440 del globo; esta vista no modifica las alturas, horizontes ni resultados de los análisis.
+
 `uv.lock` fija las dependencias. Las pruebas necesitan los kernels descargados y `.venv` se genera automáticamente.
 
 La vista de materiales permite comparar abundancias regionales en el polo sur. Las fuentes, conversiones y límites se describen en [materiales del polo sur](docs/materiales-polo-sur.md).

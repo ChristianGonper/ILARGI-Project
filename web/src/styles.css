@@ -13,6 +13,48 @@
   --muted: #94a3b8;
 }
 
+.terrain-toggle {
+  margin: 12px;
+  padding: 10px 16px;
+}
+.local-terrain {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.local-terrain h2 {
+  font-size: 1rem;
+  margin: 0 0 12px;
+}
+.local-terrain p {
+  color: var(--silver);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+.terrain-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+}
+.terrain-controls label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.85rem;
+}
+.terrain-controls select,
+.terrain-controls button {
+  padding: 8px;
+  max-width: 100%;
+}
+.terrain-canvas {
+  height: clamp(260px, 42vh, 480px);
+  width: 100%;
+}
+.terrain-canvas canvas {
+  display: block;
+  touch-action: none;
+}
+
 * {
   box-sizing: border-box;
 }
