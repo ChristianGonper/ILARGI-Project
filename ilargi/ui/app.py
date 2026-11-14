@@ -115,8 +115,18 @@ def run() -> None:
             )
             step = st.selectbox(
                 "Paso temporal",
-                ["1 hora", "30 minutos", "15 minutos", "3 horas", "6 horas"],
-                index=0,
+                [
+                    "10 minutos",
+                    "20 minutos",
+                    "30 minutos",
+                    "1 hora",
+                    "2 horas",
+                    "3 horas",
+                    "6 horas",
+                    "12 horas",
+                    "24 horas",
+                ],
+                index=3,
             )
         left, middle, right = st.columns(3)
         with left:
@@ -156,7 +166,11 @@ def run() -> None:
             minutes = {
                 "1 hora": 60,
                 "30 minutos": 30,
-                "15 minutos": 15,
+                "10 minutos": 10,
+                "20 minutos": 20,
+                "2 horas": 120,
+                "12 horas": 720,
+                "24 horas": 1440,
                 "3 horas": 180,
                 "6 horas": 360,
             }[step]

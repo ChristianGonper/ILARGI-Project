@@ -17,16 +17,18 @@ def sky_series(
     height_m: float,
 ) -> pd.DataFrame:
     start = require_aware_utc(start)
-    if not 0 < duration_hours <= 24 * 90 or step_minutes < 15:
-        raise ValueError("Duración hasta 90 días y paso mínimo de 15 minutos")
+    if not 0 < duration_hours <= 24 * 90 or step_minutes < 10 or step_minutes % 10:
+        raise ValueError(
+            "Duración hasta 90 días y paso en múltiplos de 10 minutos (mínimo 10)"
+        )
     duration = timedelta(hours=duration_hours)
     step = timedelta(minutes=step_minutes)
     count = int(duration // step)
-    extra = int(start + count * step < start + duration)
+    extra = int(duration - count * step >= timedelta(minutes=10))
     if count + 1 + extra > 3000:
         raise ValueError("El intervalo supera 3000 muestras; aumenta el paso")
     times = [start + index * step for index in range(count + 1)]
-    if times[-1] < start + duration:
+    if extra:
         times.append(start + duration)
     rows = []
     for instant in times:

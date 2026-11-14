@@ -2,6 +2,8 @@
 
 El prototipo evalúa una serie de posiciones aparentes desde un solo emplazamiento. Selecciona fecha UTC, duración, paso temporal, coordenadas y altura del instrumento. En cada instante emplea `spkcpo` con `LT+S`, observador en superficie y marco `MOON_ME_DE440_ME421`. Se muestran centros puntuales: no se calculan discos, eclipses ni eventos entre muestras.
 
+El paso temporal es un múltiplo de 10 minutos, con un mínimo de 10 minutos. El final se incluye si dista al menos 10 minutos de la muestra anterior; de lo contrario, la serie termina en la muestra regular anterior.
+
 ## Terreno y horizonte
 
 Los recortes LOLA incluidos proceden de los productos regionales de 20 y 80 m/píxel y usan el marco ME de DE421. Su cota representa metros sobre la esfera de 1.737.400 m; el observador se coloca a esa cota más la altura del instrumento. Se aproximan las coordenadas DE421 ME y DE440 ME421 como próximas, no idénticas; consultar las limitaciones temporales en [geometría aparente](geometria-aparente.md).
