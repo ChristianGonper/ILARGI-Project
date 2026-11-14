@@ -12,7 +12,7 @@ uv run python -m ilargi.kernels
 uv run streamlit run main.py
 ```
 
-Abre la dirección local que muestre Streamlit. Los kernels se descargan desde NAIF a `data/kernels/` y se verifican con SHA-256. La primera descarga ocupa unos 45 MB. La muestra LOLA regional está incluida en el repositorio. Para ejecutar las comprobaciones:
+Abre la dirección local que muestre Streamlit. Los kernels se descargan desde NAIF a `data/kernels/` y se verifican con SHA-256. La primera descarga ocupa unos 45 MB. Para incorporar el DEM polar completo y el global, ejecuta `uv run python -m ilargi.download_terrain` (aproximadamente 2,3 GB). Las muestras locales siguen incluidas en el repositorio. Para ejecutar las comprobaciones:
 
 ```powershell
 uv run pytest -q
@@ -39,7 +39,7 @@ La vista de materiales permite comparar abundancias regionales en el polo sur. L
 
 Los objetivos son la Tierra (399) y el Sol (10), vistos desde la Luna (301). El marco explícito es `MOON_ME_DE440_ME421`, con efemérides DE440s y corrección `LT+S` para tiempo de luz y aberración estelar. El observador superficial se calcula por separado: latitud planetocéntrica, longitud este y altura respecto a una esfera de radio 1.737,4 km. El acimut se mide desde el norte hacia el este; el plano horizontal es el de la esfera, no un horizonte topográfico. El azimut exacto en los polos se rechaza por indeterminación del norte.
 
-Los recortes LOLA cubren regiones limitadas del polo sur, con resoluciones nominales de 20 y 80 m/píxel y marco ME de DE421. La realización ME de DE440 usada en el cálculo es próxima pero no idéntica. La altura del píxel se utiliza como altura del suelo, sumada a la del instrumento. El horizonte se muestrea sobre el DEM elegido, pero es parcial: los recortes no permiten asegurar que se hayan considerado todos los obstáculos. No se calculan discos aparentes, ventanas de iluminación ni comunicaciones. Los datos futuros UTC dependen de la vigencia del kernel de segundos intercalares.
+El DEM polar de 80 m cubre 80–90° S; el global LDEM_128 cubre toda la Luna, con 128 píxeles por grado (unos 237 m en latitud y en el ecuador). Los recortes de 20 y 80 m cubren regiones locales. Todos usan el marco ME de DE421, próximo pero no idéntico a la realización ME de DE440 utilizada en el cálculo. La altura del píxel se utiliza como altura del suelo, sumada a la del instrumento. El horizonte se muestrea sobre el DEM elegido y puede ser parcial: no se garantiza que se hayan considerado todos los obstáculos. El tamaño físico de los píxeles globales en longitud disminuye hacia los polos y el paso radial no garantiza detectar todos los obstáculos. No se calculan discos aparentes, ventanas de iluminación ni comunicaciones. Los datos futuros UTC dependen de la vigencia del kernel de segundos intercalares.
 
 La [guía de trayectorias y horizonte](docs/trayectorias-y-horizonte.md), la [guía interactiva anterior](docs/recorrido.html), [geometría aparente](docs/geometria-aparente.md), [validación](docs/validacion-efemerides.md) y [procedencia del recorte LOLA](data/terrain/README.md) describen las convenciones, contrastes y límites. El [planteamiento inicial](docs/planteamiento-inicial.md) recoge los próximos pasos.
 

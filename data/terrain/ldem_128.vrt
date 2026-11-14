@@ -1,0 +1,9 @@
+<VRTDataset rasterXSize="46080" rasterYSize="23040">
+  <SRS>+proj=eqc +lat_ts=0 +lat_0=0 +lon_0=180 +R=1737400 +units=m +type=crs</SRS>
+  <GeoTransform>-5458203.076346906833, 236.901175188668, 0, 2729101.538173453417, 0, -236.901175188668</GeoTransform>
+  <VRTRasterBand dataType="Int16" band="1" subClass="VRTRawRasterBand">
+    <SourceFilename relativeToVRT="1">ldem_128.img</SourceFilename>
+    <ImageOffset>0</ImageOffset><PixelOffset>2</PixelOffset><LineOffset>92160</LineOffset><ByteOrder>LSB</ByteOrder>
+    <Scale>0.5</Scale><Offset>0</Offset><UnitType>m</UnitType>
+  </VRTRasterBand>
+</VRTDataset>
