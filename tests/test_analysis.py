@@ -92,6 +92,8 @@ def test_analyze_site_lola_and_ideal_fallback():
     )
     assert south.horizon_mode == "lola"
     assert south.terrain is not None
+    assert south.search_radius_km > 100.0
+    assert south.horizon.requested_m > 100_000.0
     assert south.materials.in_coverage is True
     assert "Al" in south.materials.elements
     assert "Sin datos" in south.materials.water_status

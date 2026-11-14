@@ -22,7 +22,6 @@ export interface AnalysisParams {
   durationHours: number;
   stepMinutes: number;
   instrumentHeightM: number;
-  searchKm: number;
   azimuthStepDeg: number;
   demMode: "auto" | "polar" | "global" | "sample20" | "sample80" | "ideal";
 }
@@ -71,6 +70,7 @@ export interface SiteAnalysisResult {
   instrument_height_m: number;
   horizon_mode: "lola" | "ideal";
   horizon_label: string;
+  search_radius_km: number;
   ground_elevation_m: number | null;
   pixel_m: number;
   horizon_profile: {

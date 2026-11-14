@@ -7,7 +7,13 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from ilargi.horizon import Horizon, calculate_horizon, horizon_at
+from ilargi.horizon import (
+    Horizon,
+    calculate_horizon,
+    calculate_multiresolution_horizon,
+    estimate_search_radius,
+    horizon_at,
+)
 from ilargi.materials import MATERIALS, load_regions, region_at
 from ilargi.series import sky_series
 from ilargi.terrain import GLOBAL, POLAR, SAMPLE, TerrainSample, sample_elevation
@@ -67,6 +73,7 @@ class SiteAnalysis:
     instrument_height_m: float
     horizon_mode: str  # "lola" | "ideal"
     horizon_label: str
+    search_radius_km: float
     terrain: TerrainSample | None
     horizon: Horizon
     series: pd.DataFrame
@@ -354,6 +361,14 @@ def _resolve_dem_candidates(
     return candidates
 
 
+def _safe_fine_distance_m(
+    target_m: float, pixel_m: float, azimuth_step_deg: float
+) -> float:
+    n_az = max(1, int(np.ceil(360.0 / azimuth_step_deg)))
+    max_safe_m = (3_800_000 / n_az) * pixel_m
+    return float(min(target_m, max_safe_m))
+
+
 def analyze_site(
     *,
     label: str,
@@ -364,34 +379,79 @@ def analyze_site(
     duration_hours: float = 720.0,
     step_minutes: int = 60,
     instrument_height_m: float = 2.0,
-    search_km: float = 20.0,
     azimuth_step_deg: float = 1.0,
     dem_path: Path | None = None,
     dem_mode: str = "auto",
     regions: pd.DataFrame | None = None,
 ) -> SiteAnalysis:
-    """Ejecuta el análisis completo de un punto lunar con fallback a horizonte ideal."""
+    """Ejecuta el análisis completo de un punto lunar con radio del plano tangente."""
     terrain: TerrainSample | None = None
     horizon: Horizon | None = None
     horizon_mode = "ideal"
     horizon_label = "Esfera ideal (0°) — sin cobertura DEM"
+    avail = dem_availability()
+    search_radius_km = (
+        estimate_search_radius(
+            instrument_height_m, min_elevation_deg=0.0
+        ).tangent_plane_m
+        / 1000.0
+    )
 
     for candidate in _resolve_dem_candidates(latitude_deg, dem_mode, dem_path):
         try:
             terrain = sample_elevation(latitude_deg, longitude_east_deg, candidate)
-            horizon = calculate_horizon(
-                latitude_deg,
-                longitude_east_deg,
-                instrument_height_m=instrument_height_m,
-                max_distance_m=search_km * 1000.0,
-                azimuth_step_deg=azimuth_step_deg,
-                path=candidate,
-            )
+            observer_m = terrain.elevation_m + instrument_height_m
+            tangent_m = estimate_search_radius(
+                observer_m, min_elevation_deg=0.0
+            ).tangent_plane_m
+
+            coarse_path: Path | None = None
+            if candidate in (SAMPLE_20, SAMPLE) and avail["polar_80m"]:
+                coarse_path = POLAR
+            elif candidate != GLOBAL and avail["global_240m"]:
+                coarse_path = GLOBAL
+
+            if coarse_path is not None:
+                fine_limit = (
+                    min(tangent_m, 15_000.0)
+                    if candidate == SAMPLE_20
+                    else _safe_fine_distance_m(
+                        tangent_m, terrain.pixel_size_m, azimuth_step_deg
+                    )
+                )
+                horizon = calculate_multiresolution_horizon(
+                    latitude_deg,
+                    longitude_east_deg,
+                    instrument_height_m=instrument_height_m,
+                    fine_distance_m=fine_limit,
+                    max_distance_m=tangent_m,
+                    azimuth_step_deg=azimuth_step_deg,
+                    fine_path=candidate,
+                    coarse_path=coarse_path,
+                )
+            else:
+                single_limit = _safe_fine_distance_m(
+                    tangent_m, terrain.pixel_size_m, azimuth_step_deg
+                )
+                horizon = calculate_horizon(
+                    latitude_deg,
+                    longitude_east_deg,
+                    instrument_height_m=instrument_height_m,
+                    max_distance_m=single_limit,
+                    azimuth_step_deg=azimuth_step_deg,
+                    path=candidate,
+                )
+
             horizon_mode = "lola"
+            search_radius_km = float(horizon.requested_m / 1000.0)
             res_tag = (
                 "≈237" if candidate == GLOBAL else f"{int(round(horizon.pixel_m))}"
             )
-            horizon_label = f"LOLA {res_tag} m/píxel ({candidate.stem})"
+            horizon_label = (
+                f"LOLA {res_tag} m/píxel + Global"
+                if coarse_path == GLOBAL
+                else f"LOLA {res_tag} m/píxel ({candidate.stem})"
+            )
             break
         except ValueError:
             terrain = None
@@ -464,6 +524,7 @@ def analyze_site(
         instrument_height_m=float(instrument_height_m),
         horizon_mode=horizon_mode,
         horizon_label=horizon_label,
+        search_radius_km=search_radius_km,
         terrain=terrain,
         horizon=horizon,
         series=series,

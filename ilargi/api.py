@@ -43,7 +43,6 @@ class AnalyzeRequest(BaseModel):
     duration_hours: float = Field(default=720.0, gt=0.0, le=2160.0)
     step_minutes: int = Field(default=60, ge=10, le=1440)
     instrument_height_m: float = Field(default=2.0, ge=0.0, le=1000.0)
-    search_km: float = Field(default=20.0, ge=1.0, le=500.0)
     azimuth_step_deg: float = Field(default=1.0, gt=0.0, le=10.0)
     dem_mode: Literal["auto", "polar", "global", "sample20", "sample80", "ideal"] = (
         "auto"
@@ -117,6 +116,7 @@ def _serialize_analysis(analysis: SiteAnalysis) -> dict:
         "instrument_height_m": analysis.instrument_height_m,
         "horizon_mode": analysis.horizon_mode,
         "horizon_label": analysis.horizon_label,
+        "search_radius_km": float(analysis.search_radius_km),
         "ground_elevation_m": (
             float(analysis.terrain.elevation_m)
             if analysis.terrain is not None
@@ -249,7 +249,6 @@ def create_app() -> FastAPI:
                     duration_hours=payload.duration_hours,
                     step_minutes=payload.step_minutes,
                     instrument_height_m=payload.instrument_height_m,
-                    search_km=payload.search_km,
                     azimuth_step_deg=payload.azimuth_step_deg,
                     dem_mode=payload.dem_mode,
                     regions=regions,

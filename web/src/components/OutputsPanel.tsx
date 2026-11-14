@@ -55,6 +55,9 @@ export function OutputsPanel({ result, onClose }: OutputsPanelProps) {
           <div className="mono-sub">
             Inicio {formatUtcShort(result.start_utc)} · ventana{" "}
             {result.duration_hours} h
+            {result.horizon_mode === "lola"
+              ? ` · tangente ${result.search_radius_km.toFixed(1)} km`
+              : ""}
           </div>
         </div>
         <div className="outputs-head-actions">

@@ -276,7 +276,7 @@ export function InputPanel({
               </select>
             </label>
 
-            <div className="field-grid-3">
+            <div className="field-grid-2">
               <label className="field">
                 <span>Altura (m)</span>
                 <input
@@ -291,22 +291,6 @@ export function InputPanel({
                         0,
                         Number(e.target.value) || 0,
                       ),
-                    })
-                  }
-                />
-              </label>
-
-              <label className="field">
-                <span>Radio (km)</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={500}
-                  step={1}
-                  value={params.searchKm}
-                  onChange={(e) =>
-                    onChangeParams({
-                      searchKm: Math.max(1, Number(e.target.value) || 20),
                     })
                   }
                 />

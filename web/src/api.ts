@@ -39,7 +39,6 @@ export async function analyzePoints(
     duration_hours: params.durationHours,
     step_minutes: params.stepMinutes,
     instrument_height_m: params.instrumentHeightM,
-    search_km: params.searchKm,
     azimuth_step_deg: params.azimuthStepDeg,
     dem_mode: params.demMode,
   };

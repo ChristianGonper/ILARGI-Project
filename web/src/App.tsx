@@ -58,7 +58,6 @@ export function App() {
     durationHours: 720,
     stepMinutes: 60,
     instrumentHeightM: 2,
-    searchKm: 20,
     azimuthStepDeg: 1,
     demMode: "auto",
   });

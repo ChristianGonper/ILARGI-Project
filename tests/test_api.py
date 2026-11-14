@@ -42,7 +42,6 @@ def test_analyze_single_and_multipoint_payload():
             "duration_hours": 48,
             "step_minutes": 60,
             "instrument_height_m": 2.0,
-            "search_km": 20.0,
             "azimuth_step_deg": 2.0,
             "dem_mode": "auto",
         },
@@ -53,6 +52,7 @@ def test_analyze_single_and_multipoint_payload():
 
     p1, p2 = results
     assert p1["label"] == "P1"
+    assert p1["search_radius_km"] > 100.0
     assert p1["materials"]["in_coverage"] is True
     assert "Al" in p1["materials"]["elements"]
     assert "Sin datos" in p1["materials"]["water_status"]
@@ -60,6 +60,7 @@ def test_analyze_single_and_multipoint_payload():
     assert len(p1["series"]["earth"]) == 49
 
     assert p2["label"] == "P2"
+    assert p2["search_radius_km"] > 100.0
     assert p2["materials"]["in_coverage"] is False
     assert "Sin modelo" in p2["temperature_status"]
 

@@ -71,7 +71,6 @@ export function SkyAzimuthPlot({ result, height = 300 }: SkyAzimuthPlotProps) {
       .map((az, idx) => ({
         rel: centerAzimuth(az, centerDeg),
         el: hProfile.elevation_deg[idx],
-        cov: hProfile.coverage_km[idx],
         trunc: hProfile.truncated[idx],
       }))
       .sort((a, b) => a.rel - b.rel);
@@ -81,15 +80,12 @@ export function SkyAzimuthPlot({ result, height = 300 }: SkyAzimuthPlotProps) {
       {
         x: hOrder.map((p) => p.rel),
         y: hOrder.map((p) => p.el),
-        customdata: hOrder.map((p) => p.cov),
         name: isIdeal ? "Horizonte ideal (0°)" : "Horizonte LOLA",
         type: "scatter",
         mode: "lines",
         line: { color: isIdeal ? "#94A3B8" : "#F97316", width: 2 },
-        fill: isIdeal ? undefined : "tozeroy",
-        fillcolor: isIdeal ? undefined : "rgba(249, 115, 22, 0.12)",
         hovertemplate:
-          "Azimut rel.: %{x:.1f}°<br>Horizonte: %{y:.2f}°<br>Alcance: %{customdata:.1f} km<extra></extra>",
+          "Azimut rel.: %{x:.1f}°<br>Horizonte: %{y:.2f}°<extra></extra>",
       },
     ];
 
@@ -150,6 +146,18 @@ export function SkyAzimuthPlot({ result, height = 300 }: SkyAzimuthPlotProps) {
         bgcolor: "rgba(19, 27, 46, 0.75)",
         font: { size: 11, color: "#CBD5E1" },
       },
+      shapes: [
+        {
+          type: "line",
+          xref: "paper",
+          x0: 0,
+          x1: 1,
+          yref: "y",
+          y0: 0,
+          y1: 0,
+          line: { color: "#475569", width: 1, dash: "dot" },
+        },
+      ],
       xaxis: {
         title: `Azimut relativo al centro (${centerDeg.toFixed(1)}°) (°)`,
         range: [-180, 180],
