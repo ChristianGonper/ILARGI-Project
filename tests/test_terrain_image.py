@@ -14,7 +14,8 @@ def test_export_creates_high_resolution_png_for_both_styles():
     relief = render_terrain_png(SAMPLE, point, relief=True)
     with Image.open(BytesIO(normal)) as image:
         assert image.format == "PNG"
-        assert image.width >= 2000 and image.height >= 2000
+        assert image.width >= 2000
+        assert image.height >= 2000
     assert normal != relief
 
 
