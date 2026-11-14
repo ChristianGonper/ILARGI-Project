@@ -1,5 +1,6 @@
 """Abundancias regionales derivadas de la tabla PDS de Lunar Prospector."""
 
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -17,7 +18,7 @@ MATERIALS = {
 }
 
 
-def load_regions(path=DATA, *, south_pole_only: bool = True):
+def load_regions(path=DATA, *, south_pole_only: bool = False):
     """Lee los campos de ancho fijo de LP-GRS y calcula categorías por terciles."""
     widths = [10, 7, 7, 7, 7] + [15] * 11
     names = [
@@ -63,13 +64,31 @@ def load_regions(path=DATA, *, south_pole_only: bool = True):
 
 
 def region_at(data, lat, lon):
-    if not (-90 <= lat <= -80 and -180 <= lon <= 180):
+    if not (-90 <= lat <= 90 and -180 <= lon <= 360):
         return None
     lon = (lon + 180) % 360 - 180
     rows = data[
         (data.south <= lat)
-        & ((lat < data.north) | ((lat == -80) & (data.north >= -80)))
+        & ((lat < data.north) | ((lat == 90) & (data.north == 90)))
         & (data.west <= lon)
         & (lon < data.east)
     ]
     return None if rows.empty else rows.iloc[0]
+
+
+@lru_cache(maxsize=1)
+def hydrogen_map():
+    """Malla global de hidrógeno (ppm en masa), Lawrence et al. (2022)."""
+    path = DATA.parent / "lawrence2022_hydrogen.npz"
+    with np.load(path) as source:
+        return source["hydrogen"]
+
+
+def weh_at(lat: float, lon: float) -> float | None:
+    """WEH en ppm de H₂O equivalente; consulta la celda de 0,5° que contiene el punto."""
+    if not (-90 <= lat <= 90 and -180 <= lon <= 360):
+        return None
+    lon = (lon + 180) % 360 - 180
+    y = min(int((lat + 90) * 2), 359)
+    x = int((lon + 180) * 2)
+    return float(hydrogen_map()[y, x]) * (18.01528 / (2 * 1.00794))

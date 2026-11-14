@@ -15,7 +15,7 @@ from ilargi.horizon import (
     estimate_search_radius,
     horizon_at,
 )
-from ilargi.materials import MATERIALS, load_regions, region_at
+from ilargi.materials import MATERIALS, load_regions, region_at, weh_at
 from ilargi.series import sky_series
 from ilargi.terrain import GLOBAL, POLAR, SAMPLE, TerrainSample, sample_elevation
 
@@ -287,14 +287,13 @@ def compute_incidence_stats(sun_track: pd.DataFrame) -> IncidenceStats:
 def summarize_materials(
     latitude_deg: float, longitude_east_deg: float, regions: pd.DataFrame | None = None
 ) -> MaterialsSummary:
-    """Consulta abundancias LP-GRS (80°–90° S) y estado honesto de agua/WEH."""
-    if not (-90.0 <= latitude_deg <= -80.0):
-        return MaterialsSummary(
-            in_coverage=False,
-            region_id=None,
-            elements={},
-            water_status="Sin datos validados (WEH pendiente · fuera de 80°–90° S)",
-        )
+    """Consulta abundancias regionales globales de LP-GRS y el estado de WEH."""
+    weh = weh_at(latitude_deg, longitude_east_deg)
+    water_status = (
+        f"{weh:.0f} ppm H₂O equivalente (Lawrence et al. 2022)"
+        if weh is not None
+        else "Sin datos WEH"
+    )
     if regions is None:
         regions = load_regions()
     row = region_at(regions, latitude_deg, longitude_east_deg)
@@ -303,7 +302,7 @@ def summarize_materials(
             in_coverage=False,
             region_id=None,
             elements={},
-            water_status="Sin datos validados (WEH pendiente)",
+            water_status=water_status,
         )
     elements: dict[str, tuple[float | None, str, str]] = {}
     for _, (col, unit) in MATERIALS.items():
@@ -314,7 +313,7 @@ def summarize_materials(
         in_coverage=True,
         region_id=int(row["id"]),
         elements=elements,
-        water_status="Sin datos validados (WEH pendiente)",
+        water_status=water_status,
     )
 
 

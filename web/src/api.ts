@@ -219,13 +219,13 @@ export function formatIncidenceSummary(r: SiteAnalysisResult): string {
 export function formatMaterialsSummary(r: SiteAnalysisResult): string {
   const mat = r.materials;
   if (!mat.in_coverage) {
-    return "Fuera de LP-GRS (80°–90° S) · Agua/WEH: Sin datos validados";
+    return `Sin datos LP-GRS para esta ubicación · WEH: ${mat.water_status}`;
   }
   const parts = Object.entries(mat.elements).map(([sym, el]) => {
     if (el.value === null) return `${sym}: s/d`;
     const unit = el.unit.replace(" en masa", "");
     return `${sym}: ${el.value.toFixed(2)} ${unit} (${el.category})`;
   });
-  parts.push(`Agua/WEH: ${mat.water_status}`);
+  parts.push(`WEH: ${mat.water_status}`);
   return parts.join(" · ");
 }

@@ -8,6 +8,8 @@ import {
   threeVectorToLatLon,
 } from "../three/moonCoordinates";
 import type { HistoricalSite, MoonViewport3DProps } from "../types";
+import { loadLunarHeightField, LunarTerrain } from "../three/lunarTerrain";
+import { moonNavigationSpeeds } from "../three/moonNavigation";
 
 interface HoverTooltip {
   x: number;
@@ -172,6 +174,7 @@ export function MoonViewport3D({
 }: MoonViewport3DProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [tooltip, setTooltip] = useState<HoverTooltip | null>(null);
+  const [terrainStatus, setTerrainStatus] = useState("Cargando relieve LOLA…");
   const [cameraPreset, setCameraPreset] = useState<"south" | "nearside">(
     "south",
   );
@@ -204,13 +207,20 @@ export function MoonViewport3D({
     const container = containerRef.current;
     if (!container) return;
     let disposed = false;
+    const terrainAbort = new AbortController();
+    let terrain: LunarTerrain | null = null;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color("#0B101B");
 
     const width = container.clientWidth || 640;
     const height = container.clientHeight || 520;
-    const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
+    const camera = new THREE.PerspectiveCamera(
+      38,
+      width / height,
+      0.00001,
+      100,
+    );
     camera.position.set(0.95, -1.95, 1.85);
     cameraRef.current = camera;
 
@@ -222,13 +232,15 @@ export function MoonViewport3D({
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.07;
-    controls.minDistance = 1.45;
+    controls.minDistance = 1.012;
+    controls.zoomSpeed = 0.65;
+    Object.assign(controls, moonNavigationSpeeds(camera.position.length()));
     controls.maxDistance = 5.5;
     controls.enablePan = false;
     controlsRef.current = controls;
 
     // Iluminación espacial + ambiental suficiente para leer toda la esfera.
-    scene.add(new THREE.AmbientLight(0xdbeafe, 0.95));
+    scene.add(new THREE.AmbientLight(0xdbeafe, 0.45));
     const sunLight = new THREE.DirectionalLight(0xfff7ed, 1.4);
     sunLight.position.set(4.5, 1.2, 3.8);
     scene.add(sunLight);
@@ -303,7 +315,7 @@ export function MoonViewport3D({
       tex.anisotropy = maxAnisotropy;
       activeBumpMap = tex;
       sphereMat.bumpMap = tex;
-      sphereMat.bumpScale = 0.026;
+      sphereMat.bumpScale = terrain ? 0.001 : 0.026;
       sphereMat.needsUpdate = true;
       fallbackBump.dispose();
     });
@@ -332,6 +344,39 @@ export function MoonViewport3D({
       mesh: overlayMesh,
     };
     scene.add(overlayMesh);
+
+    void loadLunarHeightField(terrainAbort.signal)
+      .then((field) => {
+        if (disposed) return;
+        terrain = new LunarTerrain(field, sphereMat, overlayMat);
+        terrain.update(camera.position);
+        scene.add(terrain);
+        scene.traverse((object) => {
+          if (!(object instanceof THREE.Line)) return;
+          const positions = object.geometry.getAttribute("position");
+          for (let i = 0; i < positions.count; i++) {
+            const point = new THREE.Vector3().fromBufferAttribute(positions, i);
+            const location = threeVectorToLatLon(point);
+            point.setLength(
+              field.radius(location.latitudeDeg, location.longitudeEastDeg) +
+                0.0001,
+            );
+            positions.setXYZ(i, point.x, point.y, point.z);
+          }
+          positions.needsUpdate = true;
+          object.geometry.computeBoundingSphere();
+        });
+        moonMesh.visible = false;
+        overlayMesh.visible = false;
+        sphereMat.bumpScale = 0.001;
+        setTerrainStatus("Relieve LOLA · escala real · acerca con la rueda");
+      })
+      .catch(() => {
+        if (!disposed)
+          setTerrainStatus(
+            "Relieve no disponible · mostrando esfera texturizada",
+          );
+      });
 
     // Anillos de referencia: ecuador (0°), meridiano 0° y límite polar sur 80° S.
     const addRing = (latDeg: number, color: number, opacity: number) => {
@@ -444,7 +489,10 @@ export function MoonViewport3D({
         (callbacksRef.current.pinMode || ev.shiftKey) &&
         callbacksRef.current.onSurfacePick
       ) {
-        const surfaceHits = raycaster.intersectObject(moonMesh, false);
+        const surfaceHits = raycaster.intersectObject(
+          terrain ?? moonMesh,
+          !!terrain,
+        );
         if (surfaceHits.length > 0) {
           const { latitudeDeg, longitudeEastDeg } = threeVectorToLatLon(
             surfaceHits[0].point,
@@ -477,13 +525,43 @@ export function MoonViewport3D({
     let rafId = 0;
     const animate = () => {
       rafId = requestAnimationFrame(animate);
+      Object.assign(controls, moonNavigationSpeeds(camera.position.length()));
       controls.update();
+      terrain?.update(camera.position);
+      // Keep annotations on the displaced surface and readable at every zoom.
+      for (const group of [histGroup, activeGroup]) {
+        for (const object of group.children) {
+          const normal = object.position.clone().normalize();
+          const distance = camera.position.distanceTo(normal);
+          const size = Math.min(1, Math.max(0.0005, distance / 2.5));
+          if (!object.userData.baseScale) {
+            object.userData.baseScale = object.scale.clone();
+            object.userData.surfaceOffset = object.position.length() - 1;
+          }
+          object.scale.copy(object.userData.baseScale).multiplyScalar(size);
+          const location = threeVectorToLatLon(normal);
+          const radius =
+            terrain?.field.radius(
+              location.latitudeDeg,
+              location.longitudeEastDeg,
+            ) ?? 1;
+          object.position.copy(
+            normal.multiplyScalar(
+              radius + object.userData.surfaceOffset * size,
+            ),
+          );
+          object.visible =
+            camera.position.dot(object.position.clone().normalize()) > radius;
+        }
+      }
       renderer.render(scene, camera);
     };
     animate();
 
     return () => {
       disposed = true;
+      terrainAbort.abort();
+      terrain?.dispose();
       cancelAnimationFrame(rafId);
       resizeObserver.disconnect();
       renderer.domElement.removeEventListener("pointerdown", onPointerDown);
@@ -508,6 +586,16 @@ export function MoonViewport3D({
     };
   }, []);
 
+  const [wehTexture, setWehTexture] = useState<HTMLImageElement | null>(null);
+  useEffect(() => {
+    const image = new Image();
+    image.onload = () => setWehTexture(image);
+    image.src = "/textures/weh_lawrence2022.png";
+    return () => {
+      image.onload = null;
+    };
+  }, []);
+
   // Actualizar máscara transparente de minerales LP-GRS cuando cambia la selección.
   useEffect(() => {
     const ov = overlayRef.current;
@@ -522,6 +610,7 @@ export function MoonViewport3D({
 
     if (!mineralOverlay || selectedMinerals.length === 0) {
       tex.needsUpdate = true;
+      (mesh.material as THREE.Material).visible = false;
       mesh.visible = false;
       return;
     }
@@ -530,6 +619,13 @@ export function MoonViewport3D({
     for (const id of selectedMinerals) {
       const meta = mineralOverlay.elements.find((e) => e.id === id);
       if (!meta || !meta.available) continue;
+      if (id === "WEH") {
+        if (wehTexture) {
+          ctx.drawImage(wehTexture, 0, 0, w, h);
+          painted = true;
+        }
+        continue;
+      }
       const [r, g, b] = hexToRgb(meta.color);
 
       for (const reg of mineralOverlay.regions) {
@@ -547,8 +643,9 @@ export function MoonViewport3D({
     }
 
     tex.needsUpdate = true;
-    mesh.visible = painted;
-  }, [mineralOverlay, selectedMinerals]);
+    (mesh.material as THREE.Material).visible = painted;
+    mesh.visible = painted && moonMeshRef.current?.visible === true;
+  }, [mineralOverlay, selectedMinerals, wehTexture]);
 
   // Actualizar marcadores históricos cuando cambia la lista.
   useEffect(() => {
@@ -742,9 +839,7 @@ export function MoonViewport3D({
             </>
           )}
         </div>
-        <span className="pill pill-muted">
-          LROC WAC + LOLA · CesiumJS-ready
-        </span>
+        <span className="pill pill-muted">{terrainStatus}</span>
       </div>
     </div>
   );
