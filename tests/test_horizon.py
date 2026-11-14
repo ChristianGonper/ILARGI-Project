@@ -314,3 +314,81 @@ def test_multiresolution_horizon_combines_near_fine_and_far_coarse(tmp_path):
     # Sur (índice 18, 180°): capturado por la malla gruesa a 15 km (> 8°)
     assert result.elevation_deg[18] > 8.0
     assert result.coverage_m[18] > 14_000.0
+
+
+def test_max_search_distance_rejects_invalid_bounds():
+    with pytest.raises(ValueError, match="inferior a min_terrain_m"):
+        max_search_distance_m(-10_000.0)
+    with pytest.raises(ValueError, match="min_terrain_m no puede superar"):
+        max_search_distance_m(0.0, max_terrain_m=100.0, min_terrain_m=200.0)
+    with pytest.raises(ValueError, match=r"\(-90, 90\)"):
+        max_search_distance_m(0.0, min_elevation_deg=90.0)
+
+
+def test_multiresolution_horizon_stops_at_coarse_nodata(tmp_path):
+    with rasterio.open(SAMPLE) as source:
+        crs = source.crs
+    projection = CRS.from_user_input(crs)
+    project = Transformer.from_crs(projection.geodetic_crs, projection, always_xy=True)
+    geod = Geod(a=RADIUS_M, b=RADIUS_M)
+
+    fine_path = tmp_path / "fine_flat.tif"
+    fine_data = np.zeros((201, 201), dtype="float32")
+    fine_transform = from_origin(-5025, 15161.771431773632 + 5025, 50, 50)
+    with rasterio.open(
+        fine_path,
+        "w",
+        driver="GTiff",
+        height=201,
+        width=201,
+        count=1,
+        dtype="float32",
+        crs=crs,
+        transform=fine_transform,
+        nodata=np.nan,
+    ) as ds:
+        ds.write(fine_data, 1)
+
+    # Malla gruesa con un hueco nodata a 10 km al sur y una montaña a 18 km detrás del hueco
+    coarse_path = tmp_path / "coarse_hole.tif"
+    coarse_data = np.zeros((201, 201), dtype="float32")
+    coarse_transform = from_origin(-40200, 15161.771431773632 + 40200, 400, 400)
+    lon_gap, lat_gap, _ = geod.fwd(0, -89.5, 180, 10_000)
+    x_g, y_g = project.transform(lon_gap, lat_gap)
+    r_g, c_g = rasterio.transform.rowcol(coarse_transform, x_g, y_g)
+    coarse_data[r_g - 2 : r_g + 3, c_g - 2 : c_g + 3] = np.nan
+
+    lon_mtn, lat_mtn, _ = geod.fwd(0, -89.5, 180, 18_000)
+    x_m, y_m = project.transform(lon_mtn, lat_mtn)
+    r_m, c_m = rasterio.transform.rowcol(coarse_transform, x_m, y_m)
+    coarse_data[r_m - 2 : r_m + 3, c_m - 2 : c_m + 3] = 3_000.0
+
+    with rasterio.open(
+        coarse_path,
+        "w",
+        driver="GTiff",
+        height=201,
+        width=201,
+        count=1,
+        dtype="float32",
+        crs=crs,
+        transform=coarse_transform,
+        nodata=np.nan,
+    ) as ds:
+        ds.write(coarse_data, 1)
+
+    result = calculate_multiresolution_horizon(
+        -89.5,
+        0.0,
+        instrument_height_m=2.0,
+        fine_distance_m=5_000.0,
+        max_distance_m=25_000.0,
+        azimuth_step_deg=10.0,
+        fine_path=fine_path,
+        coarse_path=coarse_path,
+        max_terrain_m=3_000.0,
+        min_terrain_m=0.0,
+    )
+    # Al sur (índice 18, 180°), el rayo se detiene antes del hueco (10 km) y no salta a la montaña
+    assert result.coverage_m[18] < 10_000.0
+    assert result.elevation_deg[18] < 0.0
