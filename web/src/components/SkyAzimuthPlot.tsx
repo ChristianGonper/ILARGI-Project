@@ -98,6 +98,36 @@ function SkyAzimuthPlotCanvas({
     const isIdeal = result.horizon_mode === "ideal";
     const traces: Record<string, unknown>[] = [];
 
+    const sunTrack = buildTrackWithBreaks(result.series.sun, centerDeg);
+    traces.push({
+      x: sunTrack.x,
+      y: sunTrack.y,
+      customdata: sunTrack.customdata,
+      name: "Sol",
+      legendrank: 2,
+      type: "scatter",
+      mode: "lines+markers",
+      marker: { size: 3.5 },
+      line: { color: "#F59E0B", width: 2 },
+      hovertemplate:
+        "%{customdata}<br>Azimut rel.: %{x:.2f}°<br>Elevación: %{y:.2f}°<extra>Sol</extra>",
+    });
+
+    const earthTrack = buildTrackWithBreaks(result.series.earth, centerDeg);
+    traces.push({
+      x: earthTrack.x,
+      y: earthTrack.y,
+      customdata: earthTrack.customdata,
+      name: "Tierra",
+      legendrank: 3,
+      type: "scatter",
+      mode: "lines+markers",
+      marker: { size: 3.5 },
+      line: { color: "#38BDF8", width: 2 },
+      hovertemplate:
+        "%{customdata}<br>Azimut rel.: %{x:.2f}°<br>Elevación: %{y:.2f}°<extra>Tierra</extra>",
+    });
+
     if (!isIdeal) {
       traces.push({
         x: hOrder.map((p) => p.rel),
@@ -114,11 +144,12 @@ function SkyAzimuthPlotCanvas({
       x: hOrder.map((p) => p.rel),
       y: hOrder.map((p) => p.el),
       name: isIdeal ? "Horizonte ideal (0°)" : "Horizonte LOLA",
+      legendrank: 1,
       type: "scatter",
       mode: "lines",
       line: { color: isIdeal ? "#94A3B8" : "#F97316", width: 2 },
       fill: isIdeal ? undefined : "tonexty",
-      fillcolor: isIdeal ? undefined : "rgba(249, 115, 22, 0.22)",
+      fillcolor: isIdeal ? undefined : "rgba(249, 115, 22, 0.28)",
       hovertemplate:
         "Azimut rel.: %{x:.1f}°<br>Horizonte: %{y:.2f}°<extra></extra>",
     });
@@ -129,39 +160,12 @@ function SkyAzimuthPlotCanvas({
         x: truncPts.map((p) => p.rel),
         y: truncPts.map((p) => p.el),
         name: "Terreno interrumpido",
+        legendrank: 4,
         type: "scatter",
         mode: "markers",
         marker: { size: 4, color: "#F43F5E" },
       });
     }
-
-    const sunTrack = buildTrackWithBreaks(result.series.sun, centerDeg);
-    traces.push({
-      x: sunTrack.x,
-      y: sunTrack.y,
-      customdata: sunTrack.customdata,
-      name: "Sol",
-      type: "scatter",
-      mode: "lines+markers",
-      marker: { size: 3.5 },
-      line: { color: "#F59E0B", width: 2 },
-      hovertemplate:
-        "%{customdata}<br>Azimut rel.: %{x:.2f}°<br>Elevación: %{y:.2f}°<extra>Sol</extra>",
-    });
-
-    const earthTrack = buildTrackWithBreaks(result.series.earth, centerDeg);
-    traces.push({
-      x: earthTrack.x,
-      y: earthTrack.y,
-      customdata: earthTrack.customdata,
-      name: "Tierra",
-      type: "scatter",
-      mode: "lines+markers",
-      marker: { size: 3.5 },
-      line: { color: "#38BDF8", width: 2 },
-      hovertemplate:
-        "%{customdata}<br>Azimut rel.: %{x:.2f}°<br>Elevación: %{y:.2f}°<extra>Tierra</extra>",
-    });
 
     const layout: Record<string, unknown> = {
       height,
