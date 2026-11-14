@@ -2,7 +2,6 @@ import { useEffect, useRef } from "react";
 import Plotly from "plotly.js-dist-min";
 import type { SiteAnalysisResult, SkySample } from "../types";
 import { PlotFullscreenShell } from "./PlotFullscreenShell";
-import { buildSplitSkyTrack, centerAzimuth } from "./plotTracks";
 
 interface SkyAzimuthPlotProps {
   result: SiteAnalysisResult;
@@ -24,50 +23,35 @@ function circularMeanDeg(azimuths: number[]): number {
   return ((angle % 360) + 360) % 360;
 }
 
-function appendBodyTraces(
-  traces: Record<string, unknown>[],
+function centerAzimuth(az: number, center: number): number {
+  return ((((az - center + 180) % 360) + 360) % 360) - 180;
+}
+
+function buildTrackWithBreaks(
   samples: SkySample[],
   centerDeg: number,
-  name: string,
-  legendgroup: string,
-  color: string,
-) {
-  const { visible, occluded } = buildSplitSkyTrack(samples, centerDeg);
-  const hasVisible = visible.x.length > 0;
-  const hasOccluded = occluded.x.length > 0;
-  const hovertemplate = `%{customdata}<br>Azimut rel.: %{x:.2f}°<br>Elevación: %{y:.2f}°<extra>${name}</extra>`;
-
-  if (hasVisible) {
-    traces.push({
-      x: visible.x,
-      y: visible.y,
-      customdata: visible.customdata,
-      name,
-      legendgroup,
-      showlegend: true,
-      type: "scatter",
-      mode: "lines+markers",
-      marker: { size: visible.markerSizes, color },
-      line: { color, width: 2 },
-      hovertemplate,
-    });
+): {
+  x: (number | null)[];
+  y: (number | null)[];
+  customdata: (string | null)[];
+} {
+  const x: (number | null)[] = [];
+  const y: (number | null)[] = [];
+  const customdata: (string | null)[] = [];
+  let prev: number | null = null;
+  for (const s of samples) {
+    const rel = centerAzimuth(s.azimuth_deg, centerDeg);
+    if (prev !== null && Math.abs(rel - prev) > 180) {
+      x.push(null);
+      y.push(null);
+      customdata.push(null);
+    }
+    x.push(rel);
+    y.push(s.elevation_deg);
+    customdata.push(s.utc);
+    prev = rel;
   }
-
-  if (hasOccluded) {
-    traces.push({
-      x: occluded.x,
-      y: occluded.y,
-      customdata: occluded.customdata,
-      name,
-      legendgroup,
-      showlegend: !hasVisible,
-      type: "scatter",
-      mode: "lines+markers",
-      marker: { size: occluded.markerSizes, color },
-      line: { color, width: 2, dash: "dash" },
-      hovertemplate,
-    });
-  }
+  return { x, y, customdata };
 }
 
 function SkyAzimuthPlotCanvas({
@@ -98,19 +82,46 @@ function SkyAzimuthPlotCanvas({
       }))
       .sort((a, b) => a.rel - b.rel);
 
+    const allY = [
+      ...hOrder
+        .map((p) => p.el)
+        .filter((v): v is number => v !== null && Number.isFinite(v)),
+      ...result.series.sun.map((s) => s.elevation_deg),
+      ...result.series.earth.map((s) => s.elevation_deg),
+    ];
+    const dataMin = allY.length > 0 ? Math.min(...allY) : -10;
+    const dataMax = allY.length > 0 ? Math.max(...allY) : 10;
+    const pad = Math.max(1.5, (dataMax - dataMin) * 0.08);
+    const yMin = dataMin - pad;
+    const yMax = dataMax + pad;
+
     const isIdeal = result.horizon_mode === "ideal";
-    const traces: Record<string, unknown>[] = [
-      {
+    const traces: Record<string, unknown>[] = [];
+
+    if (!isIdeal) {
+      traces.push({
         x: hOrder.map((p) => p.rel),
-        y: hOrder.map((p) => p.el),
-        name: isIdeal ? "Horizonte ideal (0°)" : "Horizonte LOLA",
+        y: hOrder.map(() => yMin),
         type: "scatter",
         mode: "lines",
-        line: { color: isIdeal ? "#94A3B8" : "#F97316", width: 2 },
-        hovertemplate:
-          "Azimut rel.: %{x:.1f}°<br>Horizonte: %{y:.2f}°<extra></extra>",
-      },
-    ];
+        line: { width: 0, color: "rgba(0,0,0,0)" },
+        showlegend: false,
+        hoverinfo: "skip",
+      });
+    }
+
+    traces.push({
+      x: hOrder.map((p) => p.rel),
+      y: hOrder.map((p) => p.el),
+      name: isIdeal ? "Horizonte ideal (0°)" : "Horizonte LOLA",
+      type: "scatter",
+      mode: "lines",
+      line: { color: isIdeal ? "#94A3B8" : "#F97316", width: 2 },
+      fill: isIdeal ? undefined : "tonexty",
+      fillcolor: isIdeal ? undefined : "rgba(249, 115, 22, 0.22)",
+      hovertemplate:
+        "Azimut rel.: %{x:.1f}°<br>Horizonte: %{y:.2f}°<extra></extra>",
+    });
 
     const truncPts = hOrder.filter((p) => p.trunc && p.el !== null);
     if (truncPts.length > 0) {
@@ -124,22 +135,33 @@ function SkyAzimuthPlotCanvas({
       });
     }
 
-    appendBodyTraces(
-      traces,
-      result.series.sun,
-      centerDeg,
-      "Sol",
-      "SUN",
-      "#F59E0B",
-    );
-    appendBodyTraces(
-      traces,
-      result.series.earth,
-      centerDeg,
-      "Tierra",
-      "EARTH",
-      "#38BDF8",
-    );
+    const sunTrack = buildTrackWithBreaks(result.series.sun, centerDeg);
+    traces.push({
+      x: sunTrack.x,
+      y: sunTrack.y,
+      customdata: sunTrack.customdata,
+      name: "Sol",
+      type: "scatter",
+      mode: "lines+markers",
+      marker: { size: 3.5 },
+      line: { color: "#F59E0B", width: 2 },
+      hovertemplate:
+        "%{customdata}<br>Azimut rel.: %{x:.2f}°<br>Elevación: %{y:.2f}°<extra>Sol</extra>",
+    });
+
+    const earthTrack = buildTrackWithBreaks(result.series.earth, centerDeg);
+    traces.push({
+      x: earthTrack.x,
+      y: earthTrack.y,
+      customdata: earthTrack.customdata,
+      name: "Tierra",
+      type: "scatter",
+      mode: "lines+markers",
+      marker: { size: 3.5 },
+      line: { color: "#38BDF8", width: 2 },
+      hovertemplate:
+        "%{customdata}<br>Azimut rel.: %{x:.2f}°<br>Elevación: %{y:.2f}°<extra>Tierra</extra>",
+    });
 
     const layout: Record<string, unknown> = {
       height,
@@ -179,6 +201,7 @@ function SkyAzimuthPlotCanvas({
       },
       yaxis: {
         title: "Elevación local (°)",
+        range: [yMin, yMax],
         gridcolor: "#26334D",
         zerolinecolor: "#475569",
         tickfont: { color: "#94A3B8" },
