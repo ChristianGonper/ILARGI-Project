@@ -1,10 +1,13 @@
 """Descarga y verificación de un conjunto explícito de kernels NAIF."""
 
+import os
+import shutil
 from hashlib import sha256
 from pathlib import Path
 from urllib.request import urlopen
 
-KERNEL_DIR = Path(__file__).resolve().parent.parent / "data" / "kernels"
+LOCAL_KERNEL_DIR = Path(__file__).resolve().parent.parent / "data" / "kernels"
+SHARED_KERNEL_DIR = Path.home() / ".ilargi" / "kernels"
 BASE = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/"
 KERNELS = {
     "de440s.bsp": (
@@ -30,6 +33,20 @@ KERNELS = {
 }
 
 
+def _resolve_kernel_dir() -> Path:
+    env_dir = os.environ.get("ILARGI_KERNEL_DIR")
+    if env_dir:
+        return Path(env_dir)
+    if all((LOCAL_KERNEL_DIR / name).is_file() for name in KERNELS):
+        return LOCAL_KERNEL_DIR
+    if all((SHARED_KERNEL_DIR / name).is_file() for name in KERNELS):
+        return SHARED_KERNEL_DIR
+    return LOCAL_KERNEL_DIR
+
+
+KERNEL_DIR = _resolve_kernel_dir()
+
+
 def digest(path: Path) -> str:
     with path.open("rb") as f:
         return sha256(f.read()).hexdigest()
@@ -45,11 +62,19 @@ def verify() -> None:
 
 
 def download() -> None:
-    KERNEL_DIR.mkdir(parents=True, exist_ok=True)
+    LOCAL_KERNEL_DIR.mkdir(parents=True, exist_ok=True)
+    SHARED_KERNEL_DIR.mkdir(parents=True, exist_ok=True)
     for name, (url, expected) in KERNELS.items():
-        path = KERNEL_DIR / name
+        path = LOCAL_KERNEL_DIR / name
+        shared_path = SHARED_KERNEL_DIR / name
         if path.is_file() and digest(path) == expected:
+            if not shared_path.is_file() or digest(shared_path) != expected:
+                shutil.copy2(path, shared_path)
             print(f"Verificado: {name}")
+            continue
+        if shared_path.is_file() and digest(shared_path) == expected:
+            shutil.copy2(shared_path, path)
+            print(f"Copiado desde caché común: {name}")
             continue
         tmp = path.with_suffix(path.suffix + ".part")
         try:
@@ -60,6 +85,7 @@ def download() -> None:
             if digest(tmp) != expected:
                 raise ValueError(f"SHA-256 incorrecto: {name}")
             tmp.replace(path)
+            shutil.copy2(path, shared_path)
         finally:
             tmp.unlink(missing_ok=True)
 
