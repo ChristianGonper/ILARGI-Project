@@ -39,10 +39,11 @@ interface TelemetrySnapshot {
 }
 
 const TARGET_CIRCLE_RADIUS_M = 15;
-const SAFE_LANDING_SPEED_MS = 3.8;
-const INITIAL_ALTITUDE_M = 260;
+const SAFE_LANDING_SPEED_MS = 4.5;
+const INITIAL_ALTITUDE_M = 175;
+const BASE_DESCENT_SPEED_MS = -10.5;
 
-// Generamos cráteres deterministas alrededor de la zona de aterrizaje para que el scroll sea rico y continuo
+// Generamos cráteres deterministas alrededor de la zona de aterrizaje para aportar relieve nítido incluso a muy baja altura
 function buildCraterField(): CraterFeature[] {
   const craters: CraterFeature[] = [];
   let seed = 42197;
@@ -50,19 +51,64 @@ function buildCraterField(): CraterFeature[] {
     seed = (seed * 1664525 + 1013904223) % 4294967296;
     return seed / 4294967296;
   };
-  for (let i = 0; i < 190; i++) {
+  for (let i = 0; i < 240; i++) {
     const x = (rand() - 0.5) * 900;
     const y = (rand() - 0.5) * 900;
     // Dejamos el círculo central de aterrizaje bastante despejado de cráteres grandes
     const d0 = Math.hypot(x, y);
-    const maxR = d0 < 30 ? 4 : 36;
-    const r = 3 + Math.pow(rand(), 1.7) * maxR;
+    const maxR = d0 < 28 ? 3.5 : 32;
+    const r = 2 + Math.pow(rand(), 1.7) * maxR;
     craters.push({ x, y, r, depth: 0.35 + rand() * 0.55 });
   }
   return craters;
 }
 
 const CRATERS = buildCraterField();
+
+/**
+ * Construye un patrón 2x2 espejado sin costuras a partir de un recorte craterizado
+ * de la textura lunar real (/textures/moon_color.jpg).
+ */
+function buildSeamlessMoonTile(img: HTMLImageElement): HTMLCanvasElement {
+  const tileSize = 768;
+  const out = document.createElement("canvas");
+  out.width = tileSize * 2;
+  out.height = tileSize * 2;
+  const octx = out.getContext("2d");
+  if (!octx) return out;
+
+  // Recortamos una región cuadrada ecuatorial/media con cráteres y mares nítidos (sin estiramiento polar)
+  const sx = Math.floor(img.width * 0.34);
+  const sy = Math.floor(img.height * 0.22);
+  const sw = Math.min(img.width - sx, Math.floor(img.width * 0.275));
+  const sh = Math.min(img.height - sy, Math.floor(img.height * 0.55));
+
+  // Cuadrante superior izquierdo (normal)
+  octx.drawImage(img, sx, sy, sw, sh, 0, 0, tileSize, tileSize);
+
+  // Cuadrante superior derecho (espejo X)
+  octx.save();
+  octx.translate(tileSize * 2, 0);
+  octx.scale(-1, 1);
+  octx.drawImage(img, sx, sy, sw, sh, 0, 0, tileSize, tileSize);
+  octx.restore();
+
+  // Cuadrante inferior izquierdo (espejo Y)
+  octx.save();
+  octx.translate(0, tileSize * 2);
+  octx.scale(1, -1);
+  octx.drawImage(img, sx, sy, sw, sh, 0, 0, tileSize, tileSize);
+  octx.restore();
+
+  // Cuadrante inferior derecho (espejo X+Y)
+  octx.save();
+  octx.translate(tileSize * 2, tileSize * 2);
+  octx.scale(-1, -1);
+  octx.drawImage(img, sx, sy, sw, sh, 0, 0, tileSize, tileSize);
+  octx.restore();
+
+  return out;
+}
 
 export function Phase3LandingCanvas({
   site,
@@ -71,6 +117,7 @@ export function Phase3LandingCanvas({
   onExitToEducation,
 }: Phase3LandingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const moonTileRef = useRef<HTMLCanvasElement | null>(null);
   const keysRef = useRef<{
     up: boolean;
     down: boolean;
@@ -86,12 +133,12 @@ export function Phase3LandingCanvas({
   });
 
   const simRef = useRef({
-    landerX: -95,
-    landerY: 78,
+    landerX: -92,
+    landerY: 74,
     altM: INITIAL_ALTITUDE_M,
-    vx: 1.5,
-    vy: -1.0,
-    vz: -4.4, // Descenso lento inicial (m/s)
+    vx: 2.0,
+    vy: -1.4,
+    vz: -9.5,
     outcome: "playing" as "playing" | "won" | "missed" | "hard_landing",
     finalErrorM: 0,
     finalSpeedMs: 0,
@@ -99,11 +146,11 @@ export function Phase3LandingCanvas({
 
   const [hud, setHud] = useState<TelemetrySnapshot>({
     altM: INITIAL_ALTITUDE_M,
-    vzMs: -4.4,
-    vxMs: 1.5,
-    vyMs: -1.0,
-    distM: 123,
-    predDistM: 120,
+    vzMs: -9.5,
+    vxMs: 2.0,
+    vyMs: -1.4,
+    distM: 118,
+    predDistM: 115,
     spacePressed: false,
     alignedInCircle: false,
     outcome: "playing",
@@ -111,25 +158,40 @@ export function Phase3LandingCanvas({
     finalSpeedMs: 0,
   });
 
+  // Cargar textura lunar real (/textures/moon_color.jpg) para el suelo de la cámara
+  useEffect(() => {
+    let cancelled = false;
+    const img = new Image();
+    img.src = "/textures/moon_color.jpg";
+    img.onload = () => {
+      if (!cancelled) {
+        moonTileRef.current = buildSeamlessMoonTile(img);
+      }
+    };
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const resetPhase3 = useCallback(() => {
     const angle = Math.PI * 0.78;
-    const radius = 115;
+    const radius = 112;
     simRef.current = {
       landerX: Math.cos(angle) * radius,
       landerY: Math.sin(angle) * radius,
       altM: INITIAL_ALTITUDE_M,
-      vx: 0.8,
-      vy: -0.6,
-      vz: -4.4,
+      vx: 1.5,
+      vy: -1.1,
+      vz: -9.5,
       outcome: "playing",
       finalErrorM: 0,
       finalSpeedMs: 0,
     };
     setHud({
       altM: INITIAL_ALTITUDE_M,
-      vzMs: -4.4,
-      vxMs: 0.8,
-      vyMs: -0.6,
+      vzMs: -9.5,
+      vxMs: 1.5,
+      vyMs: -1.1,
       distM: radius,
       predDistM: radius,
       spacePressed: false,
@@ -140,7 +202,7 @@ export function Phase3LandingCanvas({
     });
     onIlargiSpeak(
       "Modo Aterrizar · Cámara en patas",
-      "Usa las flechas (o WASD) para mover tu X hacia donde marcan las flechas crecientes. Pulsa ESPACIO para frenar la bajada (¡verás cómo el suelo se aleja!) y cuadra tu X dentro del círculo final.",
+      "Usa las flechas (o WASD) para llevar tu X hacia donde indican las flechas crecientes. ¡El descenso es rápido (~10 m/s): mantén ESPACIO para frenar y alejar el suelo, y cuadra tu X dentro del círculo!",
     );
   }, [onIlargiSpeak]);
 
@@ -195,7 +257,7 @@ export function Phase3LandingCanvas({
     };
   }, []);
 
-  // Bucle principal de física lenta + renderizado Canvas 2D de cámara en patas
+  // Bucle principal de física y renderizado Canvas 2D de cámara en patas
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -215,8 +277,8 @@ export function Phase3LandingCanvas({
       const keys = keysRef.current;
 
       if (s.outcome === "playing") {
-        // Control horizontal suave (RCS lento y preciso)
-        const latAccel = 16.5;
+        // Control horizontal ágil y preciso
+        const latAccel = 30.0;
         let ax = 0;
         let ay = 0;
         if (keys.left) ax -= latAccel;
@@ -226,13 +288,11 @@ export function Phase3LandingCanvas({
 
         s.vx += ax * dt;
         s.vy += ay * dt;
-        // Amortiguación suave para que pilotar sea cómodo y sin derrapes infinitos
-        const damping = Math.exp(-1.15 * dt);
+        const damping = Math.exp(-1.5 * dt);
         s.vx *= damping;
         s.vy *= damping;
 
-        // Límite de velocidad horizontal
-        const maxLatSpeed = 24;
+        const maxLatSpeed = 36;
         const spdLat = Math.hypot(s.vx, s.vy);
         if (spdLat > maxLatSpeed) {
           s.vx = (s.vx / spdLat) * maxLatSpeed;
@@ -242,18 +302,16 @@ export function Phase3LandingCanvas({
         s.landerX += s.vx * dt;
         s.landerY += s.vy * dt;
 
-        // Control vertical lento: descenso base suave ~ -4.5 m/s; ESPACIO frena y sube!
+        // Control vertical ágil: descenso base ~ -10.5 m/s; ESPACIO frena rápido y sube!
         if (keys.space) {
-          s.vz += 7.2 * dt; // Empuje ascendente: frena bajada y llega a subir (la imagen se aleja!)
-          s.vz = Math.min(s.vz, 5.5);
+          s.vz += 16.5 * dt;
+          s.vz = Math.min(s.vz, 7.5);
         } else {
-          // Gravedad lunar regulada hacia velocidad terminal lenta (~ -4.5 m/s)
-          const targetDescent = -4.55;
-          s.vz += (targetDescent - s.vz) * 0.9 * dt;
+          s.vz += (BASE_DESCENT_SPEED_MS - s.vz) * 1.35 * dt;
         }
 
         s.altM += s.vz * dt;
-        s.altM = Math.min(480, s.altM);
+        s.altM = Math.min(420, s.altM);
 
         if (s.altM <= 0) {
           s.altM = 0;
@@ -275,7 +333,7 @@ export function Phase3LandingCanvas({
             s.outcome = "missed";
             onIlargiSpeak(
               "Fuera de la zona de aterrizaje",
-              `Tocaste suelo a ${errorM.toFixed(1)} m del centro del círculo. ¡Inténtalo de nuevo siguiendo las flechas crecientes y usa ESPACIO si necesitas más tiempo para cuadrar la X!`,
+              `Tocaste suelo a ${errorM.toFixed(1)} m del centro del círculo. ¡Inténtalo de nuevo siguiendo las flechas crecientes y usa ESPACIO si necesitas frenar para cuadrar la X!`,
             );
           } else {
             s.outcome = "hard_landing";
@@ -288,7 +346,7 @@ export function Phase3LandingCanvas({
       }
 
       // Predicción de dónde aterrizaría ahora (X móvil según velocidad/movimiento)
-      const lookaheadSec = Math.min(3.8, Math.max(0, s.altM / 22));
+      const lookaheadSec = Math.min(3.2, Math.max(0, s.altM / 20));
       const predX = s.landerX + s.vx * lookaheadSec;
       const predY = s.landerY + s.vy * lookaheadSec;
       const predDistM = Math.hypot(predX, predY);
@@ -314,13 +372,36 @@ export function Phase3LandingCanvas({
       const cy = h / 2;
 
       // Escala dinámica según altitud: al pulsar ESPACIO sube la altura -> pixelsPerMeter baja -> ¡la imagen se aleja!
-      const pixelsPerMeter = (Math.min(w, h) * 0.42) / (32 + s.altM * 0.55);
+      const pixelsPerMeter = (Math.min(w, h) * 0.42) / (26 + s.altM * 0.62);
 
-      // 1. Fondo regolito lunar con scroll relativo a (landerX, landerY)
+      // 1. Fondo con textura lunar real (/textures/moon_color.jpg) con scroll y zoom relativos
       ctx.fillStyle = "#1b2230";
       ctx.fillRect(0, 0, w, h);
 
-      // Grano y cuadrícula sutil del terreno que hace scroll con la nave
+      const tile = moonTileRef.current;
+      if (tile) {
+        const pattern = ctx.createPattern(tile, "repeat");
+        if (pattern) {
+          // 1 metro lunar equivale a 2.8 texels del patrón para mantener nitidez y alinear 1:1 con cráteres y objetivo
+          const texelsPerMeter = 2.8;
+          const screenPxPerTexel = pixelsPerMeter / texelsPerMeter;
+          const matrix = new DOMMatrix()
+            .translate(cx, cy)
+            .scale(screenPxPerTexel, screenPxPerTexel)
+            .translate(
+              -s.landerX * texelsPerMeter,
+              -s.landerY * texelsPerMeter,
+            );
+          pattern.setTransform(matrix);
+          ctx.fillStyle = pattern;
+          ctx.fillRect(0, 0, w, h);
+          // Veladura sutil para contraste óptimo del HUD y retículas sobre la foto lunar
+          ctx.fillStyle = "rgba(11, 16, 27, 0.22)";
+          ctx.fillRect(0, 0, w, h);
+        }
+      }
+
+      // Cuadrícula telemétrica sutil del terreno que hace scroll con la nave
       const gridStepM = 25;
       const startGridX =
         Math.floor((s.landerX - w / (2 * pixelsPerMeter)) / gridStepM) *
@@ -348,7 +429,7 @@ export function Phase3LandingCanvas({
         ctx.stroke();
       }
 
-      // 2. Cráteres lunares sobre el suelo con relieve sombreado (scroll relativo)
+      // 2. Cráteres locales sobre la textura para mantener nitidez y relieve a baja altura
       for (const c of CRATERS) {
         const sx = cx + (c.x - s.landerX) * pixelsPerMeter;
         const sy = cy + (c.y - s.landerY) * pixelsPerMeter;
@@ -364,12 +445,12 @@ export function Phase3LandingCanvas({
         // Sombra interior del cráter
         ctx.beginPath();
         ctx.arc(sx, sy, sr, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(11, 16, 27, ${0.28 + c.depth * 0.25})`;
+        ctx.fillStyle = `rgba(9, 13, 22, ${0.24 + c.depth * 0.22})`;
         ctx.fill();
         // Borde iluminado por el Sol
         ctx.beginPath();
-        ctx.arc(sx - sr * 0.06, sy - sr * 0.06, sr, 0, Math.PI * 2);
-        ctx.strokeStyle = "rgba(203, 213, 225, 0.22)";
+        ctx.arc(sx - sr * 0.07, sy - sr * 0.07, sr, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(226, 232, 240, 0.22)";
         ctx.lineWidth = Math.max(1, sr * 0.08);
         ctx.stroke();
       }
@@ -747,7 +828,8 @@ export function Phase3LandingCanvas({
               INSTRUMENTOS DE ATERRIZAJE
             </div>
             <div className="panel-sub">
-              Descenso lento y controlado sobre {site.name.split("·")[0].trim()}
+              Controla el descenso rápido y frena con ESPACIO sobre{" "}
+              {site.name.split("·")[0].trim()}
             </div>
           </div>
         </div>

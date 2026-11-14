@@ -39,7 +39,7 @@ export function Phase2DescentView({
   // Animación fluida del descenso orbital al pulsar el botón rojo con el cohete
   useEffect(() => {
     if (!burning) return;
-    const durationMs = 5600;
+    const durationMs = 3600;
     const startTs = performance.now();
 
     const tick = (now: number) => {
