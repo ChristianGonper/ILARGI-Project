@@ -3,6 +3,8 @@ from datetime import UTC, datetime, timedelta
 import numpy as np
 import pandas as pd
 import pytest
+import rasterio
+from rasterio.transform import from_origin
 
 from ilargi.analysis import (
     _extract_body_events_and_spans,
@@ -113,6 +115,32 @@ def test_analyze_site_lola_and_ideal_fallback():
     assert np.allclose(apollo.horizon.elevation_deg, 0.0)
     assert apollo.materials.in_coverage is True
     assert format_events_summary(()) == "Sin evento en el periodo evaluado"
+
+
+def test_invalid_dem_does_not_silently_become_an_ideal_horizon(tmp_path):
+    path = tmp_path / "invalid.tif"
+    with rasterio.open(
+        path,
+        "w",
+        driver="GTiff",
+        height=2,
+        width=2,
+        count=1,
+        dtype="float32",
+        transform=from_origin(0, 16000, 80, 80),
+    ) as dataset:
+        dataset.write(np.zeros((2, 2), dtype="float32"), 1)
+
+    with pytest.raises(ValueError, match="sistema de coordenadas"):
+        analyze_site(
+            label="P1",
+            site_name="Invalid DEM",
+            latitude_deg=-89.5,
+            longitude_east_deg=0.0,
+            start_utc=datetime(2026, 4, 2, tzinfo=UTC),
+            duration_hours=1,
+            dem_path=path,
+        )
 
 
 def test_materials_summary_outside_south_pole():

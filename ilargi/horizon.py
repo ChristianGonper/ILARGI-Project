@@ -11,6 +11,7 @@ from rasterio.windows import Window
 from ilargi.terrain import (
     RADIUS_M,
     SAMPLE,
+    TerrainCoverageError,
     dem_metadata,
     raster_indices,
     sample_elevation,
@@ -329,7 +330,7 @@ def calculate_horizon(
         latitude, longitude, observer, effective_requested, azimuth_step_deg, path
     )
     if np.all(np.isnan(horizon)):
-        raise ValueError("El DEM no cubre los rayos alrededor del lugar")
+        raise TerrainCoverageError("El DEM no cubre los rayos alrededor del lugar")
     required = np.asarray(
         max_search_distance_m(
             observer,
@@ -407,7 +408,7 @@ def calculate_multiresolution_horizon(
         latitude, longitude, observer, fine_requested, azimuth_step_deg, fine_path
     )
     if np.all(np.isnan(fine_elev)):
-        raise ValueError("El DEM fino no cubre los rayos alrededor del lugar")
+        raise TerrainCoverageError("El DEM fino no cubre los rayos alrededor del lugar")
 
     az_cutoff = np.asarray(
         max_search_distance_m(

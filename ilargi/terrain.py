@@ -16,6 +16,10 @@ POLAR = SAMPLE.with_name("LDEM_80S_80MPP_ADJ.TIF")
 GLOBAL = SAMPLE.with_name("ldem_128.vrt")
 
 
+class TerrainCoverageError(ValueError):
+    """The DEM has no usable terrain at or around the requested location."""
+
+
 def raster_indices(dataset, x, y):
     """Índices proyectados; los mapas cilíndricos completos cierran en longitud."""
     cols = np.floor((np.asarray(x) - dataset.transform.c) / dataset.transform.a).astype(
@@ -100,10 +104,12 @@ def sample_elevation(
         x, y = transform.transform(longitude_deg, latitude_deg)
         row, col = raster_indices(dataset, x, y)
         if not (0 <= row < dataset.height and 0 <= col < dataset.width):
-            raise ValueError("La ubicación queda fuera del recorte LOLA disponible")
+            raise TerrainCoverageError(
+                "La ubicación queda fuera del recorte LOLA disponible"
+            )
         pixel = dataset.read(1, window=((row, row + 1), (col, col + 1)), masked=True)
         if np.ma.is_masked(pixel[0, 0]) or not np.isfinite(pixel[0, 0]):
-            raise ValueError("El recorte LOLA no contiene datos en ese punto")
+            raise TerrainCoverageError("El recorte LOLA no contiene datos en ese punto")
         return TerrainSample(
             float(pixel[0, 0]) * scale + offset, x, y, abs(dataset.transform.a)
         )

@@ -17,7 +17,14 @@ from ilargi.horizon import (
 )
 from ilargi.materials import MATERIALS, load_regions, region_at, weh_at
 from ilargi.series import sky_series
-from ilargi.terrain import GLOBAL, POLAR, SAMPLE, TerrainSample, sample_elevation
+from ilargi.terrain import (
+    GLOBAL,
+    POLAR,
+    SAMPLE,
+    TerrainCoverageError,
+    TerrainSample,
+    sample_elevation,
+)
 
 SAMPLE_20 = SAMPLE.with_name("lola_20m_south_pole_sample.tif")
 
@@ -453,7 +460,7 @@ def analyze_site(
                 else f"LOLA {res_tag} m/píxel ({candidate.stem})"
             )
             break
-        except ValueError:
+        except TerrainCoverageError:
             terrain = None
             horizon = None
 
