@@ -24,7 +24,8 @@ def sky_series(
     duration = timedelta(hours=duration_hours)
     step = timedelta(minutes=step_minutes)
     count = int(duration // step)
-    extra = int(duration - count * step >= timedelta(minutes=10))
+    # Always include the requested endpoint, even for a short final interval.
+    extra = int(duration > count * step)
     if count + 1 + extra > 3000:
         raise ValueError("El intervalo supera 3000 muestras; aumenta el paso")
     times = [start + index * step for index in range(count + 1)]

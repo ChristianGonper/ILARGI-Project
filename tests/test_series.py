@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -13,6 +13,14 @@ def test_series_includes_final_instant_and_both_targets():
     assert result.utc.max().minute == 30
     assert set(result.objetivo) == {"SUN", "EARTH"}
     assert result[result.objetivo == "SUN"].azimut_deg.nunique() == 4
+
+
+@pytest.mark.parametrize("duration_minutes", [5, 65])
+def test_series_includes_short_final_interval(duration_minutes):
+    start = datetime(2026, 4, 2, tzinfo=UTC)
+    result = sky_series(start, duration_minutes / 60, 60, -89.5, 0, 0)
+    assert result.utc.max() == start + timedelta(minutes=duration_minutes)
+    assert result.utc.nunique() == (2 if duration_minutes < 60 else 3)
 
 
 def test_series_rejects_excessive_sampling():
