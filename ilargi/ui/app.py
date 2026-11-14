@@ -15,7 +15,7 @@ from ilargi.horizon import (
 )
 from ilargi.materials import MATERIALS, load_regions, region_at
 from ilargi.series import sky_series
-from ilargi.terrain import SAMPLE, sample_elevation
+from ilargi.terrain import GLOBAL, POLAR, SAMPLE, sample_elevation
 from ilargi.terrain_image import render_terrain_png
 from ilargi.ui.presentation import elevation_figure, materials_figure, sky_figure
 
@@ -131,8 +131,13 @@ def run() -> None:
         left, middle, right = st.columns(3)
         with left:
             source = st.selectbox(
-                "Recorte LOLA",
-                ["20 m/píxel · zona local", "80 m/píxel · zona más amplia"],
+                "DEM LOLA",
+                [
+                    "20 m/píxel · zona local",
+                    "80 m/píxel · muestra local",
+                    "80 m/píxel · polo sur completo",
+                    "≈237 m/píxel · global",
+                ],
             )
         with middle:
             instrument = st.number_input(
@@ -161,7 +166,19 @@ def run() -> None:
         return
     if submitted:
         try:
-            path = SAMPLE_20 if source.startswith("20") else SAMPLE
+            path = {
+                "80 m/píxel · polo sur completo": POLAR,
+                "≈237 m/píxel · global": GLOBAL,
+                "20 m/píxel · zona local": SAMPLE_20,
+                "80 m/píxel · muestra local": SAMPLE,
+            }[source]
+            if path in (POLAR, GLOBAL):
+                binary = POLAR if path == POLAR else GLOBAL.with_suffix(".img")
+                expected = 189158392 if path == POLAR else 2123366400
+                if not binary.exists() or binary.stat().st_size != expected:
+                    raise ValueError(
+                        "Falta el DEM completo. Ejecuta uv run python -m ilargi.download_terrain"
+                    )
             start = datetime.combine(day, hour, tzinfo=UTC)
             minutes = {
                 "1 hora": 60,
@@ -263,11 +280,16 @@ def run() -> None:
             "text/csv",
         )
     st.subheader("Muestra de topografía LOLA")
+    if Path(path) == GLOBAL:
+        st.caption(
+            "La vista local del DEM global aún no está disponible; el horizonte sí usa sus alturas."
+        )
+        return
     style = st.radio(
         "Representación del terreno", ["Altura", "Relieve sombreado"], horizontal=True
     )
     zoom = st.radio(
-        "Extensión", ["Recorte completo", "Detalle de 5 km"], horizontal=True
+        "Extensión", ["Detalle de 5 km", "Recorte completo"], horizontal=True
     )
     try:
         png = terrain_png(

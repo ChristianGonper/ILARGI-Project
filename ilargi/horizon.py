@@ -8,7 +8,13 @@ import rasterio
 from pyproj import Transformer
 from rasterio.windows import Window
 
-from ilargi.terrain import RADIUS_M, SAMPLE, dem_metadata, sample_elevation
+from ilargi.terrain import (
+    RADIUS_M,
+    SAMPLE,
+    dem_metadata,
+    raster_indices,
+    sample_elevation,
+)
 
 # Extremos globales LOLA respecto a la esfera de referencia de 1 737 400 m:
 # cumbre selene (+10 792 m, borde de Engel'gardt) y suelo de Antoniadi (-9 129 m).
@@ -208,8 +214,7 @@ def _sample_dem_rays(
         )
         transformer = Transformer.from_crs(crs.geodetic_crs, crs, always_xy=True)
         x, y = transformer.transform(np.rad2deg(lon2), np.rad2deg(lat2))
-        cols = np.floor((x - ds.transform.c) / ds.transform.a).astype(int)
-        rows = np.floor((y - ds.transform.f) / ds.transform.e).astype(int)
+        rows, cols = raster_indices(ds, x, y)
 
         in_ring = np.ones((n_az, n_distance), dtype=bool)
         if min_distance_by_az is not None:
@@ -223,22 +228,40 @@ def _sample_dem_rays(
         if not np.any(in_bounds):
             empty = np.full(n_az, np.nan)
             return az, empty, np.zeros(n_az), pixel, np.nan
-        r0, r1 = rows[in_bounds].min(), rows[in_bounds].max() + 1
-        c0, c1 = cols[in_bounds].min(), cols[in_bounds].max() + 1
-        if (r1 - r0) * (c1 - c0) > 16_000_000:
-            raise ValueError(
-                "El área solicitada supera el límite de memoria; reduce la distancia o usa un DEM más grueso"
-            )
-        grid = (
-            ds.read(1, window=Window(c0, r0, c1 - c0, r1 - r0), masked=True)
-            .astype(float)
-            .filled(np.nan)
-        )
-        grid = grid * scale + offset
+        # Leer bloques visitados evita una ventana global al cruzar 0°/360°.
         heights = np.full(rows.shape, np.nan)
-        heights[in_bounds] = grid[rows[in_bounds] - r0, cols[in_bounds] - c0]
+        block_h, block_w = ds.block_shapes[0]
+        # Limitar bloques de imágenes sin teselas (como VRT de datos PDS).
+        block_h, block_w = min(block_h, 256), min(block_w, 256)
+        rr, cc = rows[in_bounds], cols[in_bounds]
+        block_ids = (rr // block_h) * (
+            (ds.width + block_w - 1) // block_w
+        ) + cc // block_w
+        values = np.empty(len(rr), dtype=float)
+        for block in np.unique(block_ids):
+            selected = block_ids == block
+            r0 = int(rr[selected][0] // block_h * block_h)
+            c0 = int(cc[selected][0] // block_w * block_w)
+            grid = (
+                ds.read(
+                    1,
+                    window=Window(
+                        c0,
+                        r0,
+                        min(block_w, ds.width - c0),
+                        min(block_h, ds.height - r0),
+                    ),
+                    masked=True,
+                )
+                .astype(float)
+                .filled(np.nan)
+            )
+            values[selected] = (
+                grid[rr[selected] - r0, cc[selected] - c0] * scale + offset
+            )
+        heights[in_bounds] = values
         obs_x, obs_y = transformer.transform(longitude, latitude)
-        observer_row, observer_col = ds.index(obs_x, obs_y)
+        observer_row, observer_col = raster_indices(ds, obs_x, obs_y)
 
     # Un hueco de datos interrumpe el rayo: no tratar terreno posterior como continuo.
     # Las celdas fuera del anillo solicitado (antes de min_distance) no interrumpen el rayo.
