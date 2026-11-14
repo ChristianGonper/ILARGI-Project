@@ -29,6 +29,11 @@ def analyse(start, hours, step, lat, lon, instrument, search_km, az_step, path):
     return terrain, horizon, series
 
 
+@st.cache_data(show_spinner=False)
+def terrain_png(path, terrain, relief, window_km):
+    return render_terrain_png(Path(path), terrain, relief=relief, window_km=window_km)
+
+
 def run() -> None:
     st.set_page_config(
         page_title="ILARGI | Emplazamiento lunar", page_icon="🌕", layout="wide"
@@ -192,18 +197,18 @@ def run() -> None:
         "Extensión", ["Recorte completo", "Detalle de 5 km"], horizontal=True
     )
     try:
-        png = render_terrain_png(
-            Path(path),
+        png = terrain_png(
+            path,
             terrain,
-            relief=style == "Relieve sombreado",
-            window_km=5 if zoom == "Detalle de 5 km" else None,
+            style == "Relieve sombreado",
+            5 if zoom == "Detalle de 5 km" else None,
         )
         st.image(png, width="stretch")
         st.download_button(
             "Descargar imagen PNG", png, "ilargi-topografia-lola.png", "image/png"
         )
+        st.caption(
+            "PNG generado sin suavizado ni remuestreo previo del DEM. La figura y la pantalla pueden redimensionar la imagen. El sombreado es ilustrativo y no representa la iluminación solar calculada."
+        )
     except ValueError as exc:
         st.warning(str(exc))
-    st.caption(
-        "PNG generado con Matplotlib sin interpolar los píxeles del DEM. En pantalla puede reducirse para ajustarse; descarga la imagen para verla ampliada. El sombreado es ilustrativo y no representa la iluminación solar calculada."
-    )

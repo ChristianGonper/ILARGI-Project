@@ -6,13 +6,36 @@ from pathlib import Path
 
 import numpy as np
 import rasterio
+from matplotlib import colormaps
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.colors import LightSource, Normalize
 from matplotlib.figure import Figure
-from rasterio.windows import Window
+from rasterio.windows import Window, from_bounds
 from scipy.ndimage import binary_dilation
 
 from ilargi.terrain import SAMPLE, TerrainSample, dem_metadata, sample_elevation
+
+
+def crop_window(ds, sample: TerrainSample, window_km: float) -> Window:
+    """Devuelve la envolvente en píxeles de un cuadrado proyectado."""
+    if not np.isfinite(window_km) or window_km <= 0:
+        raise ValueError("La ventana necesita un tamaño positivo")
+    half = window_km * 500
+    left, right = sample.x_m - half, sample.x_m + half
+    bottom, top = sample.y_m - half, sample.y_m + half
+    if (
+        left < ds.bounds.left
+        or right > ds.bounds.right
+        or bottom < ds.bounds.bottom
+        or top > ds.bounds.top
+    ):
+        raise ValueError("La ventana solicitada rebasa el recorte disponible")
+    raw = from_bounds(left, bottom, right, top, transform=ds.transform)
+    col0 = max(0, int(np.floor(raw.col_off + 1e-9)))
+    row0 = max(0, int(np.floor(raw.row_off + 1e-9)))
+    col1 = min(ds.width, int(np.ceil(raw.col_off + raw.width - 1e-9)))
+    row1 = min(ds.height, int(np.ceil(raw.row_off + raw.height - 1e-9)))
+    return Window(col0, row0, col1 - col0, row1 - row0)
 
 
 def render_terrain_png(
@@ -29,27 +52,18 @@ def render_terrain_png(
     """
     with rasterio.open(path) as ds:
         _, scale, offset = dem_metadata(ds)
+        if sample is not None and (
+            not np.isfinite(sample.x_m)
+            or not np.isfinite(sample.y_m)
+            or not ds.bounds.left <= sample.x_m < ds.bounds.right
+            or not ds.bounds.bottom < sample.y_m <= ds.bounds.top
+        ):
+            raise ValueError("El emplazamiento no pertenece al DEM")
         window = None
         if window_km is not None:
-            if sample is None or not np.isfinite(window_km) or window_km <= 0:
-                raise ValueError(
-                    "La ventana necesita un emplazamiento y un tamaño positivo"
-                )
-            half = window_km * 500
-            left, right = sample.x_m - half, sample.x_m + half
-            bottom, top = sample.y_m - half, sample.y_m + half
-            if (
-                left < ds.bounds.left
-                or right > ds.bounds.right
-                or bottom < ds.bounds.bottom
-                or top > ds.bounds.top
-            ):
-                raise ValueError("La ventana solicitada rebasa el recorte disponible")
-            row0, col0 = ds.index(left, top)
-            row1, col1 = ds.index(right, bottom)
-            row0, col0 = max(0, row0), max(0, col0)
-            row1, col1 = min(ds.height - 1, row1), min(ds.width - 1, col1)
-            window = Window(col0, row0, col1 - col0 + 1, row1 - row0 + 1)
+            if sample is None:
+                raise ValueError("La ventana necesita un emplazamiento")
+            window = crop_window(ds, sample, window_km)
         width = int(window.width) if window is not None else ds.width
         height = int(window.height) if window is not None else ds.height
         if width * height > 4_000_000:
@@ -65,6 +79,8 @@ def render_terrain_png(
     valid = np.isfinite(values)
     if not np.any(valid):
         raise ValueError("El DEM no contiene alturas válidas")
+    if relief and min(values.shape) < 2:
+        raise ValueError("El sombreado necesita al menos dos píxeles por lado")
     norm = Normalize(vmin=float(np.nanmin(values)), vmax=float(np.nanmax(values)))
     extent = [
         bounds[0] / 1000,
@@ -75,12 +91,13 @@ def render_terrain_png(
     fig = Figure(figsize=(11, 10), dpi=200, layout="constrained")
     FigureCanvasAgg(fig)
     ax = fig.subplots()
+    cmap = colormaps["cividis"].with_extremes(bad="#d54087")
     image = ax.imshow(
         values,
         origin="upper",
         extent=extent,
         interpolation="nearest",
-        cmap="terrain",
+        cmap=cmap,
         norm=norm,
     )
     if relief:
@@ -123,7 +140,7 @@ def render_terrain_png(
     )
     ax.set_title(
         f"LOLA · Elevación del polo sur · {pixel_m:g} m/píxel\n"
-        f"NASA LRO/LOLA PGDA · ME DE421 · {detail}",
+        f"NASA LRO/LOLA PGDA · ME DE421 · {detail}\nEscala de color ajustada a esta vista",
         fontsize=11,
         pad=12,
     )
@@ -159,11 +176,15 @@ def main() -> None:
         if args.dem == "20"
         else SAMPLE
     )
-    point = sample_elevation(args.latitude, args.longitude, path)
+    try:
+        point = sample_elevation(args.latitude, args.longitude, path)
+        png = render_terrain_png(
+            path, point, relief=args.relief, window_km=args.window_km
+        )
+    except (ValueError, OSError) as exc:
+        parser.error(str(exc))
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_bytes(
-        render_terrain_png(path, point, relief=args.relief, window_km=args.window_km)
-    )
+    args.output.write_bytes(png)
     print(f"Imagen guardada: {args.output.resolve()}")
 
 
