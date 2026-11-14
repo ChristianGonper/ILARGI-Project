@@ -6,11 +6,9 @@ Este proyecto es ILARGI, (Interactive Lunar Analyzer for Radiance, Geometry, and
 
 Usa mensajes en inglés sin prefijo estilo fix(engine), y usa frases descriptivas de lo que se incluye en el commit. Haz commits según vayas trabajando, siguiendo prácticas adecuadas
 
-Crea una pull request para cada trabajo y desarrolla los cambios directamente en su rama, actualizando la misma pull request hasta completar el trabajo.
+Si empiezas a trabajar en una nueva rama o WorkTree, crea directamente una PR y trabaja en ella.
 
 # Herramientas y comprobaciones
 
-- Usa Ruff para comprobar y formatear Python
-- Usa Prettier para formatear HTML, CSS, JavaScript, JSON, Markdown y YAML. Instala sus dependencias con `npm ci` y ejecuta `npx prettier --write ruta/al/archivo`.
-- Antes de cada commit, el hook de pre-commit comprueba el formato y el lint de los archivos preparados. Si no está activado, `uv run pre-commit install`.
-- Para comprobar todos los archivos versionados, ejecuta `uv run pre-commit run --all-files`.
+- Usa Ruff para comprobación y formateo Python
+- Usa Prettier para formatear sus archivos correspondientes.
