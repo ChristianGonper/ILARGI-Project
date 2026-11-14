@@ -5,6 +5,7 @@ import {
   Info,
   Pause,
   Play,
+  Rocket,
   RotateCcw,
   Sparkles,
   Sun,
@@ -24,6 +25,7 @@ import type {
 } from "../types";
 import { EducationMoonViewport3D } from "./EducationMoonViewport3D";
 import { IlargiMascot } from "./IlargiMascot";
+import { LunarLandingGame } from "./landing-game/LunarLandingGame";
 import {
   ThreeBodyOrbitMini,
   phaseLabelFromFraction,
@@ -74,6 +76,7 @@ export function EducationWorkspace() {
   // Capas educativas: SOLO agua (materiales) + explicador del espejo de la Luna
   const [showWaterLayer, setShowWaterLayer] = useState(false);
   const [showMirrorGuide, setShowMirrorGuide] = useState(false);
+  const [gameActive, setGameActive] = useState(false);
   const [ilargiOverride, setIlargiOverride] = useState<{
     mood: string;
     text: string;
@@ -234,8 +237,42 @@ export function EducationWorkspace() {
   const lunarDaysElapsed = hoursOffset / 24.0;
   const lunarDayPct = Math.min(100, (hoursOffset / 708.734) * 100);
 
+  if (gameActive) {
+    return (
+      <LunarLandingGame
+        educationSites={sites}
+        initialSite={selectedSite}
+        onExitGame={() => setGameActive(false)}
+      />
+    );
+  }
+
   return (
     <div className="edu-shell">
+      <div className="panel edu-game-launch-bar">
+        <div className="edu-game-launch-info">
+          <span className="pill pill-amber">MISIÓN INTERACTIVA · 3 FASES</span>
+          <div>
+            <strong>Juego de Aterrizaje Lunar con ILARGI</strong>
+            <div className="panel-sub">
+              Calcula la inclinación desde la parking orbit, programa la bajada
+              y pilota el aterrizador hasta el círculo objetivo.
+            </div>
+          </div>
+        </div>
+        <button
+          type="button"
+          className="btn-primary edu-game-start-btn"
+          onClick={() => {
+            setPlaying(false);
+            setGameActive(true);
+          }}
+        >
+          <Rocket size={16} />
+          Iniciar Juego de Aterrizaje
+        </button>
+      </div>
+
       {errorMsg && (
         <div className="error-banner" role="alert">
           <span>{errorMsg}</span>
