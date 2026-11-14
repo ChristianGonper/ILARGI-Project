@@ -287,14 +287,7 @@ def compute_incidence_stats(sun_track: pd.DataFrame) -> IncidenceStats:
 def summarize_materials(
     latitude_deg: float, longitude_east_deg: float, regions: pd.DataFrame | None = None
 ) -> MaterialsSummary:
-    """Consulta abundancias LP-GRS (80°–90° S) y estado honesto de agua/WEH."""
-    if not (-90.0 <= latitude_deg <= -80.0):
-        return MaterialsSummary(
-            in_coverage=False,
-            region_id=None,
-            elements={},
-            water_status="Sin datos validados (WEH pendiente · fuera de 80°–90° S)",
-        )
+    """Consulta abundancias regionales globales de LP-GRS y el estado de WEH."""
     if regions is None:
         regions = load_regions()
     row = region_at(regions, latitude_deg, longitude_east_deg)

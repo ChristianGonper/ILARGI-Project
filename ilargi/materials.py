@@ -17,7 +17,7 @@ MATERIALS = {
 }
 
 
-def load_regions(path=DATA, *, south_pole_only: bool = True):
+def load_regions(path=DATA, *, south_pole_only: bool = False):
     """Lee los campos de ancho fijo de LP-GRS y calcula categorías por terciles."""
     widths = [10, 7, 7, 7, 7] + [15] * 11
     names = [
@@ -63,12 +63,12 @@ def load_regions(path=DATA, *, south_pole_only: bool = True):
 
 
 def region_at(data, lat, lon):
-    if not (-90 <= lat <= -80 and -180 <= lon <= 180):
+    if not (-90 <= lat <= 90 and -180 <= lon <= 360):
         return None
     lon = (lon + 180) % 360 - 180
     rows = data[
         (data.south <= lat)
-        & ((lat < data.north) | ((lat == -80) & (data.north >= -80)))
+        & ((lat < data.north) | ((lat == 90) & (data.north == 90)))
         & (data.west <= lon)
         & (lon < data.east)
     ]
