@@ -29,9 +29,10 @@ export function IlargiMascot({
 
   const handleTriggerFact = (delta: number) => {
     setBubbleMode("fact");
-    setFactIdx(
-      (prev) =>
-        (prev + delta + ILARGI_FUN_FACTS.length) % ILARGI_FUN_FACTS.length,
+    setFactIdx((prev) =>
+      bubbleMode === "guide" && delta === 1
+        ? prev
+        : (prev + delta + ILARGI_FUN_FACTS.length) % ILARGI_FUN_FACTS.length,
     );
     setSpeaking(true);
     window.setTimeout(() => setSpeaking(false), 2400);
@@ -76,9 +77,7 @@ export function IlargiMascot({
           <div className="ilargi-bubble-badges">
             <span className="pill pill-cyan">
               <Volume2 size={11} />{" "}
-              {bubbleMode === "fact"
-                ? `¿Y sabías qué…? · ${activeFact.tag}`
-                : speakerMood}
+              {bubbleMode === "fact" ? "DID YOU KNOW…?" : speakerMood}
             </span>
           </div>
           {showFunFacts && (
@@ -113,6 +112,11 @@ export function IlargiMascot({
             </div>
           )}
         </div>
+        {bubbleMode === "fact" && (
+          <p className="ilargi-bubble-text">
+            <strong>{activeFact.question}</strong>
+          </p>
+        )}
         <p className="ilargi-bubble-text">{shownText}</p>
       </div>
     </div>
