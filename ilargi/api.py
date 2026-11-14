@@ -30,6 +30,66 @@ def _cached_regions():
     return load_regions()
 
 
+@lru_cache(maxsize=1)
+def _cached_materials_overlay() -> dict:
+    df = load_regions(south_pole_only=False)
+    cat_code = {"Sin datos": 0, "Baja": 1, "Media": 2, "Alta": 3}
+    elements = [
+        {
+            "id": "Al",
+            "label": "Aluminio (Al)",
+            "unit": "% en masa",
+            "color": "#A78BFA",
+            "available": True,
+        },
+        {
+            "id": "Ca",
+            "label": "Calcio (Ca)",
+            "unit": "% en masa",
+            "color": "#34D399",
+            "available": True,
+        },
+        {
+            "id": "FeO",
+            "label": "Óxido de hierro (FeO)",
+            "unit": "% en masa",
+            "color": "#EF4444",
+            "available": True,
+        },
+        {
+            "id": "Th",
+            "label": "Torio (Th)",
+            "unit": "ppm",
+            "color": "#FBBF24",
+            "available": True,
+        },
+        {
+            "id": "WEH",
+            "label": "Agua / Hielo (WEH · futura)",
+            "unit": "% en masa",
+            "color": "#22D3EE",
+            "available": False,
+            "status": "Sin datos WEH validados en esta versión",
+        },
+    ]
+    regions = [
+        {
+            "south": float(row.south),
+            "north": float(row.north),
+            "west": float(row.west),
+            "east": float(row.east),
+            "levels": {
+                "Al": cat_code.get(str(row.Al_category), 0),
+                "Ca": cat_code.get(str(row.Ca_category), 0),
+                "FeO": cat_code.get(str(row.FeO_category), 0),
+                "Th": cat_code.get(str(row.Th_category), 0),
+            },
+        }
+        for row in df.itertuples()
+    ]
+    return {"elements": elements, "regions": regions}
+
+
 class PointInput(BaseModel):
     label: str = Field(min_length=1, max_length=16)
     site_name: str = Field(min_length=1, max_length=120)
@@ -222,6 +282,10 @@ def create_app() -> FastAPI:
             }
             for s in HISTORICAL_SITES
         ]
+
+    @app.get("/api/materials-overlay")
+    def materials_overlay() -> dict:
+        return _cached_materials_overlay()
 
     @app.post("/api/analyze")
     async def analyze_points(payload: AnalyzeRequest) -> dict:

@@ -135,6 +135,28 @@ export interface HealthResponse {
   };
 }
 
+export interface MineralLayerMeta {
+  id: string;
+  label: string;
+  unit: string;
+  color: string;
+  available: boolean;
+  status?: string;
+}
+
+export interface MaterialRegionOverlay {
+  south: number;
+  north: number;
+  west: number;
+  east: number;
+  levels: Record<string, number>;
+}
+
+export interface MaterialsOverlayResponse {
+  elements: MineralLayerMeta[];
+  regions: MaterialRegionOverlay[];
+}
+
 /**
  * Contrato de adaptador para el visor lunar 3D.
  * Permite intercambiar Three.js por CesiumJS (o combinarlos) sin cambiar el resto de la app.
@@ -144,6 +166,8 @@ export interface MoonViewport3DProps {
   activePoints: PointDraft[];
   focusedIndex: number | null;
   pinMode: boolean;
+  mineralOverlay: MaterialsOverlayResponse | null;
+  selectedMinerals: string[];
   onSelectHistoricalSite: (site: HistoricalSite) => void;
   onSelectActivePoint?: (index: number) => void;
   onSurfacePick?: (latitudeDeg: number, longitudeEastDeg: number) => void;

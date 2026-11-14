@@ -1,16 +1,31 @@
 import { useState } from "react";
-import { Crosshair, Plus, Rocket, SlidersHorizontal, X } from "lucide-react";
-import type { AnalysisParams, HistoricalSite, PointDraft } from "../types";
+import {
+  Check,
+  Crosshair,
+  Plus,
+  Rocket,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
+import type {
+  AnalysisParams,
+  HistoricalSite,
+  MineralLayerMeta,
+  PointDraft,
+} from "../types";
 
 export const MAX_POINTS = 10;
 
 interface InputPanelProps {
   points: PointDraft[];
   historicalSites: HistoricalSite[];
+  mineralElements: MineralLayerMeta[];
+  selectedMinerals: string[];
   params: AnalysisParams;
   focusedIndex: number | null;
   pinMode: boolean;
   loading: boolean;
+  onToggleMineral: (id: string) => void;
   onTogglePinMode: () => void;
   onFocusPoint: (index: number) => void;
   onChangePoint: (index: number, patch: Partial<PointDraft>) => void;
@@ -24,10 +39,13 @@ interface InputPanelProps {
 export function InputPanel({
   points,
   historicalSites,
+  mineralElements,
+  selectedMinerals,
   params,
   focusedIndex,
   pinMode,
   loading,
+  onToggleMineral,
   onTogglePinMode,
   onFocusPoint,
   onChangePoint,
@@ -313,6 +331,52 @@ export function InputPanel({
             </div>
           </div>
         )}
+      </div>
+
+      <div className="minerals-section">
+        <div className="eyebrow">Minerales (máscara 3D)</div>
+        <div className="mineral-list">
+          {mineralElements.map((el) => {
+            const checked = selectedMinerals.includes(el.id);
+            return (
+              <label
+                key={el.id}
+                className={`mineral-item ${checked ? "checked" : ""}`}
+                title={
+                  el.available
+                    ? `Mostrar regiones LP-GRS de ${el.label}`
+                    : (el.status ?? "Sin datos validados aún")
+                }
+              >
+                <input
+                  type="checkbox"
+                  className="sr-only"
+                  checked={checked}
+                  onChange={() => onToggleMineral(el.id)}
+                />
+                <span
+                  className="mineral-check-box"
+                  style={
+                    checked
+                      ? {
+                          backgroundColor: el.color,
+                          borderColor: el.color,
+                        }
+                      : { borderColor: el.color }
+                  }
+                >
+                  {checked && (
+                    <Check size={12} strokeWidth={3} color="#0b101b" />
+                  )}
+                </span>
+                <span className="mineral-label">{el.label}</span>
+                {!el.available && (
+                  <span className="mineral-future-tag">sin datos</span>
+                )}
+              </label>
+            );
+          })}
+        </div>
       </div>
 
       <button

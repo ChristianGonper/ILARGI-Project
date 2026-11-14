@@ -2,6 +2,7 @@ import type {
   AnalysisParams,
   HealthResponse,
   HistoricalSite,
+  MaterialsOverlayResponse,
   PointDraft,
   ShadowSpan,
   SiteAnalysisResult,
@@ -22,6 +23,16 @@ export async function fetchHistoricalSites(): Promise<HistoricalSite[]> {
     throw new Error(`Error al consultar /api/sites (${res.status})`);
   }
   return res.json() as Promise<HistoricalSite[]>;
+}
+
+export async function fetchMaterialsOverlay(): Promise<MaterialsOverlayResponse> {
+  const res = await fetch("/api/materials-overlay");
+  if (!res.ok) {
+    throw new Error(
+      `Error al consultar /api/materials-overlay (${res.status})`,
+    );
+  }
+  return res.json() as Promise<MaterialsOverlayResponse>;
 }
 
 export async function analyzePoints(

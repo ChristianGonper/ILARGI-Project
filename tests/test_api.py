@@ -18,6 +18,15 @@ def test_health_and_sites_endpoints():
     assert len(data) >= 8
     assert any(s["id"] == "lola-center" for s in data)
 
+    overlay = client.get("/api/materials-overlay")
+    assert overlay.status_code == 200
+    ov = overlay.json()
+    elem_ids = [e["id"] for e in ov["elements"]]
+    assert elem_ids == ["Al", "Ca", "FeO", "Th", "WEH"]
+    weh = next(e for e in ov["elements"] if e["id"] == "WEH")
+    assert weh["available"] is False
+    assert len(ov["regions"]) == 1790
+
 
 def test_analyze_single_and_multipoint_payload():
     resp = client.post(

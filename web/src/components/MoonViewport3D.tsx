@@ -153,11 +153,19 @@ function makeLabelSprite(text: string, colorHex: string): THREE.Sprite {
   return sprite;
 }
 
+function hexToRgb(hex: string): [number, number, number] {
+  const clean = hex.replace("#", "");
+  const num = parseInt(clean, 16);
+  return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
+}
+
 export function MoonViewport3D({
   historicalSites,
   activePoints,
   focusedIndex,
   pinMode,
+  mineralOverlay,
+  selectedMinerals,
   onSelectHistoricalSite,
   onSelectActivePoint,
   onSurfacePick,
@@ -173,6 +181,11 @@ export function MoonViewport3D({
   const histGroupRef = useRef<THREE.Group | null>(null);
   const activeGroupRef = useRef<THREE.Group | null>(null);
   const moonMeshRef = useRef<THREE.Mesh | null>(null);
+  const overlayRef = useRef<{
+    canvas: HTMLCanvasElement;
+    tex: THREE.CanvasTexture;
+    mesh: THREE.Mesh;
+  } | null>(null);
 
   const callbacksRef = useRef({
     onSelectHistoricalSite,
@@ -190,6 +203,7 @@ export function MoonViewport3D({
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+    let disposed = false;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color("#0B101B");
@@ -214,11 +228,11 @@ export function MoonViewport3D({
     controlsRef.current = controls;
 
     // Iluminación espacial + ambiental suficiente para leer toda la esfera.
-    scene.add(new THREE.AmbientLight(0xdbeafe, 0.85));
-    const sunLight = new THREE.DirectionalLight(0xfff7ed, 1.35);
+    scene.add(new THREE.AmbientLight(0xdbeafe, 0.95));
+    const sunLight = new THREE.DirectionalLight(0xfff7ed, 1.4);
     sunLight.position.set(4.5, 1.2, 3.8);
     scene.add(sunLight);
-    const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.25);
+    const fillLight = new THREE.DirectionalLight(0x38bdf8, 0.22);
     fillLight.position.set(-3.0, -2.5, -2.5);
     scene.add(fillLight);
 
@@ -245,21 +259,79 @@ export function MoonViewport3D({
     });
     scene.add(new THREE.Points(starGeo, starMat));
 
-    // Esfera lunar texturizada en MOON_ME.
-    const { colorMap, bumpMap } = buildLunarTextures();
-    const sphereGeo = new THREE.SphereGeometry(1.0, 96, 64);
+    // Esfera lunar texturizada en MOON_ME (LROC WAC + relieve LOLA, con fallback procedural).
+    const { colorMap: fallbackColor, bumpMap: fallbackBump } =
+      buildLunarTextures();
+    let activeColorMap: THREE.Texture = fallbackColor;
+    let activeBumpMap: THREE.Texture = fallbackBump;
+
+    const sphereGeo = new THREE.SphereGeometry(1.0, 128, 96);
     // Alinear u=0.5 (lon=0°) con +Z: SphereGeometry empieza en -X, rotamos Y -90°.
     sphereGeo.rotateY(-Math.PI / 2);
     const sphereMat = new THREE.MeshStandardMaterial({
-      map: colorMap,
-      bumpMap,
-      bumpScale: 0.015,
-      roughness: 0.92,
-      metalness: 0.04,
+      map: activeColorMap,
+      bumpMap: activeBumpMap,
+      bumpScale: 0.022,
+      roughness: 0.94,
+      metalness: 0.02,
     });
     const moonMesh = new THREE.Mesh(sphereGeo, sphereMat);
     moonMeshRef.current = moonMesh;
     scene.add(moonMesh);
+
+    const maxAnisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    const loader = new THREE.TextureLoader();
+    loader.load("/textures/moon_color.jpg", (tex) => {
+      if (disposed) {
+        tex.dispose();
+        return;
+      }
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = maxAnisotropy;
+      activeColorMap = tex;
+      sphereMat.map = tex;
+      sphereMat.needsUpdate = true;
+      fallbackColor.dispose();
+    });
+    loader.load("/textures/moon_bump.jpg", (tex) => {
+      if (disposed) {
+        tex.dispose();
+        return;
+      }
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.anisotropy = maxAnisotropy;
+      activeBumpMap = tex;
+      sphereMat.bumpMap = tex;
+      sphereMat.bumpScale = 0.026;
+      sphereMat.needsUpdate = true;
+      fallbackBump.dispose();
+    });
+
+    // Máscara transparente de minerales LP-GRS sobre la esfera lunar.
+    const overlayCanvas = document.createElement("canvas");
+    overlayCanvas.width = 1440;
+    overlayCanvas.height = 720;
+    const overlayTex = new THREE.CanvasTexture(overlayCanvas);
+    overlayTex.wrapS = THREE.RepeatWrapping;
+    overlayTex.colorSpace = THREE.SRGBColorSpace;
+    const overlayGeo = new THREE.SphereGeometry(1.0025, 128, 96);
+    overlayGeo.rotateY(-Math.PI / 2);
+    const overlayMat = new THREE.MeshStandardMaterial({
+      map: overlayTex,
+      transparent: true,
+      depthWrite: false,
+      roughness: 0.95,
+      metalness: 0.0,
+    });
+    const overlayMesh = new THREE.Mesh(overlayGeo, overlayMat);
+    overlayMesh.visible = false;
+    overlayRef.current = {
+      canvas: overlayCanvas,
+      tex: overlayTex,
+      mesh: overlayMesh,
+    };
+    scene.add(overlayMesh);
 
     // Anillos de referencia: ecuador (0°), meridiano 0° y límite polar sur 80° S.
     const addRing = (latDeg: number, color: number, opacity: number) => {
@@ -411,14 +483,20 @@ export function MoonViewport3D({
     animate();
 
     return () => {
+      disposed = true;
       cancelAnimationFrame(rafId);
       resizeObserver.disconnect();
       renderer.domElement.removeEventListener("pointerdown", onPointerDown);
       renderer.domElement.removeEventListener("pointermove", onPointerMove);
       renderer.domElement.removeEventListener("pointerup", onPointerUp);
       controls.dispose();
-      colorMap.dispose();
-      bumpMap.dispose();
+      activeColorMap.dispose();
+      activeBumpMap.dispose();
+      fallbackColor.dispose();
+      fallbackBump.dispose();
+      overlayTex.dispose();
+      overlayGeo.dispose();
+      overlayMat.dispose();
       sphereGeo.dispose();
       sphereMat.dispose();
       starGeo.dispose();
@@ -429,6 +507,48 @@ export function MoonViewport3D({
       }
     };
   }, []);
+
+  // Actualizar máscara transparente de minerales LP-GRS cuando cambia la selección.
+  useEffect(() => {
+    const ov = overlayRef.current;
+    if (!ov) return;
+    const { canvas, tex, mesh } = ov;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    if (!mineralOverlay || selectedMinerals.length === 0) {
+      tex.needsUpdate = true;
+      mesh.visible = false;
+      return;
+    }
+
+    let painted = false;
+    for (const id of selectedMinerals) {
+      const meta = mineralOverlay.elements.find((e) => e.id === id);
+      if (!meta || !meta.available) continue;
+      const [r, g, b] = hexToRgb(meta.color);
+
+      for (const reg of mineralOverlay.regions) {
+        const level = reg.levels[id] ?? 0;
+        if (level < 2) continue;
+        const alpha = level === 3 ? 0.36 : 0.13;
+        const x0 = Math.round(((reg.west + 180) / 360) * w);
+        const x1 = Math.round(((reg.east + 180) / 360) * w);
+        const y0 = Math.round(((90 - reg.north) / 180) * h);
+        const y1 = Math.round(((90 - reg.south) / 180) * h);
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        ctx.fillRect(x0, y0, Math.max(1, x1 - x0), Math.max(1, y1 - y0));
+        painted = true;
+      }
+    }
+
+    tex.needsUpdate = true;
+    mesh.visible = painted;
+  }, [mineralOverlay, selectedMinerals]);
 
   // Actualizar marcadores históricos cuando cambia la lista.
   useEffect(() => {
@@ -590,13 +710,41 @@ export function MoonViewport3D({
       )}
 
       <div className="moon-hud-bottom">
-        <span>
-          Clic en un punto histórico para añadirlo/analizarlo ·{" "}
-          {pinMode
-            ? "Modo pin activo: clic sobre la esfera para fijar coordenadas"
-            : "Shift + clic en superficie para elegir coordenadas manuales"}
+        <div className="moon-hud-minerals">
+          {selectedMinerals.length === 0 ? (
+            <span>
+              Clic en un punto histórico para añadirlo/analizarlo ·{" "}
+              {pinMode
+                ? "Modo pin activo: clic sobre la esfera para fijar coordenadas"
+                : "Shift + clic en superficie para elegir coordenadas manuales"}
+            </span>
+          ) : (
+            <>
+              <span className="muted-note">Máscara LP-GRS:</span>
+              {selectedMinerals.map((id) => {
+                const meta = mineralOverlay?.elements.find((e) => e.id === id);
+                if (!meta) return null;
+                return (
+                  <span
+                    key={id}
+                    className="pill"
+                    style={{
+                      borderColor: meta.color,
+                      color: meta.color,
+                      background: "rgba(11, 16, 27, 0.85)",
+                    }}
+                  >
+                    {meta.id}
+                    {!meta.available ? " · sin datos validados" : ""}
+                  </span>
+                );
+              })}
+            </>
+          )}
+        </div>
+        <span className="pill pill-muted">
+          LROC WAC + LOLA · CesiumJS-ready
         </span>
-        <span className="pill pill-muted">Adaptador CesiumJS-ready</span>
       </div>
     </div>
   );

@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { analyzePoints, fetchHealth, fetchHistoricalSites } from "./api";
+import {
+  analyzePoints,
+  fetchHealth,
+  fetchHistoricalSites,
+  fetchMaterialsOverlay,
+} from "./api";
 import { ComparisonPanel } from "./components/ComparisonPanel";
 import { InputPanel, MAX_POINTS } from "./components/InputPanel";
 import { MoonViewport3D } from "./components/MoonViewport3D";
@@ -8,6 +13,7 @@ import type {
   AnalysisParams,
   HealthResponse,
   HistoricalSite,
+  MaterialsOverlayResponse,
   PointDraft,
   SiteAnalysisResult,
 } from "./types";
@@ -39,6 +45,9 @@ function makeManualPoint(uid: number, lat = -89.5, lon = 0): PointDraft {
 export function App() {
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [historicalSites, setHistoricalSites] = useState<HistoricalSite[]>([]);
+  const [mineralOverlay, setMineralOverlay] =
+    useState<MaterialsOverlayResponse | null>(null);
+  const [selectedMinerals, setSelectedMinerals] = useState<string[]>([]);
   const [points, setPoints] = useState<PointDraft[]>([
     {
       uid: 1,
@@ -71,6 +80,9 @@ export function App() {
   useEffect(() => {
     void fetchHealth()
       .then(setHealth)
+      .catch(() => undefined);
+    void fetchMaterialsOverlay()
+      .then(setMineralOverlay)
       .catch(() => undefined);
     void fetchHistoricalSites()
       .then((sites) => {
@@ -266,10 +278,17 @@ export function App() {
         <InputPanel
           points={points}
           historicalSites={historicalSites}
+          mineralElements={mineralOverlay?.elements ?? []}
+          selectedMinerals={selectedMinerals}
           params={params}
           focusedIndex={focusedIndex}
           pinMode={pinMode}
           loading={loading}
+          onToggleMineral={(id) =>
+            setSelectedMinerals((prev) =>
+              prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id],
+            )
+          }
           onTogglePinMode={() => setPinMode((v) => !v)}
           onFocusPoint={setFocusedIndex}
           onChangePoint={handleChangePoint}
@@ -286,6 +305,8 @@ export function App() {
             activePoints={points}
             focusedIndex={singleResult ? 0 : focusedIndex}
             pinMode={pinMode}
+            mineralOverlay={mineralOverlay}
+            selectedMinerals={selectedMinerals}
             onSelectHistoricalSite={handleGlobeHistoricalClick}
             onSelectActivePoint={(idx) => setFocusedIndex(idx)}
             onSurfacePick={handleSurfacePick}
