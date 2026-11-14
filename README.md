@@ -1,10 +1,10 @@
 # ILARGI
 
-ILARGI explora las condiciones de iluminación y visibilidad desde emplazamientos lunares. Esta primera entrega permite explorar **las posiciones geométricas de los centros del Sol, la Tierra y la Luna** para un instante UTC, con dos vistas 3D, distancias y exportación CSV. El documento [NASA - Space Apps Info - Christian.md](NASA%20-%20Space%20Apps%20Info%20-%20Christian.md) recoge la visión completa provisional.
+ILARGI explora las condiciones de iluminación y visibilidad desde emplazamientos lunares. El prototipo calcula trayectorias aparentes del **Sol y la Tierra desde un lugar de aterrizaje**, las compara con un horizonte topográfico muestreado y permite consultar y exportar resultados. La visión completa provisional está en [NASA - Space Apps Info - Christian.md](NASA%20-%20Space%20Apps%20Info%20-%20Christian.md).
 
 ## Inicio
 
-Se necesitan Python 3.13, [uv](https://docs.astral.sh/uv/) y conexión a internet para descargar los datos iniciales:
+Se necesitan Python 3.13, [uv](https://docs.astral.sh/uv/) y conexión a internet para descargar los kernels iniciales:
 
 ```powershell
 uv sync
@@ -12,33 +12,55 @@ uv run python -m ilargi.kernels
 uv run streamlit run main.py
 ```
 
-Abre la dirección local que muestre Streamlit. Los kernels se descargan desde NAIF a `data/kernels/` y se comprueban con SHA-256; no se suben a Git. El comando puede repetirse para comprobarlos o restaurarlos. La primera descarga ocupa unos 45 MB. Para validar la instalación:
+Abre la dirección local que muestre Streamlit. Los kernels se descargan desde NAIF a `data/kernels/` y se verifican con SHA-256. La primera descarga ocupa unos 45 MB. La muestra LOLA regional está incluida en el repositorio. Para ejecutar las comprobaciones:
 
 ```powershell
 uv run pytest -q
 uv run ruff check .
+uv run ruff format --check .
 ```
 
-`uv.lock` fija las dependencias. Las pruebas necesitan los kernels descargados. El entorno local `.venv` se genera automáticamente.
+Para activar las comprobaciones de Python antes de cada commit, ejecuta una vez
+`uv run pre-commit install`. El hook revisa los archivos preparados; si falla el
+formato, aplica `uv run ruff format .` y vuelve a preparar los cambios. Para
+comprobar todos los archivos, usa `uv run pre-commit run --all-files`. Ruff no
+comprueba ni formatea HTML.
 
-## Alcance y límites
+Para HTML, CSS, JavaScript, JSON, Markdown y YAML se usa Prettier. Instala Node.js
+y ejecuta `npm ci` una vez; el mismo hook comprueba el formato de los archivos
+preparados. Para formatear un archivo, usa `npx prettier --write ruta/al/archivo`.
+Prettier comprueba formato, no errores de lógica o validez de HTML.
 
-Las posiciones son simultáneas y geométricas, en kilómetros, con ejes inerciales SPICE J2000 y efeméride DE440s. Los marcadores están ampliados; la separación entre cuerpos se representa a escala en cada vista. La tabla indica el origen y el CSV incorpora instante, origen, marco, corrección y efeméride. Para fechas futuras se usa la última tabla de segundos intercalares disponible; un nuevo segundo intercalar puede cambiar la conversión de UTC.
+`uv.lock` fija las dependencias. Las pruebas necesitan los kernels descargados y `.venv` se genera automáticamente.
 
-No se ha implementado todavía un observador sobre la Luna, ni posiciones aparentes, relieve LOLA, sombras, iluminación o visibilidad. El PCK y FK lunares descargados no intervienen en las posiciones geométricas actuales ni configuran por sí solos el marco lunar predeterminado para cálculos futuros. Los resultados no son una evaluación de seguridad ni de comunicaciones.
+## Qué calcula y qué no
 
-Consulta [la validación y los datos](docs/validacion-efemerides.md) y [el planteamiento inicial](docs/planteamiento-inicial.md) para convenciones, fuentes y próximos pasos.
+Los objetivos son la Tierra (399) y el Sol (10), vistos desde la Luna (301). El marco explícito es `MOON_ME_DE440_ME421`, con efemérides DE440s y corrección `LT+S` para tiempo de luz y aberración estelar. El observador superficial se calcula por separado: latitud planetocéntrica, longitud este y altura respecto a una esfera de radio 1.737,4 km. El acimut se mide desde el norte hacia el este; el plano horizontal es el de la esfera, no un horizonte topográfico. El azimut exacto en los polos se rechaza por indeterminación del norte.
 
-## Organización del proyecto
+Los recortes LOLA cubren regiones limitadas del polo sur, con resoluciones nominales de 20 y 80 m/píxel y marco ME de DE421. La realización ME de DE440 usada en el cálculo es próxima pero no idéntica. La altura del píxel se utiliza como altura del suelo, sumada a la del instrumento. El horizonte se muestrea sobre el DEM elegido, pero es parcial: los recortes no permiten asegurar que se hayan considerado todos los obstáculos. No se calculan discos aparentes, ventanas de iluminación ni comunicaciones. Los datos futuros UTC dependen de la vigencia del kernel de segundos intercalares.
 
-- `main.py`: entrada mínima de Streamlit.
-- `ilargi/ephemeris.py`: cálculo científico y convenciones de los vectores.
-- `ilargi/kernels.py`: catálogo, descarga y verificación de kernels.
-- `ilargi/ui/`: flujo de la interfaz y construcción separada de gráficos y tablas.
-- `tests/`: comprobaciones científicas y de la interfaz.
-- `docs/`: decisiones, plan y evidencia de validación.
-- `data/kernels/`: datos locales reproducibles, excluidos de Git.
+La [guía de trayectorias y horizonte](docs/trayectorias-y-horizonte.md), la [guía interactiva anterior](docs/recorrido.html), [geometría aparente](docs/geometria-aparente.md), [validación](docs/validacion-efemerides.md) y [procedencia del recorte LOLA](data/terrain/README.md) describen las convenciones, contrastes y límites. El [planteamiento inicial](docs/planteamiento-inicial.md) recoge los próximos pasos.
 
-El motor no depende de Streamlit y puede reutilizarse en una API o en otras interfaces. Se ampliará por dominios según se incorporen el terreno, los observadores y los eventos.
+## Organización
 
-Streamlit y Plotly son herramientas de prototipado para esta primera entrega, no una decisión sobre la interfaz definitiva. Se evaluarán tanto un ecosistema web como uno basado en Python cuando estén más claros los requisitos de interacción, visualización 3D y distribución.
+- `main.py`: entrada de Streamlit.
+- `ilargi/apparent.py`: geometría lunar aparente y observador superficial.
+- `ilargi/ephemeris.py` y `ilargi/kernels.py`: infraestructura SPICE y kernels.
+- `ilargi/terrain.py`, `ilargi/horizon.py` y `data/terrain/`: consulta LOLA y horizonte parcial.
+- `ilargi/series.py`: series temporales desde el emplazamiento.
+- `ilargi/terrain_image.py`: imágenes PNG de terreno con Matplotlib.
+- `ilargi/ui/`: prototipo y visualizaciones.
+- `tests/` y `docs/`: pruebas y evidencia.
+
+El motor no depende de Streamlit. Streamlit y Plotly son herramientas de prototipado; se evaluarán tanto una interfaz web como una basada en Python cuando estén más claros los requisitos de visualización 3D y distribución.
+
+## Exportar un mapa LOLA en PNG
+
+Para producir una imagen con Matplotlib, sin suavizar ni reducir previamente el LDEM:
+
+```powershell
+uv run python -m ilargi.terrain_image --dem 20 --output salidas/lola-20m.png
+uv run python -m ilargi.terrain_image --dem 20 --relief --window-km 5 --output salidas/lola-20m-detalle.png
+```
+
+Ambos comandos marcan por defecto el emplazamiento indicado. La segunda imagen abarca aproximadamente 5 km, ajustados a los bordes de píxel, centrados en 89,5° S, 0° E; puede cambiarse con `--latitude` y `--longitude` si la ventana cabe en el recorte. `--relief` añade sombreado calculado de las pendientes con una exageración vertical de 2× para apreciar formas. Es un recurso gráfico: no muestra la iluminación solar real, no cambia las alturas ni mejora la resolución científica. La barra corresponde a los colores base de altura; el sombreado modifica su brillo. La escala de colores se ajusta al mínimo y máximo de cada vista; el mismo color puede indicar alturas distintas en recortes diferentes. La figura se renderiza en un lienzo de 2200 × 2000 píxeles y la pantalla puede reducirla; la exportación no aumenta la resolución científica de los datos.

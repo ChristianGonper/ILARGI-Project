@@ -1,0 +1,327 @@
+{
+  "api": "https://ssd.jpl.nasa.gov/api/horizons.api",
+  "retrieved_on": "2026-11-14",
+  "vectors": [
+    {
+      "target": "EARTH",
+      "locus": "center",
+      "utc": "2026-04-02T15:00:00.000+00:00",
+      "x_km": 373915.6739599261,
+      "y_km": 106746.4153239523,
+      "z_km": 71540.97842567653,
+      "soe": "2461133.125000000, A.D. 2026-Apr-02 15:00:00.0000,  3.739156739599261E+05,  1.067464153239523E+05,  7.154097842567653E+04, -2.868535778444681E-01,  8.478037481903051E-01,  4.446864965624133E-01,",
+      "headers": [
+        "Ephemeris / API_USER Sat Nov 14 02:00:28 2026 Pasadena, USA      / Horizons",
+        "Target body name: Earth (399)                     {source: DE441}",
+        "Center body name: Moon (301)                      {source: DE441}",
+        "Center-site name: BODY CENTER",
+        "Start time      : A.D. 2026-Apr-02 15:00:00.0000 UT",
+        "Center geodetic : 0.0, 0.0, 0.0                   {E-lon(deg),Lat(deg),Alt(km)}",
+        "Center radii    : 1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}",
+        "Output type     : LT+S CORRECTED cartesian states",
+        "Reference frame : ICRF"
+      ]
+    },
+    {
+      "target": "EARTH",
+      "locus": "center",
+      "utc": "2026-04-02T16:00:00.000+00:00",
+      "x_km": 372867.7341969965,
+      "y_km": 109794.1204986139,
+      "z_km": 73138.89375620718,
+      "soe": "2461133.166666667, A.D. 2026-Apr-02 16:00:00.0000,  3.728677341969965E+05,  1.097941204986139E+05,  7.313889375620718E+04, -2.955143422885067E-01,  8.452783741990402E-01,  4.429913703881709E-01,",
+      "headers": [
+        "Ephemeris / API_USER Sat Nov 14 02:00:28 2026 Pasadena, USA      / Horizons",
+        "Target body name: Earth (399)                     {source: DE441}",
+        "Center body name: Moon (301)                      {source: DE441}",
+        "Center-site name: BODY CENTER",
+        "Start time      : A.D. 2026-Apr-02 15:00:00.0000 UT",
+        "Center geodetic : 0.0, 0.0, 0.0                   {E-lon(deg),Lat(deg),Alt(km)}",
+        "Center radii    : 1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}",
+        "Output type     : LT+S CORRECTED cartesian states",
+        "Reference frame : ICRF"
+      ]
+    },
+    {
+      "target": "SUN",
+      "locus": "center",
+      "utc": "2026-04-02T15:00:00.000+00:00",
+      "x_km": 146354745.5105977,
+      "y_km": 29825613.93438952,
+      "z_km": 12952898.46432436,
+      "soe": "2461133.125000000, A.D. 2026-Apr-02 15:00:00.0000,  1.463547455105977E+08,  2.982561393438952E+07,  1.295289846432436E+07, -6.255323073087193E+00,  2.762157897308813E+01,  1.204972709630170E+01,",
+      "headers": [
+        "Ephemeris / API_USER Sat Nov 14 02:00:29 2026 Pasadena, USA      / Horizons",
+        "Target body name: Sun (10)                        {source: DE441}",
+        "Center body name: Moon (301)                      {source: DE441}",
+        "Center-site name: BODY CENTER",
+        "Start time      : A.D. 2026-Apr-02 15:00:00.0000 UT",
+        "Center geodetic : 0.0, 0.0, 0.0                   {E-lon(deg),Lat(deg),Alt(km)}",
+        "Center radii    : 1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}",
+        "Output type     : LT+S CORRECTED cartesian states",
+        "Reference frame : ICRF"
+      ]
+    },
+    {
+      "target": "SUN",
+      "locus": "center",
+      "utc": "2026-04-02T16:00:00.000+00:00",
+      "x_km": 146332184.3858547,
+      "y_km": 29925042.10544919,
+      "z_km": 12996272.5883311,
+      "soe": "2461133.166666667, A.D. 2026-Apr-02 16:00:00.0000,  1.463321843858547E+08,  2.992504210544919E+07,  1.299627258833110E+07, -6.284735083345724E+00,  2.761482898684141E+01,  1.204620809640905E+01,",
+      "headers": [
+        "Ephemeris / API_USER Sat Nov 14 02:00:29 2026 Pasadena, USA      / Horizons",
+        "Target body name: Sun (10)                        {source: DE441}",
+        "Center body name: Moon (301)                      {source: DE441}",
+        "Center-site name: BODY CENTER",
+        "Start time      : A.D. 2026-Apr-02 15:00:00.0000 UT",
+        "Center geodetic : 0.0, 0.0, 0.0                   {E-lon(deg),Lat(deg),Alt(km)}",
+        "Center radii    : 1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}",
+        "Output type     : LT+S CORRECTED cartesian states",
+        "Reference frame : ICRF"
+      ]
+    },
+    {
+      "target": "EARTH",
+      "locus": "surface",
+      "utc": "2026-04-02T15:00:00.000+00:00",
+      "x_km": 372236.9952923974,
+      "y_km": 106324.495442383,
+      "z_km": 71390.58874641312,
+      "soe": "2461133.125000000, A.D. 2026-Apr-02 15:00:00.0000,  3.722369952923974E+05,  1.063244954423830E+05,  7.139058874641312E+04, -2.856623340466644E-01,  8.436654773187939E-01,  4.430003451271531E-01,",
+      "headers": [
+        "Ephemeris / API_USER Sat Nov 14 02:00:30 2026 Pasadena, USA      / Horizons",
+        "Target body name: Earth (399)                     {source: DE441}",
+        "Center body name: Moon (301)                      {source: DE441}",
+        "Center-site name: (user defined site below)",
+        "Start time      : A.D. 2026-Apr-02 15:00:00.0000 UT",
+        "Center geodetic : 0.0, 0.0, 0.0                   {E-lon(deg),Lat(deg),Alt(km)}",
+        "Center radii    : 1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}",
+        "Output type     : LT+S CORRECTED cartesian states",
+        "Reference frame : ICRF"
+      ],
+      "longitude_east_deg": 0.0,
+      "latitude_deg": 0.0,
+      "height_km": 0.0
+    },
+    {
+      "target": "SUN",
+      "locus": "surface",
+      "utc": "2026-04-02T15:00:00.000+00:00",
+      "x_km": 146353496.7323797,
+      "y_km": 29825087.56042918,
+      "z_km": 12953985.97607614,
+      "soe": "2461133.125000000, A.D. 2026-Apr-02 15:00:00.0000,  1.463534967323797E+08,  2.982508756042918E+07,  1.295398597607614E+07, -6.255104167611599E+00,  2.761846777459824E+01,  1.204846711180266E+01,",
+      "headers": [
+        "Ephemeris / API_USER Sat Nov 14 02:00:30 2026 Pasadena, USA      / Horizons",
+        "Target body name: Sun (10)                        {source: DE441}",
+        "Center body name: Moon (301)                      {source: DE441}",
+        "Center-site name: (user defined site below)",
+        "Start time      : A.D. 2026-Apr-02 15:00:00.0000 UT",
+        "Center geodetic : 348.8, -43.3, 2.77017E-13       {E-lon(deg),Lat(deg),Alt(km)}",
+        "Center radii    : 1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}",
+        "Output type     : LT+S CORRECTED cartesian states",
+        "Reference frame : ICRF"
+      ],
+      "longitude_east_deg": 348.8,
+      "latitude_deg": -43.3,
+      "height_km": 0.0
+    },
+    {
+      "target": "SUN",
+      "locus": "surface",
+      "utc": "2026-04-02T15:00:00.000+00:00",
+      "x_km": 146355048.5090308,
+      "y_km": 29824974.25119098,
+      "z_km": 12951309.55883156,
+      "soe": "2461133.125000000, A.D. 2026-Apr-02 15:00:00.0000,  1.463550485090308E+08,  2.982497425119098E+07,  1.295130955883156E+07, -6.252159967457689E+00,  2.762237148477796E+01,  1.205001150156697E+01,",
+      "headers": [
+        "Ephemeris / API_USER Sat Nov 14 02:00:31 2026 Pasadena, USA      / Horizons",
+        "Target body name: Sun (10)                        {source: DE441}",
+        "Center body name: Moon (301)                      {source: DE441}",
+        "Center-site name: (user defined site below)",
+        "Start time      : A.D. 2026-Apr-02 15:00:00.0000 UT",
+        "Center geodetic : 90.0, 45.0, 2.0                 {E-lon(deg),Lat(deg),Alt(km)}",
+        "Center radii    : 1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}",
+        "Output type     : LT+S CORRECTED cartesian states",
+        "Reference frame : ICRF"
+      ],
+      "longitude_east_deg": 90.0,
+      "latitude_deg": 45.0,
+      "height_km": 2.0
+    },
+    {
+      "target": "EARTH",
+      "locus": "surface",
+      "utc": "2026-04-02T16:00:00.000+00:00",
+      "x_km": 372872.4706265407,
+      "y_km": 109139.2512069757,
+      "z_km": 74748.16774812751,
+      "soe": "2461133.166666667, A.D. 2026-Apr-02 16:00:00.0000,  3.728724706265407E+05,  1.091392512069757E+05,  7.474816774812751E+04, -2.955034286019584E-01,  8.452449623447116E-01,  4.429777418138396E-01,",
+      "headers": [
+        "Ephemeris / API_USER Sat Nov 14 02:00:31 2026 Pasadena, USA      / Horizons",
+        "Target body name: Earth (399)                     {source: DE441}",
+        "Center body name: Moon (301)                      {source: DE441}",
+        "Center-site name: (user defined site below)",
+        "Start time      : A.D. 2026-Apr-02 16:00:00.0000 UT",
+        "Center geodetic : 0.0, -89.5, 0.0                 {E-lon(deg),Lat(deg),Alt(km)}",
+        "Center radii    : 1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}",
+        "Output type     : LT+S CORRECTED cartesian states",
+        "Reference frame : ICRF"
+      ],
+      "longitude_east_deg": 0.0,
+      "latitude_deg": -89.5,
+      "height_km": 0.0
+    }
+  ],
+  "horizontal": [
+    {
+      "target": "EARTH",
+      "utc": "2026-04-02T15:00:00.000+00:00",
+      "longitude_east_deg": 0.0,
+      "latitude_deg": 0.0,
+      "height_km": 0.0,
+      "azimuth_deg": 39.688171319,
+      "elevation_deg": 84.224596513,
+      "range_km": 393651.99753,
+      "soe": "2026-Apr-02 15:00:00.000,*,i,   39.688171319,      84.224596513,  3.9365199753E+05,  0.0381912,",
+      "headers": [
+        "Ephemeris / API_USER Sat Nov 14 02:00:32 2026 Pasadena, USA      / Horizons",
+        "Target body name: Earth (399)                     {source: DE441}",
+        "Center body name: Moon (301)                      {source: DE441}",
+        "Center-site name: (user defined site below)",
+        "Start time      : A.D. 2026-Apr-02 15:00:00.0000 UT",
+        "Center geodetic : 0.0, 0.0, 0.0                   {E-lon(deg),Lat(deg),Alt(km)}",
+        "Center radii    : 1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}",
+        "Atmos refraction: NO (AIRLESS)"
+      ]
+    },
+    {
+      "target": "SUN",
+      "utc": "2026-04-02T15:00:00.000+00:00",
+      "longitude_east_deg": 0.0,
+      "latitude_deg": 0.0,
+      "height_km": 0.0,
+      "azimuth_deg": 291.378406826,
+      "elevation_deg": 87.419355376,
+      "range_km": 149921766.04,
+      "soe": "2026-Apr-02 15:00:00.000,*,i,  291.378406826,      87.419355376,  1.4992176604E+08,  0.4329785,",
+      "headers": [
+        "Ephemeris / API_USER Sat Nov 14 02:00:33 2026 Pasadena, USA      / Horizons",
+        "Target body name: Sun (10)                        {source: DE441}",
+        "Center body name: Moon (301)                      {source: DE441}",
+        "Center-site name: (user defined site below)",
+        "Start time      : A.D. 2026-Apr-02 15:00:00.0000 UT",
+        "Center geodetic : 0.0, 0.0, 0.0                   {E-lon(deg),Lat(deg),Alt(km)}",
+        "Center radii    : 1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}",
+        "Atmos refraction: NO (AIRLESS)"
+      ]
+    },
+    {
+      "target": "EARTH",
+      "utc": "2026-04-02T15:00:00.000+00:00",
+      "longitude_east_deg": 348.8,
+      "latitude_deg": -43.3,
+      "height_km": 0.0,
+      "azimuth_deg": 19.651224406,
+      "elevation_deg": 40.228869803,
+      "range_km": 394256.33625,
+      "soe": "2026-Apr-02 15:00:00.000,*,i,   19.651224406,      40.228869803,  3.9425633625E+05,  0.0384206,",
+      "headers": [
+        "Ephemeris / API_USER Sat Nov 14 02:00:33 2026 Pasadena, USA      / Horizons",
+        "Target body name: Earth (399)                     {source: DE441}",
+        "Center body name: Moon (301)                      {source: DE441}",
+        "Center-site name: (user defined site below)",
+        "Start time      : A.D. 2026-Apr-02 15:00:00.0000 UT",
+        "Center geodetic : 348.8, -43.3, 2.77017E-13       {E-lon(deg),Lat(deg),Alt(km)}",
+        "Center radii    : 1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}",
+        "Atmos refraction: NO (AIRLESS)"
+      ]
+    },
+    {
+      "target": "SUN",
+      "utc": "2026-04-02T15:00:00.000+00:00",
+      "longitude_east_deg": 0.0,
+      "latitude_deg": -89.5,
+      "height_km": 0.0,
+      "azimuth_deg": 357.596984869,
+      "elevation_deg": -0.441528714,
+      "range_km": 149923515.07,
+      "soe": "2026-Apr-02 15:00:00.000, , ,  357.596984869,      -0.441528714,  1.4992351507E+08,  0.4328108,",
+      "headers": [
+        "Ephemeris / API_USER Sat Nov 14 02:00:34 2026 Pasadena, USA      / Horizons",
+        "Target body name: Sun (10)                        {source: DE441}",
+        "Center body name: Moon (301)                      {source: DE441}",
+        "Center-site name: (user defined site below)",
+        "Start time      : A.D. 2026-Apr-02 15:00:00.0000 UT",
+        "Center geodetic : 0.0, -89.5, 0.0                 {E-lon(deg),Lat(deg),Alt(km)}",
+        "Center radii    : 1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}",
+        "Atmos refraction: NO (AIRLESS)"
+      ]
+    },
+    {
+      "target": "EARTH",
+      "utc": "2026-04-02T15:00:00.000+00:00",
+      "longitude_east_deg": 90.0,
+      "latitude_deg": 45.0,
+      "height_km": 2.0,
+      "azimuth_deg": 270.534099116,
+      "elevation_deg": 5.474374834,
+      "range_km": 395210.7666,
+      "soe": "2026-Apr-02 15:00:00.000,*,i,  270.534099116,       5.474374834,  3.9521076660E+05,  0.0380716,",
+      "headers": [
+        "Ephemeris / API_USER Sat Nov 14 02:00:34 2026 Pasadena, USA      / Horizons",
+        "Target body name: Earth (399)                     {source: DE441}",
+        "Center body name: Moon (301)                      {source: DE441}",
+        "Center-site name: (user defined site below)",
+        "Start time      : A.D. 2026-Apr-02 15:00:00.0000 UT",
+        "Center geodetic : 90.0, 45.0, 2.0                 {E-lon(deg),Lat(deg),Alt(km)}",
+        "Center radii    : 1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}",
+        "Atmos refraction: NO (AIRLESS)"
+      ]
+    },
+    {
+      "target": "SUN",
+      "utc": "2024-06-21T12:00:00.000+00:00",
+      "longitude_east_deg": 90.0,
+      "latitude_deg": 45.0,
+      "height_km": 2.0,
+      "azimuth_deg": 269.937833696,
+      "elevation_deg": 2.215833571,
+      "range_km": 152404765.6,
+      "soe": "2024-Jun-21 12:00:00.000,*,i,  269.937833696,       2.215833571,  1.5240476560E+08,  0.1763685,",
+      "headers": [
+        "Ephemeris / API_USER Sat Nov 14 02:00:35 2026 Pasadena, USA      / Horizons",
+        "Target body name: Sun (10)                        {source: DE441}",
+        "Center body name: Moon (301)                      {source: DE441}",
+        "Center-site name: (user defined site below)",
+        "Start time      : A.D. 2024-Jun-21 12:00:00.0000 UT",
+        "Center geodetic : 90.0, 45.0, 2.0                 {E-lon(deg),Lat(deg),Alt(km)}",
+        "Center radii    : 1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}",
+        "Atmos refraction: NO (AIRLESS)"
+      ]
+    },
+    {
+      "target": "EARTH",
+      "utc": "2024-06-21T12:00:00.000+00:00",
+      "longitude_east_deg": 222.5,
+      "latitude_deg": -88.2,
+      "height_km": 0.01,
+      "azimuth_deg": 132.067033582,
+      "elevation_deg": -7.684997039,
+      "range_km": 382491.52608,
+      "soe": "2024-Jun-21 12:00:00.000, , ,  132.067033582,      -7.684997039,  3.8249152608E+05, -0.0482050,",
+      "headers": [
+        "Ephemeris / API_USER Sat Nov 14 02:00:36 2026 Pasadena, USA      / Horizons",
+        "Target body name: Earth (399)                     {source: DE441}",
+        "Center body name: Moon (301)                      {source: DE441}",
+        "Center-site name: (user defined site below)",
+        "Start time      : A.D. 2024-Jun-21 12:00:00.0000 UT",
+        "Center geodetic : 222.5, -88.2, .010              {E-lon(deg),Lat(deg),Alt(km)}",
+        "Center radii    : 1737.4, 1737.4, 1737.4 km       {Equator_a, b, pole_c}",
+        "Atmos refraction: NO (AIRLESS)"
+      ]
+    }
+  ]
+}

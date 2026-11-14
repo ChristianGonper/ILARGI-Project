@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ILARGI · recorrido científico</title>
+    <style>
+      :root {
+        --panel: var(--card, #edf3f2);
+        --text: var(--foreground, #172d2d);
+        --muted: var(--muted-foreground, #45615d);
+        --line: var(--border, #bed0cc);
+        --mint: var(--primary, #176c57);
+        --gold: var(--warning, #9a671a);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        color: var(--text);
+        font:
+          16px/1.6 system-ui,
+          sans-serif;
+      }
+      main {
+        max-width: 960px;
+        margin: auto;
+        padding: 0;
+      }
+      h1,
+      h2,
+      h3 {
+        line-height: 1.15;
+      }
+      h1 {
+        font-size: clamp(2.2rem, 6vw, 4.1rem);
+        max-width: 750px;
+        margin: 0.4rem 0 1rem;
+      }
+      h2 {
+        font-size: clamp(1.45rem, 4vw, 2.1rem);
+        margin: 0 0 0.7rem;
+      }
+      p {
+        color: var(--muted);
+      }
+      .eyebrow {
+        color: var(--mint);
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        font-size: 0.76rem;
+        font-weight: 700;
+      }
+      .intro {
+        max-width: 690px;
+        font-size: 1.1rem;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+        margin: 24px 0;
+      }
+      .box {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 20px;
+      }
+      .box strong {
+        color: var(--mint);
+      }
+      .tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 20px 0;
+      }
+      button {
+        font: inherit;
+        color: var(--text);
+        background: transparent;
+        border: 1px solid var(--line);
+        border-radius: 99px;
+        padding: 9px 16px;
+        cursor: pointer;
+      }
+      button[aria-selected="true"] {
+        background: var(--mint);
+        border-color: var(--mint);
+        color: var(--primary-foreground, #fff);
+        font-weight: 700;
+      }
+      section {
+        margin-top: 48px;
+      }
+      .diagram {
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        gap: 12px;
+        padding: 25px 10px;
+        flex-wrap: wrap;
+      }
+      .node {
+        border: 1px solid var(--line);
+        padding: 12px;
+        border-radius: 12px;
+        text-align: center;
+        min-width: 135px;
+      }
+      .arrow {
+        color: var(--gold);
+        font-size: 1.5rem;
+      }
+      .note {
+        border-left: 3px solid var(--gold);
+        padding-left: 16px;
+      }
+      .steps li {
+        margin: 0.6rem 0;
+        color: var(--muted);
+      }
+      code {
+        font-size: 0.9em;
+        color: var(--mint);
+        overflow-wrap: anywhere;
+      }
+      a {
+        color: var(--mint);
+      }
+      [hidden] {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="eyebrow">ILARGI · prototipo científico</div>
+      <h1>Mirar el Sol y la Tierra desde la Luna</h1>
+      <p class="intro">
+        Una guía de lectura del primer flujo lunar: efemérides aparentes, un
+        observador ideal en la superficie y una muestra topográfica real del
+        polo sur.
+      </p>
+      <div class="grid">
+        <div class="box">
+          <strong>01 · Posición</strong><br />Sol y Tierra como objetivos; la
+          Luna es el origen del cálculo central.
+        </div>
+        <div class="box">
+          <strong>02 · Observador</strong><br />Latitud, longitud y altura
+          sitúan un punto sobre una esfera lunar ideal.
+        </div>
+        <div class="box">
+          <strong>03 · Terreno</strong><br />Un recorte LOLA permite
+          inspeccionar alturas reales en su zona de cobertura.
+        </div>
+      </div>
+      <section>
+        <div class="eyebrow">Cómo leer el modelo</div>
+        <h2>Tres piezas, una referencia lunar</h2>
+        <p>
+          Elige una pieza para ver qué aporta y qué no debe interpretarse a
+          partir de ella.
+        </p>
+        <div class="tabs" role="tablist" aria-label="Componentes del modelo">
+          <button
+            role="tab"
+            aria-selected="true"
+            aria-controls="central"
+            id="tab-central"
+          >
+            Centro lunar</button
+          ><button
+            role="tab"
+            aria-selected="false"
+            aria-controls="local"
+            id="tab-local"
+          >
+            Punto en superficie</button
+          ><button
+            role="tab"
+            aria-selected="false"
+            aria-controls="terrain"
+            id="tab-terrain"
+          >
+            Muestra LOLA
+          </button>
+        </div>
+        <div
+          id="central"
+          role="tabpanel"
+          aria-labelledby="tab-central"
+          class="box"
+        >
+          <h3>Vectores aparentes</h3>
+          <div class="diagram">
+            <div class="node">Luna<br /><small>observador central</small></div>
+            <span class="arrow">→</span>
+            <div class="node">Tierra y Sol<br /><small>objetivos</small></div>
+          </div>
+          <p>
+            SPICE usa el marco <code>MOON_ME_DE440_ME421</code> y la corrección
+            <code>LT+S</code> para tiempo de luz y aberración estelar. Los
+            vectores apuntan del observador al objetivo; no son un cálculo de
+            iluminación superficial.
+          </p>
+        </div>
+        <div
+          id="local"
+          role="tabpanel"
+          aria-labelledby="tab-local"
+          class="box"
+          hidden
+        >
+          <h3>Un observador distinto</h3>
+          <p>
+            La posición del instrumento sobre la esfera importa, especialmente
+            para la Tierra cerca del horizonte lunar. El sistema local expresa
+            la dirección mediante azimut desde el norte hacia el este y
+            elevación respecto al plano horizontal ideal.
+          </p>
+          <p class="note">
+            Un ángulo sobre ese plano no incorpora las montañas ni garantiza
+            iluminación útil o comunicaciones.
+          </p>
+        </div>
+        <div
+          id="terrain"
+          role="tabpanel"
+          aria-labelledby="tab-terrain"
+          class="box"
+          hidden
+        >
+          <h3>El terreno tiene límites</h3>
+          <p>
+            El recorte procede de NASA LOLA, con resolución nominal de 80
+            m/píxel y coordenadas cartográficas en ME de DE421. Abarca solo una
+            zona regional del polo sur. La realización lunar DE440 usada por
+            SPICE está muy próxima, pero no es idéntica.
+          </p>
+          <p class="note">
+            Una altura puntual no es un perfil de horizonte. La muestra no basta
+            para decidir si una montaña oculta al Sol o a la Tierra.
+          </p>
+        </div>
+      </section>
+      <section>
+        <div class="eyebrow">En la aplicación</div>
+        <h2>Recorrido recomendado</h2>
+        <ol class="steps">
+          <li>Selecciona la fecha y la hora UTC para el escenario.</li>
+          <li>
+            Consulta los vectores del Sol y la Tierra desde el centro lunar y
+            sus distancias aparentes.
+          </li>
+          <li>
+            Elige un emplazamiento, revisa las direcciones locales y observa
+            cómo cambian al desplazarlo.
+          </li>
+          <li>
+            Inspecciona el recorte de LOLA y comprueba si el punto está dentro
+            de su cobertura.
+          </li>
+          <li>
+            Exporta los datos y revisa siempre el marco, las unidades y las
+            hipótesis.
+          </li>
+        </ol>
+      </section>
+      <section>
+        <div class="eyebrow">Qué queda abierto</div>
+        <h2>Del prototipo al análisis</h2>
+        <p>
+          Faltan un horizonte topográfico validado, discos aparentes, ventanas
+          temporales y evaluación de emplazamientos. La interfaz actual es un
+          prototipo: la tecnología definitiva, web o Python, sigue sin
+          decidirse.
+        </p>
+        <p>
+          Fuentes: <a href="https://naif.jpl.nasa.gov/naif/">NAIF / SPICE</a> ·
+          <a href="https://ssd.jpl.nasa.gov/horizons/">JPL Horizons</a> ·
+          <a href="https://pgda.gsfc.nasa.gov/products/90">NASA LOLA / PGDA</a>
+        </p>
+      </section>
+    </main>
+    <script>
+      for (const tab of document.querySelectorAll('[role="tab"]'))
+        tab.addEventListener("click", () => {
+          for (const t of document.querySelectorAll('[role="tab"]')) {
+            const selected = t === tab;
+            t.setAttribute("aria-selected", String(selected));
+            document.getElementById(t.getAttribute("aria-controls")).hidden =
+              !selected;
+          }
+        });
+    </script>
+  </body>
+</html>
