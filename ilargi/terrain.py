@@ -12,6 +12,21 @@ SAMPLE = (
     / "data/terrain/lola_80m_south_pole_sample.tif"
 )
 RADIUS_M = 1_737_400.0
+POLAR = SAMPLE.with_name("LDEM_80S_80MPP_ADJ.TIF")
+GLOBAL = SAMPLE.with_name("ldem_128.vrt")
+
+
+def raster_indices(dataset, x, y):
+    """Índices proyectados; los mapas cilíndricos completos cierran en longitud."""
+    cols = np.floor((np.asarray(x) - dataset.transform.c) / dataset.transform.a).astype(
+        int
+    )
+    rows = np.floor((np.asarray(y) - dataset.transform.f) / dataset.transform.e).astype(
+        int
+    )
+    if np.isclose(dataset.width * dataset.transform.a, 2 * np.pi * RADIUS_M, rtol=1e-5):
+        cols = cols % dataset.width
+    return rows, cols
 
 
 def dem_metadata(dataset):
@@ -83,7 +98,7 @@ def sample_elevation(
         crs, scale, offset = dem_metadata(dataset)
         transform = Transformer.from_crs(crs.geodetic_crs, crs, always_xy=True)
         x, y = transform.transform(longitude_deg, latitude_deg)
-        row, col = dataset.index(x, y)
+        row, col = raster_indices(dataset, x, y)
         if not (0 <= row < dataset.height and 0 <= col < dataset.width):
             raise ValueError("La ubicación queda fuera del recorte LOLA disponible")
         pixel = dataset.read(1, window=((row, row + 1), (col, col + 1)), masked=True)

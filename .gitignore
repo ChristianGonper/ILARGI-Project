@@ -13,3 +13,8 @@ data/kernels/
 .ruff_cache/
 node_modules/
 salidas/
+
+# Productos topográficos descargados de NASA/PDS
+data/terrain/LDEM_80S_80MPP_ADJ.TIF
+data/terrain/ldem_128.img
+data/terrain/*.part
