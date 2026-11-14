@@ -1,5 +1,6 @@
 """Posiciones geométricas simultáneas en J2000, en kilómetros."""
 
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from threading import RLock
 
@@ -22,6 +23,29 @@ def load_kernels() -> None:
             _loaded = True
 
 
+@contextmanager
+def spice_session():
+    """Carga los kernels verificados y reserva SPICE durante el bloque."""
+    with _lock:
+        load_kernels()
+        yield
+
+
+def require_aware_utc(instant: datetime) -> datetime:
+    """Devuelve el instante en UTC o rechaza una fecha ambigua o fuera de cobertura."""
+    if instant.tzinfo is None or instant.utcoffset() is None:
+        raise ValueError("Se requiere una fecha con zona horaria explícita")
+    utc = instant.astimezone(UTC)
+    if not 1972 <= utc.year <= 2100:
+        raise ValueError("El intervalo admitido es 1972–2100 UTC")
+    return utc
+
+
+def utc_to_et(utc: datetime) -> float:
+    """Segundos ET/TDB desde J2000. Los kernels, incluido el LSK, deben estar cargados."""
+    return float(spice.str2et(utc.strftime("%Y-%m-%d %H:%M:%S.%f UTC")))
+
+
 def positions(instant: datetime, origin: str = "SUN") -> dict[str, np.ndarray]:
     """Vectores geométricos de los centros de masa, relativos a origin.
 
@@ -36,9 +60,8 @@ def positions(instant: datetime, origin: str = "SUN") -> dict[str, np.ndarray]:
     utc = instant.astimezone(UTC)
     if not 1972 <= utc.year <= 2100:
         raise ValueError("El intervalo admitido es 1972–2100 UTC")
-    with _lock:
-        load_kernels()
-        et = spice.str2et(utc.strftime("%Y-%m-%d %H:%M:%S.%f UTC"))
+    with spice_session():
+        et = utc_to_et(utc)
         return {
             body: np.zeros(3)
             if body == origin
