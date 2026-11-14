@@ -10,6 +10,7 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.colors import LightSource, Normalize
 from matplotlib.figure import Figure
 from rasterio.windows import Window
+from scipy.ndimage import binary_dilation
 
 from ilargi.terrain import SAMPLE, TerrainSample, dem_metadata, sample_elevation
 
@@ -87,7 +88,8 @@ def render_terrain_png(
         shade = LightSource(azdeg=315, altdeg=45).hillshade(
             filled, vert_exag=2, dx=pixel_m, dy=pixel_m
         )
-        shade = np.ma.array(shade, mask=~valid)
+        # El relleno temporal no debe crear sombras falsas alrededor de huecos.
+        shade = np.ma.array(shade, mask=binary_dilation(~valid, iterations=1))
         ax.imshow(
             shade,
             origin="upper",
