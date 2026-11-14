@@ -5,6 +5,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import rasterio
 
+from ilargi.horizon import Horizon, horizon_at
 from ilargi.terrain import SAMPLE, TerrainSample
 
 LABELS = {"SUN": "Sol", "EARTH": "Tierra", "MOON": "Luna"}
@@ -65,10 +66,15 @@ def position_table(data: dict[str, np.ndarray]) -> pd.DataFrame:
     )
 
 
-def terrain_figure(sample: TerrainSample | None = None) -> go.Figure:
+def terrain_figure(sample: TerrainSample | None = None, path=SAMPLE) -> go.Figure:
     """Muestra la zona disponible de LOLA; no representa un horizonte local."""
-    with rasterio.open(SAMPLE) as dataset:
-        data = dataset.read(1, out_shape=(256, 256), masked=True).filled(np.nan)
+    with rasterio.open(path) as dataset:
+        scale = min(1.0, 1024 / max(dataset.width, dataset.height))
+        shape = (
+            max(1, int(dataset.height * scale)),
+            max(1, int(dataset.width * scale)),
+        )
+        data = dataset.read(1, out_shape=shape, masked=True).filled(np.nan)
         bounds = dataset.bounds
     dx = (bounds.right - bounds.left) / data.shape[1]
     dy = (bounds.top - bounds.bottom) / data.shape[0]
@@ -79,6 +85,7 @@ def terrain_figure(sample: TerrainSample | None = None) -> go.Figure:
             x=x,
             y=y,
             z=data,
+            zsmooth=False,
             colorscale="Cividis",
             colorbar={"title": "Altura (m)"},
             hovertemplate="X: %{x:.2f} km<br>Y: %{y:.2f} km<br>Altura: %{z:.0f} m<extra></extra>",
@@ -101,4 +108,82 @@ def terrain_figure(sample: TerrainSample | None = None) -> go.Figure:
         margin={"l": 0, "r": 0, "b": 0, "t": 20},
     )
     fig.update_yaxes(scaleanchor="x", scaleratio=1)
+    return fig
+
+
+def sky_figure(series: pd.DataFrame, horizon: Horizon) -> go.Figure:
+    """Trayectorias sobre el perfil topográfico parcial, vistas desde el sitio."""
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=np.append(horizon.azimuth_deg, 360),
+            y=np.append(horizon.elevation_deg, horizon.elevation_deg[0]),
+            name="Horizonte muestreado (parcial)",
+            mode="lines",
+            line={"color": "#b78247"},
+        )
+    )
+    fig.add_hline(y=0, line_dash="dot", annotation_text="Plano horizontal ideal")
+    for body in ("SUN", "EARTH"):
+        track = series[series.objetivo == body].copy()
+        # Evitar una línea artificial que atraviese el gráfico al pasar por el norte.
+        azimuth, elevation, times = [], [], []
+        previous = None
+        for az, el, utc in zip(
+            track.azimut_deg, track.elevacion_deg, track.utc, strict=True
+        ):
+            if previous is not None and abs(az - previous) > 180:
+                azimuth.append(None)
+                elevation.append(None)
+                times.append(None)
+            azimuth.append(az)
+            elevation.append(el)
+            times.append(utc.isoformat())
+            previous = az
+        fig.add_trace(
+            go.Scatter(
+                x=azimuth,
+                y=elevation,
+                customdata=times,
+                name=LABELS[body],
+                mode="lines+markers",
+                marker={"size": 4},
+                line={"color": COLORS[body]},
+                hovertemplate="%{customdata}<br>Azimut: %{x:.2f}°<br>Elevación: %{y:.2f}°<extra>%{fullData.name}</extra>",
+            )
+        )
+    fig.update_layout(
+        height=480,
+        xaxis_title="Azimut desde el norte hacia el este (°)",
+        yaxis_title="Elevación local (°)",
+        xaxis_range=[0, 360],
+        hovermode="closest",
+    )
+    return fig
+
+
+def elevation_figure(series: pd.DataFrame, horizon: Horizon) -> go.Figure:
+    fig = go.Figure()
+    for body in ("SUN", "EARTH"):
+        track = series[series.objetivo == body]
+        fig.add_trace(
+            go.Scatter(
+                x=track.utc,
+                y=track.elevacion_deg,
+                name=LABELS[body],
+                line={"color": COLORS[body]},
+            )
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=track.utc,
+                y=horizon_at(horizon, track.azimut_deg),
+                name=f"Terreno hacia {LABELS[body]} (parcial)",
+                line={"color": COLORS[body], "dash": "dot"},
+            )
+        )
+    fig.add_hline(y=0, line_dash="dash", annotation_text="Plano horizontal ideal")
+    fig.update_layout(
+        height=420, xaxis_title="Fecha y hora UTC", yaxis_title="Elevación local (°)"
+    )
     return fig

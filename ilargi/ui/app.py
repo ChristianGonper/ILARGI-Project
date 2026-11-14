@@ -1,176 +1,178 @@
-"""Prototipo de Streamlit para la geometría lunar aparente."""
+"""Prototipo de análisis desde un único lugar de aterrizaje."""
 
 from datetime import UTC, date, datetime, time
+from pathlib import Path
 
 import numpy as np
-import pandas as pd
 import streamlit as st
 from spiceypy.utils.exceptions import SpiceyError
 
-from ilargi.apparent import apparent_from_lunar_center, apparent_from_lunar_surface
-from ilargi.terrain import sample_elevation
-from ilargi.ui.presentation import format_km, make_figure, terrain_figure
+from ilargi.horizon import calculate_horizon, horizon_at
+from ilargi.series import sky_series
+from ilargi.terrain import SAMPLE, sample_elevation
+from ilargi.ui.presentation import elevation_figure, sky_figure, terrain_figure
 
-LABELS = {"EARTH": "Tierra", "SUN": "Sol"}
+SAMPLE_20 = SAMPLE.with_name("lola_20m_south_pole_sample.tif")
+
+
+@st.cache_data(show_spinner=False)
+def analyse(start, hours, step, lat, lon, instrument, search_km, az_step, path):
+    terrain = sample_elevation(lat, lon, Path(path))
+    horizon = calculate_horizon(
+        lat, lon, instrument, search_km * 1000, az_step, Path(path)
+    )
+    series = sky_series(start, hours, step, lat, lon, terrain.elevation_m + instrument)
+    series["horizonte_parcial_deg"] = horizon_at(horizon, series.azimut_deg)
+    series["margen_parcial_deg"] = series.elevacion_deg - series.horizonte_parcial_deg
+    return terrain, horizon, series
 
 
 def run() -> None:
     st.set_page_config(
-        page_title="ILARGI | Observador lunar", page_icon="🌕", layout="wide"
+        page_title="ILARGI | Emplazamiento lunar", page_icon="🌕", layout="wide"
     )
-    st.title("ILARGI · La Luna como observador")
+    st.title("ILARGI · Cielo desde el lugar de aterrizaje")
     st.write(
-        "Explora dónde aparecen la Tierra y el Sol desde el centro lunar y desde un punto de su superficie."
+        "Explora las trayectorias aparentes del Sol y la Tierra desde un emplazamiento lunar y compáralas con el relieve muestreado."
     )
-    today = datetime.now(UTC)
-    col1, col2 = st.columns(2)
-    with col1:
-        day = st.date_input(
-            "Fecha UTC",
-            value=today.date(),
-            min_value=date(1972, 1, 1),
-            max_value=date(2100, 12, 31),
-        )
-    with col2:
-        hour = st.time_input("Hora UTC", value=time(today.hour, today.minute), step=60)
-    instant = datetime.combine(day, hour, tzinfo=UTC)
+    with st.form("scenario"):
+        st.subheader("Escenario")
+        a, b, c = st.columns(3)
+        with a:
+            day = st.date_input(
+                "Fecha inicial UTC",
+                value=date(2026, 4, 2),
+                min_value=date(1972, 1, 1),
+                max_value=date(2100, 12, 31),
+            )
+            lat = st.number_input(
+                "Latitud planetocéntrica (°)",
+                min_value=-89.999,
+                max_value=89.999,
+                value=-89.5,
+                format="%.3f",
+            )
+        with b:
+            hour = st.time_input("Hora inicial UTC", value=time(15), step=60)
+            lon = st.number_input(
+                "Longitud este (°)",
+                min_value=-180.0,
+                max_value=180.0,
+                value=0.0,
+                format="%.3f",
+            )
+        with c:
+            hours = st.number_input(
+                "Duración (horas)", min_value=1, max_value=2160, value=168, step=24
+            )
+            step = st.selectbox(
+                "Paso temporal",
+                ["1 hora", "30 minutos", "15 minutos", "3 horas", "6 horas"],
+                index=0,
+            )
+        left, middle, right = st.columns(3)
+        with left:
+            source = st.selectbox(
+                "Recorte LOLA",
+                ["20 m/píxel · zona local", "80 m/píxel · zona más amplia"],
+            )
+        with middle:
+            instrument = st.number_input(
+                "Altura del instrumento sobre el terreno (m)",
+                min_value=0.0,
+                max_value=1000.0,
+                value=2.0,
+                step=1.0,
+            )
+        with right:
+            search = st.number_input(
+                "Distancia de búsqueda del horizonte (km)",
+                min_value=1.0,
+                max_value=100.0,
+                value=20.0,
+                step=1.0,
+            )
+        submitted = st.form_submit_button("Calcular escenario", type="primary")
+    if not submitted and "scenario_result" not in st.session_state:
+        st.info("Configura el emplazamiento y pulsa «Calcular escenario».")
+        return
+    if submitted:
+        try:
+            path = SAMPLE_20 if source.startswith("20") else SAMPLE
+            start = datetime.combine(day, hour, tzinfo=UTC)
+            minutes = {
+                "1 hora": 60,
+                "30 minutos": 30,
+                "15 minutos": 15,
+                "3 horas": 180,
+                "6 horas": 360,
+            }[step]
+            terrain, horizon, series = analyse(
+                start, hours, minutes, lat, lon, instrument, search, 2.0, str(path)
+            )
+            st.session_state.scenario_result = (
+                terrain,
+                horizon,
+                series,
+                str(path),
+                lat,
+                lon,
+                instrument,
+                start,
+                minutes,
+            )
+        except (ValueError, OSError, SpiceyError) as exc:
+            st.error(f"No se ha podido calcular el escenario: {exc}")
+            return
+    terrain, horizon, series, path, lat, lon, instrument, start, minutes = (
+        st.session_state.scenario_result
+    )
     st.caption(
-        "Marco MOON_ME_DE440_ME421 · Corrección aparente LT+S · Objetivos: centros de Tierra y Sol"
+        f"Lugar: {lat:.3f}° latitud, {lon:.3f}° longitud este · inicio {start.isoformat()} · SPICE MOON_ME_DE440_ME421 · LT+S"
     )
-
-    try:
-        center = apparent_from_lunar_center(instant)
-    except (ValueError, OSError, SpiceyError) as exc:
-        st.error(f"No se han podido calcular las efemérides: {exc}")
-        st.info("Comprueba los datos con `uv run python -m ilargi.kernels`.")
-        st.stop()
-    st.header("1 · Desde el centro de la Luna")
-    c1, c2 = st.columns(2)
-    c1.metric(
-        "Distancia aparente a la Tierra",
-        f"{format_km(center.target('EARTH').range_km)} km",
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Altura del terreno sobre la esfera", f"{terrain.elevation_m:.1f} m")
+    c2.metric("Altura del instrumento sobre el terreno", f"{instrument:.1f} m")
+    c3.metric("Resolución nominal del DEM", f"{horizon.pixel_m:.0f} m/píxel")
+    min_coverage, max_coverage = (
+        np.min(horizon.coverage_m) / 1000,
+        np.max(horizon.coverage_m) / 1000,
     )
-    c2.metric(
-        "Distancia aparente al Sol", f"{format_km(center.target('SUN').range_km)} km"
-    )
-    view = st.radio(
-        "Vista de detalle",
-        ["Tierra desde la Luna", "Sol desde la Luna"],
-        horizontal=True,
-    )
-    target = "EARTH" if view.startswith("Tierra") else "SUN"
-    position = np.array(center.target(target).position_km)
-    st.plotly_chart(
-        make_figure({"MOON": np.zeros(3), target: position}, ("MOON", target)),
-        width="stretch",
+    st.warning(
+        f"Horizonte experimental y parcial: el terreno disponible alcanza entre {min_coverage:.1f} y {max_coverage:.1f} km según el azimut, frente a {horizon.requested_m / 1000:.1f} km solicitados. Puede haber obstáculos fuera del recorte o entre muestras; no se certifica visibilidad."
     )
     st.caption(
-        "Vectores aparentes con origen en el centro lunar. Posiciones a escala; marcadores ampliados. La vista se centra en un objetivo cada vez."
+        "La altitud LOLA de DE421 ME se aproxima en DE440 ME421 para esta demostración; ambos marcos no son idénticos. Las trayectorias representan los centros de los cuerpos, sin discos ni eclipses."
     )
-    center_rows = [
-        {
-            "Objetivo": LABELS[item.target],
-            "X (km)": item.position_km[0],
-            "Y (km)": item.position_km[1],
-            "Z (km)": item.position_km[2],
-            "Distancia (km)": item.range_km,
-            "Tiempo de luz (s)": item.light_time_s,
-        }
-        for item in center.targets
-    ]
-    st.dataframe(pd.DataFrame(center_rows), hide_index=True, width="stretch")
-
-    st.header("2 · Desde un punto en la superficie")
-    st.write(
-        "La altura se mide sobre una esfera de referencia de 1.737,4 km de radio; no es automáticamente la altura del terreno."
+    st.subheader("Trayectorias sobre el horizonte del lugar")
+    st.plotly_chart(sky_figure(series, horizon), width="stretch")
+    st.subheader("Elevación a lo largo del tiempo")
+    st.plotly_chart(elevation_figure(series, horizon), width="stretch")
+    st.caption(
+        "Las líneas punteadas muestran el perfil muestreado hacia cada cuerpo; la línea horizontal es el plano ideal. El horizonte depende de la dirección y es incompleto."
     )
-    left, middle, right = st.columns(3)
-    with left:
-        lat = st.number_input(
-            "Latitud planetocéntrica (°)",
-            min_value=-89.999,
-            max_value=89.999,
-            value=-89.5,
-            step=0.1,
-            format="%.3f",
-        )
-    with middle:
-        lon = st.number_input(
-            "Longitud este (°)",
-            min_value=-180.0,
-            max_value=180.0,
-            value=0.0,
-            step=1.0,
-            format="%.3f",
-        )
-    with right:
-        height_m = st.number_input(
-            "Altura sobre la esfera (m)",
-            min_value=-10000.0,
-            max_value=100000.0,
-            value=0.0,
-            step=10.0,
-        )
-    try:
-        surface = apparent_from_lunar_surface(instant, lat, lon, height_m / 1000)
-        surface_rows = [
-            {
-                "Objetivo": LABELS[item.target],
-                "Azimut (°)": item.azimuth_deg,
-                "Elevación (°)": item.elevation_deg,
-                "Distancia (km)": item.range_km,
-                "Tiempo de luz (s)": item.light_time_s,
-            }
-            for item in surface.targets
-        ]
-        st.dataframe(pd.DataFrame(surface_rows), hide_index=True, width="stretch")
-        st.caption(
-            "Azimut desde el norte hacia el este; elevación sobre el plano horizontal local. Se calcula la dirección del centro de cada cuerpo, sin horizonte topográfico."
-        )
-        export = pd.DataFrame(surface_rows).assign(
-            instante_utc=instant.isoformat(),
+    with st.expander("Datos del escenario"):
+        st.dataframe(series, hide_index=True, width="stretch")
+        export = series.assign(
             latitud_deg=lat,
             longitud_este_deg=lon,
-            altura_sobre_esfera_m=height_m,
+            instrumento_sobre_terreno_m=instrument,
+            terreno_m=terrain.elevation_m,
             marco="MOON_ME_DE440_ME421",
             correccion="LT+S",
-            observador="superficie esfera ideal",
-            modelo="DE440s",
+            dem=Path(path).name,
+            paso_temporal_min=minutes,
+            distancia_buscada_m=horizon.requested_m,
+            horizonte="parcial; no certifica visibilidad",
         )
         st.download_button(
-            "Descargar observación CSV",
+            "Descargar serie CSV",
             export.to_csv(index=False).encode("utf-8-sig"),
-            "ilargi-observacion-lunar.csv",
+            "ilargi-serie-lunar.csv",
             "text/csv",
         )
-    except (ValueError, OSError, SpiceyError) as exc:
-        st.error(f"No se ha podido calcular el observador de superficie: {exc}")
-
-    st.header("3 · Una muestra de terreno LOLA")
-    st.write(
-        "Un recorte real de 80 m/píxel alrededor de 89,5° S, 0° E permite consultar la altura en el píxel que contiene el punto."
-    )
-    try:
-        sample = sample_elevation(lat, lon)
-        st.metric(
-            "Altura LOLA del píxel",
-            f"{sample.elevation_m:,.1f} m".replace(",", "\u202f"),
-        )
-        st.caption(
-            "Esta altura no se aplica automáticamente al observador: puedes copiarla en el campo de altura si deseas explorar esa aproximación."
-        )
-    except ValueError:
-        sample = None
-        st.warning(
-            "El punto está fuera del recorte disponible o no tiene datos. El cálculo de superficie sigue usando la esfera ideal."
-        )
-    st.plotly_chart(terrain_figure(sample), width="stretch")
+    st.subheader("Muestra de topografía LOLA")
+    st.plotly_chart(terrain_figure(terrain, Path(path)), width="stretch")
     st.caption(
-        "La imagen reduce la resolución para visualizarla. LOLA usa ME de DE421; el marco SPICE usado está muy próximo, pero no es idéntico."
-    )
-    st.info(
-        "El recorte no permite calcular el horizonte completo. La elevación mostrada no implica visibilidad real, potencia solar ni comunicaciones. No se consideran relieve obstructor ni tamaño de los discos."
-    )
-    st.caption(
-        "UTC futuro se interpreta con el último segundo intercalar disponible. El marco lunar, los datos y las limitaciones se describen en la documentación del proyecto."
+        "Los recortes incluidos se muestran a su resolución de píxel nativa, sin suavizado: 20 o 80 m/píxel. El tamaño de píxel no equivale a precisión del terreno."
     )
