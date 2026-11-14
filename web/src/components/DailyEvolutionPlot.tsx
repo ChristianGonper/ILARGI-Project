@@ -1,16 +1,59 @@
 import { useEffect, useRef } from "react";
 import Plotly from "plotly.js-dist-min";
-import type { SiteAnalysisResult } from "../types";
+import type { SiteAnalysisResult, SkySample } from "../types";
+import { PlotFullscreenShell } from "./PlotFullscreenShell";
+import { buildSplitTimeTrack } from "./plotTracks";
 
 interface DailyEvolutionPlotProps {
   result: SiteAnalysisResult;
   height?: number;
 }
 
-export function DailyEvolutionPlot({
+function appendTimeBodyTraces(
+  traces: Record<string, unknown>[],
+  samples: SkySample[],
+  name: string,
+  legendgroup: string,
+  color: string,
+) {
+  const { visible, occluded } = buildSplitTimeTrack(samples);
+  const hasVisible = visible.x.length > 0;
+  const hasOccluded = occluded.x.length > 0;
+
+  if (hasVisible) {
+    traces.push({
+      x: visible.x,
+      y: visible.y,
+      name,
+      legendgroup,
+      showlegend: true,
+      type: "scatter",
+      mode: "lines",
+      line: { color, width: 2 },
+    });
+  }
+
+  if (hasOccluded) {
+    traces.push({
+      x: occluded.x,
+      y: occluded.y,
+      name,
+      legendgroup,
+      showlegend: !hasVisible,
+      type: "scatter",
+      mode: "lines",
+      line: { color, width: 2, dash: "dash" },
+    });
+  }
+}
+
+function DailyEvolutionPlotCanvas({
   result,
-  height = 250,
-}: DailyEvolutionPlotProps) {
+  height,
+}: {
+  result: SiteAnalysisResult;
+  height: number;
+}) {
   const elRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -18,24 +61,15 @@ export function DailyEvolutionPlot({
     if (!root) return;
 
     const isIdeal = result.horizon_mode === "ideal";
-    const traces: Record<string, unknown>[] = [
-      {
-        x: result.series.sun.map((s) => s.utc),
-        y: result.series.sun.map((s) => s.elevation_deg),
-        name: "Sol",
-        type: "scatter",
-        mode: "lines",
-        line: { color: "#F59E0B", width: 2 },
-      },
-      {
-        x: result.series.earth.map((s) => s.utc),
-        y: result.series.earth.map((s) => s.elevation_deg),
-        name: "Tierra",
-        type: "scatter",
-        mode: "lines",
-        line: { color: "#38BDF8", width: 2 },
-      },
-    ];
+    const traces: Record<string, unknown>[] = [];
+    appendTimeBodyTraces(traces, result.series.sun, "Sol", "SUN", "#F59E0B");
+    appendTimeBodyTraces(
+      traces,
+      result.series.earth,
+      "Tierra",
+      "EARTH",
+      "#38BDF8",
+    );
 
     if (!isIdeal) {
       traces.push(
@@ -100,4 +134,22 @@ export function DailyEvolutionPlot({
   }, [result, height]);
 
   return <div ref={elRef} style={{ width: "100%", height }} />;
+}
+
+export function DailyEvolutionPlot({
+  result,
+  height = 250,
+}: DailyEvolutionPlotProps) {
+  const subtitle = `${result.label} · ${result.site_name} (λ=${result.latitude_deg.toFixed(3)}°, θ=${result.longitude_east_deg.toFixed(3)}°E · ${result.horizon_label})`;
+  return (
+    <PlotFullscreenShell
+      title="Evolución de los días (Elevación UTC)"
+      subtitle={subtitle}
+      height={height}
+    >
+      {(renderHeight) => (
+        <DailyEvolutionPlotCanvas result={result} height={renderHeight} />
+      )}
+    </PlotFullscreenShell>
+  );
 }

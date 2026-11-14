@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import Plotly from "plotly.js-dist-min";
 import type { SiteAnalysisResult, SkySample } from "../types";
+import { PlotFullscreenShell } from "./PlotFullscreenShell";
+import { buildSplitSkyTrack, centerAzimuth } from "./plotTracks";
 
 interface SkyAzimuthPlotProps {
   result: SiteAnalysisResult;
@@ -22,38 +24,59 @@ function circularMeanDeg(azimuths: number[]): number {
   return ((angle % 360) + 360) % 360;
 }
 
-function centerAzimuth(az: number, center: number): number {
-  return ((((az - center + 180) % 360) + 360) % 360) - 180;
-}
-
-function buildTrackWithBreaks(
+function appendBodyTraces(
+  traces: Record<string, unknown>[],
   samples: SkySample[],
   centerDeg: number,
-): {
-  x: (number | null)[];
-  y: (number | null)[];
-  customdata: (string | null)[];
-} {
-  const x: (number | null)[] = [];
-  const y: (number | null)[] = [];
-  const customdata: (string | null)[] = [];
-  let prev: number | null = null;
-  for (const s of samples) {
-    const rel = centerAzimuth(s.azimuth_deg, centerDeg);
-    if (prev !== null && Math.abs(rel - prev) > 180) {
-      x.push(null);
-      y.push(null);
-      customdata.push(null);
-    }
-    x.push(rel);
-    y.push(s.elevation_deg);
-    customdata.push(s.utc);
-    prev = rel;
+  name: string,
+  legendgroup: string,
+  color: string,
+) {
+  const { visible, occluded } = buildSplitSkyTrack(samples, centerDeg);
+  const hasVisible = visible.x.length > 0;
+  const hasOccluded = occluded.x.length > 0;
+  const hovertemplate = `%{customdata}<br>Azimut rel.: %{x:.2f}°<br>Elevación: %{y:.2f}°<extra>${name}</extra>`;
+
+  if (hasVisible) {
+    traces.push({
+      x: visible.x,
+      y: visible.y,
+      customdata: visible.customdata,
+      name,
+      legendgroup,
+      showlegend: true,
+      type: "scatter",
+      mode: "lines+markers",
+      marker: { size: visible.markerSizes, color },
+      line: { color, width: 2 },
+      hovertemplate,
+    });
   }
-  return { x, y, customdata };
+
+  if (hasOccluded) {
+    traces.push({
+      x: occluded.x,
+      y: occluded.y,
+      customdata: occluded.customdata,
+      name,
+      legendgroup,
+      showlegend: !hasVisible,
+      type: "scatter",
+      mode: "lines+markers",
+      marker: { size: occluded.markerSizes, color },
+      line: { color, width: 2, dash: "dash" },
+      hovertemplate,
+    });
+  }
 }
 
-export function SkyAzimuthPlot({ result, height = 300 }: SkyAzimuthPlotProps) {
+function SkyAzimuthPlotCanvas({
+  result,
+  height,
+}: {
+  result: SiteAnalysisResult;
+  height: number;
+}) {
   const elRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -101,33 +124,22 @@ export function SkyAzimuthPlot({ result, height = 300 }: SkyAzimuthPlotProps) {
       });
     }
 
-    const sunTrack = buildTrackWithBreaks(result.series.sun, centerDeg);
-    traces.push({
-      x: sunTrack.x,
-      y: sunTrack.y,
-      customdata: sunTrack.customdata,
-      name: "Sol",
-      type: "scatter",
-      mode: "lines+markers",
-      marker: { size: 3.5 },
-      line: { color: "#F59E0B", width: 2 },
-      hovertemplate:
-        "%{customdata}<br>Azimut rel.: %{x:.2f}°<br>Elevación: %{y:.2f}°<extra>Sol</extra>",
-    });
-
-    const earthTrack = buildTrackWithBreaks(result.series.earth, centerDeg);
-    traces.push({
-      x: earthTrack.x,
-      y: earthTrack.y,
-      customdata: earthTrack.customdata,
-      name: "Tierra",
-      type: "scatter",
-      mode: "lines+markers",
-      marker: { size: 3.5 },
-      line: { color: "#38BDF8", width: 2 },
-      hovertemplate:
-        "%{customdata}<br>Azimut rel.: %{x:.2f}°<br>Elevación: %{y:.2f}°<extra>Tierra</extra>",
-    });
+    appendBodyTraces(
+      traces,
+      result.series.sun,
+      centerDeg,
+      "Sol",
+      "SUN",
+      "#F59E0B",
+    );
+    appendBodyTraces(
+      traces,
+      result.series.earth,
+      centerDeg,
+      "Tierra",
+      "EARTH",
+      "#38BDF8",
+    );
 
     const layout: Record<string, unknown> = {
       height,
@@ -185,4 +197,19 @@ export function SkyAzimuthPlot({ result, height = 300 }: SkyAzimuthPlotProps) {
   }, [result, height]);
 
   return <div ref={elRef} style={{ width: "100%", height }} />;
+}
+
+export function SkyAzimuthPlot({ result, height = 300 }: SkyAzimuthPlotProps) {
+  const subtitle = `${result.label} · ${result.site_name} (λ=${result.latitude_deg.toFixed(3)}°, θ=${result.longitude_east_deg.toFixed(3)}°E · ${result.horizon_label})`;
+  return (
+    <PlotFullscreenShell
+      title="Diagrama Acimut vs Elevación (Horizonte · Sol · Tierra)"
+      subtitle={subtitle}
+      height={height}
+    >
+      {(renderHeight) => (
+        <SkyAzimuthPlotCanvas result={result} height={renderHeight} />
+      )}
+    </PlotFullscreenShell>
+  );
 }

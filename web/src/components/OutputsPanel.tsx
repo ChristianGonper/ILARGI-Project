@@ -78,9 +78,6 @@ export function OutputsPanel({ result, onClose }: OutputsPanelProps) {
       </div>
 
       <div className="chart-card">
-        <div className="chart-title">
-          Diagrama Acimut vs Elevación (Horizonte · Sol · Tierra)
-        </div>
         <SkyAzimuthPlot result={result} height={290} />
       </div>
 
@@ -116,7 +113,6 @@ export function OutputsPanel({ result, onClose }: OutputsPanelProps) {
       </div>
 
       <div className="chart-card">
-        <div className="chart-title">Evolución de los días (Elevación UTC)</div>
         <DailyEvolutionPlot result={result} height={230} />
       </div>
 
