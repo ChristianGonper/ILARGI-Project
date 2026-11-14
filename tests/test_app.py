@@ -9,8 +9,9 @@ def test_app_displays_both_views():
     ).run()
     assert not app.exception
     assert not app.error
-    assert len(app.get("plotly_chart")) == 1
-    app.radio[0].set_value("Detalle Tierra–Luna").run()
+    assert len(app.get("plotly_chart")) == 2
+    app.radio[0].set_value("Sol desde la Luna").run()
     assert not app.exception
     assert not app.error
-    assert app.dataframe[0].value["Cuerpo"].tolist() == ["Tierra", "Luna"]
+    assert set(app.dataframe[0].value["Objetivo"]) == {"Tierra", "Sol"}
+    assert set(app.dataframe[1].value["Objetivo"]) == {"Tierra", "Sol"}

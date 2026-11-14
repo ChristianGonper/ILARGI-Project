@@ -3,6 +3,9 @@
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+import rasterio
+
+from ilargi.terrain import SAMPLE, TerrainSample
 
 LABELS = {"SUN": "Sol", "EARTH": "Tierra", "MOON": "Luna"}
 COLORS = {"SUN": "#f4bb43", "EARTH": "#478dec", "MOON": "#bfc7d1"}
@@ -60,3 +63,42 @@ def position_table(data: dict[str, np.ndarray]) -> pd.DataFrame:
             for body, vector in data.items()
         ]
     )
+
+
+def terrain_figure(sample: TerrainSample | None = None) -> go.Figure:
+    """Muestra la zona disponible de LOLA; no representa un horizonte local."""
+    with rasterio.open(SAMPLE) as dataset:
+        data = dataset.read(1, out_shape=(256, 256), masked=True).filled(np.nan)
+        bounds = dataset.bounds
+    dx = (bounds.right - bounds.left) / data.shape[1]
+    dy = (bounds.top - bounds.bottom) / data.shape[0]
+    x = (bounds.left + (np.arange(data.shape[1]) + 0.5) * dx) / 1000
+    y = (bounds.top - (np.arange(data.shape[0]) + 0.5) * dy) / 1000
+    fig = go.Figure(
+        go.Heatmap(
+            x=x,
+            y=y,
+            z=data,
+            colorscale="Cividis",
+            colorbar={"title": "Altura (m)"},
+            hovertemplate="X: %{x:.2f} km<br>Y: %{y:.2f} km<br>Altura: %{z:.0f} m<extra></extra>",
+        )
+    )
+    if sample is not None:
+        fig.add_trace(
+            go.Scatter(
+                x=[sample.x_m / 1000],
+                y=[sample.y_m / 1000],
+                mode="markers",
+                name="Punto",
+                marker={"color": "red", "size": 10, "symbol": "cross"},
+            )
+        )
+    fig.update_layout(
+        height=500,
+        xaxis_title="X estereográfico (km)",
+        yaxis_title="Y estereográfico (km)",
+        margin={"l": 0, "r": 0, "b": 0, "t": 20},
+    )
+    fig.update_yaxes(scaleanchor="x", scaleratio=1)
+    return fig
