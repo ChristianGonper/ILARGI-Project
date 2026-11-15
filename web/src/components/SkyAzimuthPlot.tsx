@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { animateTracks } from "./animateTracks";
+import { animateTracks, type TrackAnimationController } from "./animateTracks";
 import type { SiteAnalysisResult, SkySample } from "../types";
 import { PlotFullscreenShell } from "./PlotFullscreenShell";
 
@@ -57,11 +57,20 @@ function buildTrackWithBreaks(
 function SkyAzimuthPlotCanvas({
   result,
   height,
+  paused = false,
 }: {
   result: SiteAnalysisResult;
   height: number;
+  paused?: boolean;
 }) {
   const elRef = useRef<HTMLDivElement | null>(null);
+  const controllerRef = useRef<TrackAnimationController | null>(null);
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
+
+  useEffect(() => {
+    controllerRef.current?.setPaused(paused);
+  }, [paused]);
 
   useEffect(() => {
     const root = elRef.current;
@@ -110,7 +119,7 @@ function SkyAzimuthPlotCanvas({
       marker: { size: 3.5 },
       line: { color: "#F59E0B", width: 2 },
       hovertemplate:
-        "%{customdata}<br>Relative azimuth: %{x:.2f}°<br>Elevation: %{y:.2f}°<extra>Sun</extra>",
+        "%{customdata}<br>Azimuth: %{x:.2f}°<br>Elevation: %{y:.2f}°<extra>Sun</extra>",
     });
 
     const earthTrack = buildTrackWithBreaks(result.series.earth, centerDeg);
@@ -125,7 +134,7 @@ function SkyAzimuthPlotCanvas({
       marker: { size: 3.5 },
       line: { color: "#38BDF8", width: 2 },
       hovertemplate:
-        "%{customdata}<br>Relative azimuth: %{x:.2f}°<br>Elevation: %{y:.2f}°<extra>Earth</extra>",
+        "%{customdata}<br>Azimuth: %{x:.2f}°<br>Elevation: %{y:.2f}°<extra>Earth</extra>",
     });
 
     if (!isIdeal) {
@@ -150,8 +159,7 @@ function SkyAzimuthPlotCanvas({
       line: { color: isIdeal ? "#94A3B8" : "#F97316", width: 2 },
       fill: isIdeal ? undefined : "tonexty",
       fillcolor: isIdeal ? undefined : "rgba(249, 115, 22, 0.28)",
-      hovertemplate:
-        "Relative azimuth: %{x:.1f}°<br>Horizon: %{y:.2f}°<extra></extra>",
+      hovertemplate: "Azimuth: %{x:.1f}°<br>Horizon: %{y:.2f}°<extra></extra>",
     });
 
     const truncPts = hOrder.filter((p) => p.trunc && p.el !== null);
@@ -197,8 +205,11 @@ function SkyAzimuthPlotCanvas({
         },
       ],
       xaxis: {
-        title: { text: `Azimuth relative to ${centerDeg.toFixed(1)}° (°)` },
+        title: { text: "Azimuth (°)" },
         range: [-180, 180],
+        tickmode: "array",
+        tickvals: [-90, 0, 90],
+        ticktext: ["-90", "0", "90"],
         gridcolor: "#42483f",
         zerolinecolor: "#42483f",
         tickfont: { color: "#94A3B8" },
@@ -213,7 +224,12 @@ function SkyAzimuthPlotCanvas({
       hovermode: "closest",
     };
 
-    return animateTracks(root, traces, layout);
+    return animateTracks(root, traces, layout, {
+      initialPaused: pausedRef.current,
+      onController: (ctrl) => {
+        controllerRef.current = ctrl;
+      },
+    });
   }, [result, height]);
 
   return <div ref={elRef} style={{ width: "100%", height }} />;
@@ -228,8 +244,12 @@ export function SkyAzimuthPlot({ result, height = 300 }: SkyAzimuthPlotProps) {
       subtitle={subtitle}
       height={height}
     >
-      {(renderHeight) => (
-        <SkyAzimuthPlotCanvas result={result} height={renderHeight} />
+      {(renderHeight, _isFullscreen, paused) => (
+        <SkyAzimuthPlotCanvas
+          result={result}
+          height={renderHeight}
+          paused={paused}
+        />
       )}
     </PlotFullscreenShell>
   );

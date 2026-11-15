@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { animateTracks } from "./animateTracks";
+import { animateTracks, type TrackAnimationController } from "./animateTracks";
 import type { SiteAnalysisResult } from "../types";
 import { PlotFullscreenShell } from "./PlotFullscreenShell";
 
@@ -11,11 +11,20 @@ interface DailyEvolutionPlotProps {
 function DailyEvolutionPlotCanvas({
   result,
   height,
+  paused = false,
 }: {
   result: SiteAnalysisResult;
   height: number;
+  paused?: boolean;
 }) {
   const elRef = useRef<HTMLDivElement | null>(null);
+  const controllerRef = useRef<TrackAnimationController | null>(null);
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
+
+  useEffect(() => {
+    controllerRef.current?.setPaused(paused);
+  }, [paused]);
 
   useEffect(() => {
     const root = elRef.current;
@@ -107,7 +116,12 @@ function DailyEvolutionPlotCanvas({
       hovermode: "x unified",
     };
 
-    return animateTracks(root, traces, layout);
+    return animateTracks(root, traces, layout, {
+      initialPaused: pausedRef.current,
+      onController: (ctrl) => {
+        controllerRef.current = ctrl;
+      },
+    });
   }, [result, height]);
 
   return <div ref={elRef} style={{ width: "100%", height }} />;
@@ -125,8 +139,12 @@ export function DailyEvolutionPlot({
       subtitle={subtitle}
       height={height}
     >
-      {(renderHeight) => (
-        <DailyEvolutionPlotCanvas result={result} height={renderHeight} />
+      {(renderHeight, _isFullscreen, paused) => (
+        <DailyEvolutionPlotCanvas
+          result={result}
+          height={renderHeight}
+          paused={paused}
+        />
       )}
     </PlotFullscreenShell>
   );
