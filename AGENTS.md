@@ -18,25 +18,28 @@ ILARGI offers **two distinct experiences built on the same scientific engine** (
 - **Ephemerides and two non-interchangeable observers:**
   - `ephemeris.py` manages kernel loading, UTC validation, time conversion, and serialized access to SPICE. `education.py` computes geometric `J2000` vectors without corrections (`NONE`) for the three-body view.
   - `apparent.py` computes apparent directions with `LT+S` in the explicit **`MOON_ME_DE440_ME421`** frame on the reference sphere. The surface observer includes the velocity due to lunar rotation.
-- **Visual 3D terrain versus scientific DEM:** the Three.js globe uses a reduced global DEM, (~3.8 km/pixel) and illustrative lighting.
+- **Visual 3D terrain versus scientific DEM:** the Three.js globe uses a reduced global DEM (~3.8 km/pixel) and illustrative lighting.
 - **LOLA topography and frames ([ilargi/terrain.py](ilargi/terrain.py), [ilargi/horizon.py](ilargi/horizon.py)):**
   - LOLA DEMs use the **DE421** `ME` frame.
-  - The repository includes local crops ()`89.5° S, 0° E`) and supports downloading the full DEMs.
+  - The repository includes local crops (`89.5° S, 0° E`) and supports downloading the full DEMs.
 
 ## Basic structure
 
-- `ilargi/`: Python scientific engine.
+- `main.py` & `Dockerfile`: local FastAPI entry point and Cloud Run production image.
+- `ilargi/`: Python scientific engine, API transport, and CLI utilities.
+- `web/`: React + TypeScript + Three.js + Plotly.js frontend and precomputed `/demo` catalog.
 - `data/`: `kernels/` (downloadable NAIF kernels), `materials/` (LP-GRS and WEH), and `terrain/` (LOLA crops and `ldem_128.vrt`).
-- `docs/`: technical documentation covering conventions, limitations, and validation against JPL Horizons.
-- `scripts/`: data preparation utilities.
+- `docs/`: technical, deployment, and validation documentation.
+- `scripts/`: data preparation and Cloudflare Pages / Google Cloud Run deployment scripts.
 
 ## Getting started and useful commands
 
-NAIF kernels (~45 MB) **are not tracked in Git** and are required to run the API and Python tests. `ilargi/kernels.py` looks in `data/kernels/`, `~/.ilargi/kernels`, or `ILARGI_KERNEL_DIR`:
+NAIF kernels (~45 MB) **are not tracked in Git** and are required to run the API and Python tests. `ilargi/kernels.py` checks `ILARGI_KERNEL_DIR`, then `data/kernels/`, then `~/.ilargi/kernels`:
 
 ```powershell
-uv sync
+uv sync --locked
 uv run python -m ilargi.kernels
+npm ci
 npm --prefix web ci
 npm --prefix web run build
 uv run python main.py
