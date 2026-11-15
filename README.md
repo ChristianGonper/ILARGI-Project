@@ -11,6 +11,8 @@
 - **Scientific Backend API (Google Cloud Run, `europe-west1`):** https://ilargi-api-l4mfoqterq-ew.a.run.app/api/health
 - **Offline/Cold-Start Resilience:** Automatically falls back to a SHA-256-verified catalog of precomputed engine outputs (`web/public/demo/`) whenever the live API times out or is temporarily unavailable.
 
+![ILARGI Home Observatory](docs/media/home.png)
+
 ---
 
 ## Table of Contents
@@ -19,7 +21,7 @@
   - [Experience 01: Education Mode and Lunar Landing Game](#experience-01-education-mode-and-lunar-landing-game)
   - [Experience 02: Mission Analysis](#experience-02-mission-analysis)
 - [System and Hybrid Cloud Architecture](#system-and-hybrid-cloud-architecture)
-- [Screenshots and Demo Media](#screenshots-and-demo-media)
+- [Application Media and Video](#application-media-and-video)
 - [Repository Overview](#repository-overview)
 - [Code Dependencies](#code-dependencies)
 - [Run Locally from Original Sources](#run-locally-from-original-sources)
@@ -40,10 +42,17 @@ Designed for students, outreach, and intuitive conceptual exploration:
 - **Interactive Synodic Cycle (`~708.73 h`):** Scrub or animate a full lunar day across 23 curated landmarks (Peaks of Eternal Light, Permanently Shadowed Regions, Apollo/Luna/Chang'e landing sites, and laser retroreflectors), with quick presets for New Moon, First Quarter, Full Moon, and Last Quarter.
 - **Synchronized 3-Body Orbit Mini-View:** Visualizes instantaneous `J2000` Sun–Earth–Moon geometry alongside local surface illumination in `MOON_ME_DE440_ME421`.
 - **Subsurface & Resource Context:** Toggles Lawrence et al. (2022) water-equivalent hydrogen (WEH) overlays across the 3D globe and surfaces spacecraft classroom guides (`docs/classroom-spacecraft.md`).
+
+![Education Mode: 3D Moon Globe, WEH Layer, and 3-Body Orbits](docs/media/education.png)
+
 - **3-Phase Lunar Landing Game (100% Client-Side):** An interactive physics challenge (`R = 1,737.4 km`, `μ = 4.9028 × 10¹² m³/s²`, `g = 1.622 m/s²`) embedded inside Education mode:
   1. **Phase 1 — Orbital Plane Change:** Pick a target on the 3D Moon, compute the required inclination $i = |\phi|$ on the spacecraft keypad, and watch the equatorial parking orbit tilt over the landing site.
   2. **Phase 2 — Two-Impulse Descent:** Calculate the altitude drop $\Delta h = h_{\text{orb}} - h_{\text{gate}}$ to trigger a Hohmann transfer down to the terminal landing gate.
   3. **Phase 3 — Terminal Touchdown (`175 m → 0 m`):** Steer laterally over lunar craters using `WASD`/Arrow keys and hold `SPACE` to fire braking thrusters, landing inside the `15 m` (`±2 m` tolerance) target zone at `|v_z| <= 4.5 m/s`.
+
+| Phase 1: Orbital Plane Alignment                     | Phase 2: Hohmann Descent Transfer                    | Phase 3: Terminal Crater Touchdown                   |
+| ---------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------- |
+| ![Landing Game Phase 1](docs/media/game_phase_1.png) | ![Landing Game Phase 2](docs/media/game_phase_2.png) | ![Landing Game Phase 3](docs/media/game_phase_3.png) |
 
 ![Lunar Landing Game 3-Phase Mechanics & Envelope](docs/diagrams/landing_game_mechanics.png)
 
@@ -70,20 +79,16 @@ For deeper module-by-module walkthroughs, API schemas, and frame transformation 
 
 ---
 
-## Screenshots and Demo Media
+## Application Media and Video
 
-Application screenshots and showcase media live under `docs/media/`. Recommended captures from [ilargi.pages.dev](https://ilargi.pages.dev/) for visual documentation:
+Live web screenshots from [ilargi.pages.dev](https://ilargi.pages.dev/) are stored under [`docs/media/`](docs/media/):
 
-| Asset Path                           | Application View                   | Key Elements Highlighted                                                             |
-| ------------------------------------ | ---------------------------------- | ------------------------------------------------------------------------------------ |
-| `docs/media/home-observatory.png`    | Home Landing View                  | ILARGI hero observatory card, live/fallback status, and Experience 01 / 02 selectors |
-| `docs/media/education-cycle.png`     | Education Mode (`Experience 01`)   | 3D Moon illuminated at First/Full Quarter, WEH overlay active, and 3-body orbit card |
-| `docs/media/landing-game-phase1.png` | Lunar Landing Game (`Phase 1`)     | Tilted 3D parking orbit crossing target coordinates and spacecraft keypad            |
-| `docs/media/landing-game-phase3.png` | Lunar Landing Game (`Phase 3`)     | Downward crater terrain view, `15 m` landing ring, and vertical braking HUD          |
-| `docs/media/mission-analysis.png`    | Mission Analysis (`Experience 02`) | Multi-site 3D pins, Plotly sky/elevation track, and `61 × 61` finite-disc inspector  |
+- [`docs/media/home.png`](docs/media/home.png) — Observatory home screen and Experience 01 / 02 launcher
+- [`docs/media/education.png`](docs/media/education.png) — Education Mode with First Quarter lighting, WEH overlay, and 3-body orbit tracker
+- [`docs/media/game_phase_1.png`](docs/media/game_phase_1.png), [`docs/media/game_phase_2.png`](docs/media/game_phase_2.png), [`docs/media/game_phase_3.png`](docs/media/game_phase_3.png) — Full 3-phase Lunar Landing Game progression
 
 > [!TIP]
-> **Embedding Media on GitHub:** Store screenshots under `docs/media/` and embed them with `![Caption](docs/media/filename.png)`. For longer walkthrough videos (1080p60 or narrated demos), upload to YouTube and embed a clickable thumbnail link (`[![Watch ILARGI Demo](docs/media/home-observatory.png)](https://youtu.be/VIDEO_ID)`), or drag-and-drop short compressed `.mp4` clips (`< 10 MB`) directly in GitHub's markdown editor to host them via GitHub CDN without bloating Git history.
+> **Adding Video Walkthroughs:** GitHub blocks `<iframe>` embeds in Markdown. For 1080p60 or narrated walkthroughs, upload the video to YouTube and link it through a clickable thumbnail (`[![Watch ILARGI Demo](docs/media/home.png)](https://youtu.be/VIDEO_ID)`), or drag-and-drop short compressed `.mp4` clips (`< 10 MB`) directly in GitHub's web editor so they play natively via GitHub CDN without bloating Git history.
 
 ---
 
