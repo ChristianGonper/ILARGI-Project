@@ -159,62 +159,13 @@ export function LunarLandingGame({
 
   return (
     <div className="game-shell">
-      {/* Top mission bar and 3-phase progress */}
-      <div className="panel game-topbar">
-        <div className="game-topbar-left">
-          <button
-            type="button"
-            className="btn-secondary btn-compact"
-            onClick={onExitGame}
-          >
-            <ArrowLeft size={14} />
-            Return to Education
-          </button>
-          <div className="game-title-block">
-            <span className="eyebrow eyebrow-accent">
-              LUNAR LANDING MISSION · GAME MODE
-            </span>
-            <span className="muted-note">
-              Target: {selectedSite.name} ({selectedSite.latitudeDeg.toFixed(2)}
-              °, {selectedSite.longitudeEastDeg.toFixed(2)}°E)
-            </span>
-          </div>
-        </div>
-
-        <div
-          className="game-stepper"
-          role="navigation"
-          aria-label="Game phases"
-        >
-          <div
-            className={`game-step ${phase === 1 ? "active" : phase > 1 ? "done" : ""}`}
-          >
-            <span className="game-step-num">1</span>
-            <span>Parking orbit and inclination</span>
-          </div>
-          <span className="game-step-sep">→</span>
-          <div
-            className={`game-step ${phase === 2 ? "active" : phase > 2 ? "done" : ""}`}
-          >
-            <span className="game-step-num">2</span>
-            <span>Descent and ΔV</span>
-          </div>
-          <span className="game-step-sep">→</span>
-          <div className={`game-step ${phase === 3 ? "active" : ""}`}>
-            <span className="game-step-num">3</span>
-            <span>Landing mode</span>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          className="btn-secondary btn-compact"
-          onClick={() => resetToPhase1(selectedSite)}
-          title="Restart game from Phase 1"
-        >
-          <RotateCcw size={13} />
-          Restart
-        </button>
+      {/* ILARGI mascot guiding the game */}
+      <div className="panel game-mascot-dock">
+        <IlargiMascot
+          speakerMood={ilargiState.mood}
+          message={ilargiState.text}
+          showFunFacts={false}
+        />
       </div>
 
       {/* Active phase content */}
@@ -344,13 +295,62 @@ export function LunarLandingGame({
         />
       )}
 
-      {/* ILARGI mascot guiding the game */}
-      <div className="panel edu-mascot-dock game-mascot-dock">
-        <IlargiMascot
-          speakerMood={ilargiState.mood}
-          message={ilargiState.text}
-          showFunFacts={false}
-        />
+      {/* Bottom mission bar and 3-phase progress */}
+      <div className="panel game-topbar">
+        <div className="game-topbar-left">
+          <button
+            type="button"
+            className="btn-secondary btn-compact"
+            onClick={onExitGame}
+          >
+            <ArrowLeft size={14} />
+            Return to Education
+          </button>
+          <div className="game-title-block">
+            <span className="eyebrow eyebrow-accent">
+              LUNAR LANDING MISSION · GAME MODE
+            </span>
+            <span className="muted-note">
+              Target: {selectedSite.name} ({selectedSite.latitudeDeg.toFixed(2)}
+              °, {selectedSite.longitudeEastDeg.toFixed(2)}°E)
+            </span>
+          </div>
+        </div>
+
+        <div
+          className="game-stepper"
+          role="navigation"
+          aria-label="Game phases"
+        >
+          <div
+            className={`game-step ${phase === 1 ? "active" : phase > 1 ? "done" : ""}`}
+          >
+            <span className="game-step-num">1</span>
+            <span>Parking orbit and inclination</span>
+          </div>
+          <span className="game-step-sep">→</span>
+          <div
+            className={`game-step ${phase === 2 ? "active" : phase > 2 ? "done" : ""}`}
+          >
+            <span className="game-step-num">2</span>
+            <span>Descent and ΔV</span>
+          </div>
+          <span className="game-step-sep">→</span>
+          <div className={`game-step ${phase === 3 ? "active" : ""}`}>
+            <span className="game-step-num">3</span>
+            <span>Landing mode</span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className="btn-secondary btn-compact"
+          onClick={() => resetToPhase1(selectedSite)}
+          title="Restart game from Phase 1"
+        >
+          <RotateCcw size={13} />
+          Restart
+        </button>
       </div>
     </div>
   );
