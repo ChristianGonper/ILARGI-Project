@@ -72,4 +72,4 @@ The scientific model uses public NASA, NAIF/JPL, IAU, and peer-reviewed data alo
 
 ## Brand typography
 
-The ILARGI wordmark and expanded name use the original Vasca font from [DaFont](https://www.dafont.com/vasca.font). The listing and downloaded archive do not specify a license or identify an author. See [font provenance](../web/public/fonts/README.md); no open-source license is claimed.
+The ILARGI wordmark and expanded name use Vasca from [DaFont](https://www.dafont.com/vasca.font), with its legacy font tables repaired for browser compatibility without changing glyph outlines. The listing and downloaded archive do not specify a license or identify an author. See [font provenance](/fonts/README.md); no open-source license is claimed.
