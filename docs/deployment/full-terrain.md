@@ -82,6 +82,10 @@ when health, catalog and material requests arrive together.
   not controlled latency guarantees.
 - A maximum-size batch of ten points (polar center, Malapert and Apollo 11,
   repeated) returned ten terrain results without truncation in 47.470 s.
+- The final production browser request returned all ten results in 48.477 s,
+  rendered ten comparison rows and showed neither an error nor the saved-data
+  banner. Concurrent startup health/catalog/material requests all returned 200
+  in less than half a second in that run.
 - Education at the polar center returned 238 frames in 0.820 s.
 - Cloud Monitoring's available periodic memory samples for the raw-file revision
   were below 19% of 2 GiB; the first optimized-revision samples were below 13%.
@@ -94,6 +98,10 @@ when health, catalog and material requests arrive together.
 
 The production baseline before this work was `ilargi-api-00002-hsk` (crops only).
 `ilargi-api-00003-paw` adds full raw DEMs and is also retained as a fallback.
+The final production revision is `ilargi-api-00008-hob`, with the optimized DEM,
+both frontend origins and HTTP concurrency four. Pages deployment
+`https://018c8163.ilargi.pages.dev` publishes the extended browser timeouts to
+`https://ilargi.pages.dev`.
 Rollback changes traffic only; do not delete the bucket or overwrite terrain
 objects during an active analysis. List revisions and explicitly route traffic
 to the chosen revision using `gcloud run services update-traffic`.
