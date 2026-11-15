@@ -12,13 +12,13 @@ The Moon relative to Earth at 2026-04-02 15:00 UTC was queried with `EPHEM_TYPE=
 | Y         |  -106746.2116582052 |           -106746.20977303 |
 | Z         |  -71540.67909399251 |            -71540.67810391 |
 
-The residual norm is about 0.00222 km; the regression tolerance is 0.01 km. Tests retain another lunar sample one hour later, plus Sun relative to Moon (0.00154 km residual) and Earth relative to Sun (0.00069 km).
+The recorded residual norm was about 0.00222 km, with a 0.01 km regression tolerance in the historical implementation. Other recorded geometric comparisons included another lunar sample one hour later, Sun relative to Moon (0.00154 km residual) and Earth relative to Sun (0.00069 km). These checks belonged to the retired mass-center wrapper and are no longer active tests; the figures remain historical evidence rather than current validation claims.
 
 ## Apparent vectors and surface angles
 
 Original response headers and rows are retained in [the comparison JSON](horizons/comparison-2026-11-14.json) and [the full Earth observer response](horizons/earth-observer-sample.txt). Vector queries use `VEC_CORR=LT+S`; center is `500@301`, surface is `coord@301` with geodetic longitude, latitude and height in kilometers. ILARGI rotates its lunar-frame vector to J2000 at observation time before comparing it with ICRF. Horizons `REF_PLANE=BODY` is not a body-fixed cartographic frame.
 
-Recorded center-vector residuals at 15:00 and 16:00 UTC are 2.45/2.47 m for Earth and 9.28/9.08 m for Sun. Surface cases at equatorial, midlatitude and near-polar sites have similar residuals (Earth 2.45–2.47 m; Sun 9.26–9.35 m).
+Recorded center-vector residuals at 15:00 and 16:00 UTC are 2.45/2.47 m for Earth and 9.28/9.08 m for Sun; these rows are retained as historical evidence. Active vector regression tests use the surface cases at equatorial, midlatitude and near-polar sites (Earth 2.45–2.47 m; Sun 9.26–9.35 m).
 
 Observer queries use `QUANTITIES=4,20`, `ANG_FORMAT=DEG`, `APPARENT=AIRLESS`, `RANGE_UNITS=KM`, `EXTRA_PREC=YES`. Headers specify `MEAN_ME`, spherical radii 1737.4 km and no atmospheric refraction. Horizons includes gravitational light deflection; SPICE LT+S does not. Residuals therefore combine this distinction with DE440s/DE441 differences.
 

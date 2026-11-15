@@ -451,14 +451,3 @@ def horizon_at(profile: Horizon, azimuth_deg: np.ndarray) -> np.ndarray:
     return np.where(
         np.isfinite(elev[left]) & np.isfinite(elev[left + 1]), interpolated, np.nan
     )
-
-
-def coverage_at(profile: Horizon, azimuth_deg: np.ndarray) -> np.ndarray:
-    """Return the conservative common reach of neighboring azimuth rays."""
-    az = np.append(profile.azimuth_deg, 360.0)
-    coverage = np.append(profile.coverage_m, profile.coverage_m[0])
-    left = np.minimum(
-        np.searchsorted(az, np.asarray(azimuth_deg) % 360, side="right") - 1,
-        len(profile.azimuth_deg) - 1,
-    )
-    return np.minimum(coverage[left], coverage[left + 1])

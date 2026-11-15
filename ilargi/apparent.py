@@ -1,4 +1,4 @@
-"""Apparent Sun and Earth directions from lunar center and ideal surface observers."""
+"""Apparent Sun and Earth directions from ideal lunar surface observers."""
 
 from collections.abc import Sequence
 from dataclasses import dataclass
@@ -50,27 +50,6 @@ class Provenance:
 
 
 @dataclass(frozen=True)
-class CenterTarget:
-    """Apparent target vector relative to the lunar mass center."""
-
-    target: str
-    position_km: tuple[float, float, float]
-    light_time_s: float
-    range_km: float
-
-
-@dataclass(frozen=True)
-class LunarCenterApparent:
-    utc: datetime
-    et_seconds: float
-    targets: tuple[CenterTarget, ...]
-    provenance: Provenance
-
-    def target(self, name: str) -> CenterTarget:
-        return _select(self.targets, name)
-
-
-@dataclass(frozen=True)
 class SurfaceSite:
     latitude_deg: float
     longitude_east_deg: float
@@ -101,7 +80,11 @@ class LunarSurfaceApparent:
     provenance: Provenance
 
     def target(self, name: str) -> SurfaceTarget:
-        return _select(self.targets, name)
+        key = name.upper()
+        for target in self.targets:
+            if target.target == key:
+                return target
+        raise KeyError(key)
 
 
 @dataclass(frozen=True)
@@ -117,17 +100,8 @@ class HorizontalAngles:
 
 def reference_radius_km() -> float:
     """Return the spherical lunar radius from the constants PCK, in kilometers."""
-    global _radius_km
     with spice_session():
-        if _radius_km is None:
-            _radius_km = _read_spherical_radius()
-        return _radius_km
-
-
-def ephemeris_coverage_et() -> tuple[float, float]:
-    """Return the common ephemeris and lunar orientation coverage in ET."""
-    with spice_session():
-        return _coverage_bounds()
+        return _read_spherical_radius()
 
 
 def horizontal_angles(
@@ -157,34 +131,6 @@ def horizontal_angles(
     )
 
 
-def apparent_from_lunar_center(
-    instant: datetime, targets: Sequence[str] = ADMITTED_TARGETS
-) -> LunarCenterApparent:
-    """Compute LT+S target vectors from the lunar center, which has no local horizon."""
-    utc = require_aware_utc(instant)
-    names = _targets(targets)
-    with spice_session():
-        et = utc_to_et(utc)
-        _require_coverage(et)
-        radius = _read_spherical_radius()
-        rows = []
-        for name in names:
-            vector, light_time = spice.spkpos(
-                name, et, LUNAR_FRAME, ABCORR, OBSERVER_BODY
-            )
-            position = _triplet(vector)
-            rows.append(
-                CenterTarget(
-                    target=name,
-                    position_km=position,
-                    light_time_s=float(light_time),
-                    range_km=float(np.linalg.norm(position)),
-                )
-            )
-        provenance = _provenance(et, radius, "body-center", "body-center")
-    return LunarCenterApparent(utc, et, tuple(rows), provenance)
-
-
 def apparent_from_lunar_surface(
     instant: datetime,
     latitude_deg: float,
@@ -204,10 +150,7 @@ def apparent_from_lunar_surface(
         _require_coverage(et)
         radius = _read_spherical_radius()
         if height_km <= -radius:
-            raise ValueError(
-                "Height reaches or crosses the lunar center; "
-                "use apparent_from_lunar_center"
-            )
+            raise ValueError("Height reaches or crosses the lunar center.")
         site_position = np.array(
             spice.georec(
                 np.deg2rad(longitude), np.deg2rad(latitude), height_km, radius, 0.0
@@ -246,16 +189,16 @@ def apparent_from_lunar_surface(
             radius,
             _triplet(site_position),
         )
-        provenance = _provenance(et, radius, "ideal-sphere", OBSERVER_LOCUS)
+        provenance = _provenance(et, radius)
     return LunarSurfaceApparent(utc, et, site, tuple(rows), provenance)
 
 
-def _provenance(et: float, radius: float, kind: str, locus: str) -> Provenance:
+def _provenance(et: float, radius: float) -> Provenance:
     return Provenance(
         frame=LUNAR_FRAME,
         abcorr=ABCORR,
-        aberration_locus=locus,
-        observer_kind=kind,
+        aberration_locus=OBSERVER_LOCUS,
+        observer_kind="ideal-sphere",
         reference_radius_km=radius,
         pa_to_frame_deg=_rotation_deg(PA_FRAME, LUNAR_FRAME, et),
         iau_moon_to_frame_deg=_rotation_deg(IAU_FRAME, LUNAR_FRAME, et),
@@ -304,7 +247,7 @@ def _coverage_bounds() -> tuple[float, float]:
 
 def _single_window(cover: object, name: str, ident: int) -> tuple[float, float]:
     if spice.wncard(cover) != 1:
-        raise RuntimeError(f"Unexpected coverage in {name} para {ident}")
+        raise RuntimeError(f"Unexpected coverage in {name} for {ident}")
     start, stop = spice.wnfetd(cover, 0)
     return float(start), float(stop)
 
@@ -365,11 +308,3 @@ def _topocentric_components(
 
 def _triplet(vector: np.ndarray) -> tuple[float, float, float]:
     return (float(vector[0]), float(vector[1]), float(vector[2]))
-
-
-def _select(targets: tuple[CenterTarget, ...] | tuple[SurfaceTarget, ...], name: str):
-    key = name.upper()
-    for target in targets:
-        if target.target == key:
-            return target
-    raise KeyError(key)

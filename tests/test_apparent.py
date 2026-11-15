@@ -8,9 +8,7 @@ import spiceypy as spice
 
 from ilargi.apparent import (
     LUNAR_FRAME,
-    apparent_from_lunar_center,
     apparent_from_lunar_surface,
-    ephemeris_coverage_et,
     horizontal_angles,
     reference_radius_km,
 )
@@ -23,6 +21,7 @@ EVIDENCE = (
     / "comparison-2026-11-14.json"
 )
 INSTANT = datetime(2026, 4, 2, 15, tzinfo=UTC)
+EVIDENCE_DATA = json.loads(EVIDENCE.read_text(encoding="utf-8"))
 # Regression thresholds, not accuracy bounds. Recorded 2026-11-14 residuals:
 # Earth 2.5 m, Sun 9.4 m in ICRF, and at most 0.0012 arcsec per sky component.
 VECTOR_TOLERANCE_KM = 0.02
@@ -103,27 +102,14 @@ def test_surface_inputs_and_site_geometry():
     assert "not loaded" in on_sphere.provenance.de421_relation
     assert "LOLA" in on_sphere.provenance.terrain
     assert "LOLA DEM" in on_sphere.provenance.terrain
-
-
-def test_center_observer_is_not_a_surface_point():
-    center = apparent_from_lunar_center(INSTANT)
-    surface = apparent_from_lunar_surface(INSTANT, 0, 0, 0)
-    assert center.provenance.observer_kind == "body-center"
-    assert center.provenance.aberration_locus == "body-center"
-    assert not hasattr(center.target("EARTH"), "azimuth_deg")
-    assert center.provenance.frame == surface.provenance.frame == LUNAR_FRAME
-    site = np.array(surface.site.position_km)
-    assert np.linalg.norm(site) == pytest.approx(1737.4)
-    for name, minimum_km in (("EARTH", 0.01), ("SUN", 1.0)):
-        translated = np.array(center.target(name).position_km) - site
-        apparent = np.array(surface.target(name).position_km)
-        assert np.linalg.norm(translated - apparent) > minimum_km
-        assert abs(center.target(name).range_km - surface.target(name).range_km) > 1000
+    assert on_sphere.target("earth") == on_sphere.target("EARTH")
+    with pytest.raises(KeyError, match="MARS"):
+        on_sphere.target("MARS")
 
 
 def test_frame_realizations_stay_distinct():
-    first = apparent_from_lunar_center(INSTANT)
-    second = apparent_from_lunar_center(datetime(2024, 6, 21, 12, tzinfo=UTC))
+    first = apparent_from_lunar_surface(INSTANT, 0, 0)
+    second = apparent_from_lunar_surface(datetime(2024, 6, 21, 12, tzinfo=UTC), 0, 0)
     assert first.provenance.pa_to_frame_deg == pytest.approx(0.028863328214, abs=1e-12)
     assert first.provenance.pa_to_frame_deg == pytest.approx(
         second.provenance.pa_to_frame_deg
@@ -137,62 +123,49 @@ def test_frame_realizations_stay_distinct():
         assert np.allclose(alias, np.eye(3))
 
 
-def test_kernel_coverage_contains_the_admitted_interval():
-    start, stop = ephemeris_coverage_et()
-    assert spice.etcal(start) == "1849 DEC 26 00:00:00.000"
-    assert spice.etcal(stop) == "2150 JAN 22 00:00:00.000"
-
-
-def test_geometric_surface_vector_is_a_translation_and_apparent_vector_is_not():
+@pytest.mark.parametrize("target", ["EARTH", "SUN"])
+def test_surface_apparent_vector_cannot_be_replaced_by_center_translation(target):
+    result = apparent_from_lunar_surface(INSTANT, 0, 0)
     with spice_session():
-        et = spice.str2et("2026-04-02 15:00:00.000 UTC")
-        site = np.array(spice.georec(0.0, 0.0, 0.0, 1737.4, 0.0))
-        for target in ("EARTH", "SUN"):
-            geometric_center = np.array(
-                spice.spkpos(target, et, LUNAR_FRAME, "NONE", "MOON")[0]
-            )
-            geometric_surface, _light = spice.spkcpo(
-                target, et, LUNAR_FRAME, "OBSERVER", "NONE", site, "MOON", LUNAR_FRAME
-            )
-            assert np.allclose(
-                geometric_surface[:3], geometric_center - site, atol=1e-6
-            )
-        center, _light = spice.spkezr("EARTH", et, LUNAR_FRAME, "LT+S", "MOON")
-        shifted, _light = spice.spkcpo(
-            "EARTH",
-            et,
-            LUNAR_FRAME,
-            "OBSERVER",
-            "LT+S",
-            np.zeros(3),
-            "MOON",
-            LUNAR_FRAME,
-        )
-        assert np.allclose(center[:3], shifted[:3], atol=1e-9)
+        center, _ = spice.spkpos(target, result.et_seconds, LUNAR_FRAME, "LT+S", "MOON")
+    translated = center - np.array(result.site.position_km)
+    minimum_difference_km = 0.01 if target == "EARTH" else 1.0
+    assert (
+        np.linalg.norm(translated - result.target(target).position_km)
+        > minimum_difference_km
+    )
 
 
-def test_apparent_vectors_match_horizons_icrf():
-    for case in json.loads(EVIDENCE.read_text(encoding="utf-8"))["vectors"]:
-        instant = datetime.fromisoformat(case["utc"])
-        if case["locus"] == "center":
-            result = apparent_from_lunar_center(instant, (case["target"],))
-            position = result.target(case["target"]).position_km
-            et = result.et_seconds
-        else:
-            result = apparent_from_lunar_surface(
-                instant,
-                case["latitude_deg"],
-                case["longitude_east_deg"],
-                case["height_km"],
-                (case["target"],),
-            )
-            position = result.target(case["target"]).position_km
-            et = result.et_seconds
-            assert result.provenance.aberration_locus == "OBSERVER"
-        with spice_session():
-            rotated = spice.mxv(spice.pxform(LUNAR_FRAME, "J2000", et), position)
-        residual = np.linalg.norm(np.array(rotated) - _icrf(case))
-        assert residual < VECTOR_TOLERANCE_KM
+@pytest.mark.parametrize(
+    "instant", [datetime(1972, 1, 1, tzinfo=UTC), datetime(2100, 12, 31, tzinfo=UTC)]
+)
+def test_surface_calculation_accepts_supported_utc_boundaries(instant):
+    result = apparent_from_lunar_surface(instant, 0, 0)
+    assert all(
+        np.isfinite(target.range_km) and target.range_km > 0
+        for target in result.targets
+    )
+
+
+@pytest.mark.parametrize(
+    "case", [case for case in EVIDENCE_DATA["vectors"] if case["locus"] == "surface"]
+)
+def test_surface_vectors_match_horizons_icrf(case):
+    instant = datetime.fromisoformat(case["utc"])
+    result = apparent_from_lunar_surface(
+        instant,
+        case["latitude_deg"],
+        case["longitude_east_deg"],
+        case["height_km"],
+        (case["target"],),
+    )
+    position = result.target(case["target"]).position_km
+    et = result.et_seconds
+    assert result.provenance.aberration_locus == "OBSERVER"
+    with spice_session():
+        rotated = spice.mxv(spice.pxform(LUNAR_FRAME, "J2000", et), position)
+    residual = np.linalg.norm(np.array(rotated) - _icrf(case))
+    assert residual < VECTOR_TOLERANCE_KM
 
 
 def test_apparent_angles_match_horizons_airless():

@@ -11,7 +11,6 @@ from ilargi.horizon import (
     Horizon,
     calculate_horizon,
     calculate_multiresolution_horizon,
-    coverage_at,
     estimate_search_radius,
     horizon_at,
     max_search_distance_m,
@@ -139,7 +138,6 @@ def test_missing_neighbour_never_produces_a_finite_interpolated_horizon():
     result = horizon_at(profile, angles)
     assert np.isnan(result[:2]).all()
     np.testing.assert_allclose(result[2:], [3.0, 4.0])
-    np.testing.assert_allclose(coverage_at(profile, angles), [0.0, 0.0, 600.0, 900.0])
 
 
 def test_excessive_ray_arrays_are_refused_before_allocation():

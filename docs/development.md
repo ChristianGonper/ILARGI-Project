@@ -10,7 +10,7 @@ The web is React with TypeScript. Components live under `web/src/components/`, w
 
 Use uv for Python and committed lockfiles for installs. Run the checks in the root README. Python lint/format uses Ruff; web and documentation formatting uses Prettier. Add regression tests for numerical changes and preserve public source metadata with derived assets. A successful build does not validate scientific accuracy or browser interactions.
 
-Prefer descriptive English identifiers, comments explaining non-obvious scientific assumptions, and English documentation. Keep generated assets separate from source code. Verify consumers before removing functions: a comparison utility used only by scientific regression tests can still be valuable. Historical implementations may be removed when no supported workflow uses them.
+Prefer descriptive English identifiers, comments explaining non-obvious scientific assumptions, and English documentation. Keep generated assets separate from source code. Verify consumers before removing functions. Tests should exercise supported application behavior rather than preserve an unused implementation solely to keep its tests running. Keep historical reference data with an explicit distinction from active regression coverage.
 
 The Python Plotly presentation layer was removed after verifying that only its own tests referenced it. The active interface uses Plotly.js; static scientific terrain export still uses Matplotlib. Astroquery was an unused exploratory dependency and was removed. Pydantic is explicit because the API imports it. HTTPX2 supports the current Starlette TestClient.
 
