@@ -76,35 +76,35 @@ flowchart TB
 
     subgraph L["Legend: Block Color Semantics"]
         direction LR
-        L1(["External NASA / NAIF / PDS"]) ::: ext
-        L2["SPICE / Apparent Physics"] ::: spice
-        L3[("Topography / Geochemistry")] ::: topo
-        L4{{"FastAPI / Static Fallback"}} ::: api
-        L5[["Browser 3D / Plotly / Game"]] ::: ui
+        L1(["External NASA / NAIF / PDS"]):::ext
+        L2["SPICE / Apparent Physics"]:::spice
+        L3[("Topography / Geochemistry")]:::topo
+        L4{{"FastAPI / Static Fallback"}}:::api
+        L5[["Browser 3D / Plotly / Game"]]:::ui
     end
 
-    K[("NAIF Kernels<br/>DE440s · LSK · FK · PCK")] ::: ext
-    D[("LOLA DEMs<br/>20m / 80m Polar + 237m Global")] ::: ext
-    G[("LP-GRS 5° &amp; WEH 0.5°")] ::: ext
-    SVS[("NASA SVS CGI Moon Kit<br/>8 px/deg Display Mesh")] ::: ext
+    K[("NAIF Kernels<br/>DE440s · LSK · FK · PCK")]:::ext
+    D[("LOLA DEMs<br/>20m / 80m Polar + 237m Global")]:::ext
+    G[("LP-GRS 5° &amp; WEH 0.5°")]:::ext
+    SVS[("NASA SVS CGI Moon Kit<br/>8 px/deg Display Mesh")]:::ext
 
-    K -->|"UTC → ET/TDB"| EP["ephemeris.py<br/>RLock SPICE Session"] ::: spice
-    EP -->|"spkcpo LT+S<br/>OBSERVER locus"| AP["apparent.py<br/>MOON_ME_DE440_ME421"] ::: spice
-    EP -->|"spkpos NONE<br/>J2000 Heliocentric"| ED["education.py<br/>3-Body &amp; Cycle Frames"] ::: spice
+    K -->|"UTC → ET/TDB"| EP["ephemeris.py<br/>RLock SPICE Session"]:::spice
+    EP -->|"spkcpo LT+S<br/>OBSERVER locus"| AP["apparent.py<br/>MOON_ME_DE440_ME421"]:::spice
+    EP -->|"spkpos NONE<br/>J2000 Heliocentric"| ED["education.py<br/>3-Body &amp; Cycle Frames"]:::spice
 
-    D -->|"PROJ CRS Check<br/>1,737,400 m Sphere"| TR["terrain.py<br/>DE421 ME Raster"] ::: topo
-    TR -->|"Great-Circle Rays<br/>Multi-DEM Cascade"| HR["horizon.py<br/>azimuth → elev_deg"] ::: topo
-    AP -->|"Azimuth / Elevation"| AN["analysis.py + discs.py<br/>61×61 Disc + Intervals"] ::: spice
+    D -->|"PROJ CRS Check<br/>1,737,400 m Sphere"| TR["terrain.py<br/>DE421 ME Raster"]:::topo
+    TR -->|"Great-Circle Rays<br/>Multi-DEM Cascade"| HR["horizon.py<br/>azimuth → elev_deg"]:::topo
+    AP -->|"Azimuth / Elevation"| AN["analysis.py + discs.py<br/>61×61 Disc + Intervals"]:::spice
     HR --> AN
     G -->|"Point-in-Cell Lookup"| AN
 
-    AN --> API{{"ilargi/api.py<br/>REST JSON"}} ::: api
+    AN --> API{{"ilargi/api.py<br/>REST JSON"}}:::api
     ED --> API
-    AN -.->|"export_demo.py"| ST{{"web/public/demo/<br/>SHA-256 Catalog"}} ::: api
+    AN -.->|"export_demo.py"| ST{{"web/public/demo/<br/>SHA-256 Catalog"}}:::api
 
-    API -->|"HTTPS or Fallback"| WEB[["React App &amp; Plotly.js<br/>Sky / Disc / Comparison"]] ::: ui
+    API -->|"HTTPS or Fallback"| WEB[["React App &amp; Plotly.js<br/>Sky / Disc / Comparison"]]:::ui
     ST -.-> WEB
-    SVS -->|"moon_height.bin.gz<br/>Display Only"| TH[["Three.js Globe<br/>+Y North, +Z 0° Lon"]] ::: ui
+    SVS -->|"moon_height.bin.gz<br/>Display Only"| TH[["Three.js Globe<br/>+Y North, +Z 0° Lon"]]:::ui
     ED -->|"MOON_ME → Three.js<br/>Vector Swizzle"| TH
 ```
 
