@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import Plotly from "plotly.js-gl2d-dist-min";
+import { animateTracks } from "./animateTracks";
 import type { SiteAnalysisResult } from "../types";
 import { PlotFullscreenShell } from "./PlotFullscreenShell";
 
@@ -81,11 +81,17 @@ function DailyEvolutionPlotCanvas({
       },
       xaxis: {
         title: "Time (UTC)",
+        range: [
+          result.start_utc,
+          result.series.sun[result.series.sun.length - 1]?.utc ??
+            result.start_utc,
+        ],
         gridcolor: "#26334D",
         tickfont: { color: "#94A3B8" },
       },
       yaxis: {
         title: "Elevation (°)",
+        range: [-90, 90],
         gridcolor: "#26334D",
         zerolinecolor: "#475569",
         tickfont: { color: "#94A3B8" },
@@ -93,14 +99,7 @@ function DailyEvolutionPlotCanvas({
       hovermode: "x unified",
     };
 
-    void Plotly.react(root, traces, layout, {
-      responsive: true,
-      displaylogo: false,
-    });
-
-    return () => {
-      Plotly.purge(root);
-    };
+    return animateTracks(root, traces, layout);
   }, [result, height]);
 
   return <div ref={elRef} style={{ width: "100%", height }} />;
