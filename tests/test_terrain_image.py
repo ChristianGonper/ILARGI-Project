@@ -22,7 +22,7 @@ def test_export_creates_high_resolution_png_for_both_styles():
 def test_window_can_be_rendered_and_cannot_exceed_source():
     point = sample_elevation(-89.5, 0, SAMPLE)
     assert render_terrain_png(SAMPLE, point, window_km=5).startswith(b"\x89PNG")
-    with pytest.raises(ValueError, match="rebasa"):
+    with pytest.raises(ValueError, match="exceeds"):
         render_terrain_png(SAMPLE, point, window_km=100)
 
 
@@ -36,5 +36,5 @@ def test_window_respects_exact_pixel_edges_and_small_shading_is_rejected():
     assert bounds[0] == pytest.approx(-2500)
     assert bounds[2] == pytest.approx(2500)
     centered = TerrainSample(point.elevation_m, 10, 15170, 20)
-    with pytest.raises(ValueError, match="dos píxeles"):
+    with pytest.raises(ValueError, match="two pixels"):
         render_terrain_png(path, centered, relief=True, window_km=0.005)

@@ -16,9 +16,9 @@ def test_positions_are_consistent_between_origins():
 
 
 def test_inputs_are_explicit():
-    with pytest.raises(ValueError, match="zona horaria"):
+    with pytest.raises(ValueError, match="timezone-aware"):
         positions(datetime(2026, 1, 1))
-    with pytest.raises(ValueError, match="Origen"):
+    with pytest.raises(ValueError, match="origin"):
         positions(datetime(2026, 1, 1, tzinfo=UTC), "MARS")
     with pytest.raises(ValueError, match="1972"):
         positions(datetime(1900, 1, 1, tzinfo=UTC))

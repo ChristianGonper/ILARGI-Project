@@ -20,7 +20,7 @@ EVIDENCE = (
     Path(__file__).resolve().parent.parent
     / "docs"
     / "horizons"
-    / "comparacion-2026-11-14.json"
+    / "comparison-2026-11-14.json"
 )
 INSTANT = datetime(2026, 4, 2, 15, tzinfo=UTC)
 # Guardas de regresión, no una cota de exactitud. El 14 de noviembre de 2026 el
@@ -70,21 +70,21 @@ def test_local_basis_is_stable_very_near_south_pole():
 
 
 def test_surface_inputs_and_site_geometry():
-    with pytest.raises(ValueError, match="zona horaria"):
+    with pytest.raises(ValueError, match="timezone-aware"):
         apparent_from_lunar_surface(datetime(2026, 4, 2, 15), 0, 0)
     with pytest.raises(ValueError, match="1972"):
         apparent_from_lunar_surface(datetime(1900, 1, 1, tzinfo=UTC), 0, 0)
-    with pytest.raises(ValueError, match="polo"):
+    with pytest.raises(ValueError, match="pole"):
         apparent_from_lunar_surface(INSTANT, 90, 0)
-    with pytest.raises(ValueError, match="polo"):
+    with pytest.raises(ValueError, match="pole"):
         apparent_from_lunar_surface(INSTANT, -90, 10)
-    with pytest.raises(ValueError, match="finita"):
+    with pytest.raises(ValueError, match="finite"):
         apparent_from_lunar_surface(INSTANT, float("nan"), 0)
-    with pytest.raises(ValueError, match="centro lunar"):
+    with pytest.raises(ValueError, match="lunar center"):
         apparent_from_lunar_surface(INSTANT, 0, 0, height_km=-reference_radius_km())
-    with pytest.raises(ValueError, match="no admitido"):
+    with pytest.raises(ValueError, match="Unsupported"):
         apparent_from_lunar_surface(INSTANT, 0, 0, targets=("MARS",))
-    with pytest.raises(TypeError, match="secuencia"):
+    with pytest.raises(TypeError, match="sequence"):
         apparent_from_lunar_surface(INSTANT, 0, 0, targets="EARTH")
 
     radius = reference_radius_km()
@@ -101,9 +101,9 @@ def test_surface_inputs_and_site_geometry():
     assert on_sphere.provenance.observer_kind == "ideal-sphere"
     assert on_sphere.provenance.aberration_locus == "OBSERVER"
     assert on_sphere.provenance.abcorr == "LT+S"
-    assert "no está cargado" in on_sphere.provenance.de421_relation
+    assert "not loaded" in on_sphere.provenance.de421_relation
     assert "LOLA" in on_sphere.provenance.terrain
-    assert "DEM LOLA" in on_sphere.provenance.terrain
+    assert "LOLA DEM" in on_sphere.provenance.terrain
 
 
 def test_center_observer_is_not_a_surface_point():
@@ -222,9 +222,7 @@ def test_horizons_evidence_records_the_comparison_conditions():
     assert "LT+S" in text
     assert "AIRLESS" in text
     assert "1737.4, 1737.4, 1737.4" in text
-    sample = (EVIDENCE.parent / "muestra-observador-tierra.txt").read_text(
-        encoding="utf-8"
-    )
+    sample = (EVIDENCE.parent / "earth-observer-sample.txt").read_text(encoding="utf-8")
     assert "MEAN_ME (high precision)" in sample
     assert "Atmos refraction: NO (AIRLESS)" in sample
     assert "gravitational deflection of light" in sample

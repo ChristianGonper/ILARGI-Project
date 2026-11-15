@@ -143,7 +143,7 @@ def test_missing_neighbour_never_produces_a_finite_interpolated_horizon():
 
 
 def test_excessive_ray_arrays_are_refused_before_allocation():
-    with pytest.raises(ValueError, match="Demasiadas muestras"):
+    with pytest.raises(ValueError, match="Too many horizon samples"):
         calculate_horizon(-89.5, 0, 2, 100_000, 0.001, SAMPLE)
 
 
@@ -243,7 +243,7 @@ def test_multiresolution_horizon_combines_near_fine_and_far_coarse(tmp_path):
     project = Transformer.from_crs(projection.geodetic_crs, projection, always_xy=True)
     geod = Geod(a=RADIUS_M, b=RADIUS_M)
 
-    # Malla fina de 50 m/píxel cubriendo ±5 km con cresta cercana al norte (+12°)
+    # Malla fina de 50 m/pixel cubriendo ±5 km con cresta cercana al norte (+12°)
     fine_path = tmp_path / "fine.tif"
     fine_data = np.zeros((201, 201), dtype="float32")
     fine_transform = from_origin(-5025, 15161.771431773632 + 5025, 50, 50)
@@ -265,7 +265,7 @@ def test_multiresolution_horizon_combines_near_fine_and_far_coarse(tmp_path):
     ) as ds:
         ds.write(fine_data, 1)
 
-    # Malla gruesa de 400 m/píxel cubriendo ±40 km con montaña lejana al sur (15 km, 2500 m)
+    # Malla gruesa de 400 m/pixel cubriendo ±40 km con montaña lejana al sur (15 km, 2500 m)
     # y montaña artificial muy alta al norte a 25 km (más allá del corte físico de la cresta).
     coarse_path = tmp_path / "coarse.tif"
     coarse_data = np.zeros((201, 201), dtype="float32")
@@ -317,9 +317,9 @@ def test_multiresolution_horizon_combines_near_fine_and_far_coarse(tmp_path):
 
 
 def test_max_search_distance_rejects_invalid_bounds():
-    with pytest.raises(ValueError, match="inferior a min_terrain_m"):
+    with pytest.raises(ValueError, match="below min_terrain_m"):
         max_search_distance_m(-10_000.0)
-    with pytest.raises(ValueError, match="min_terrain_m no puede superar"):
+    with pytest.raises(ValueError, match="min_terrain_m cannot exceed"):
         max_search_distance_m(0.0, max_terrain_m=100.0, min_terrain_m=200.0)
     with pytest.raises(ValueError, match=r"\(-90, 90\)"):
         max_search_distance_m(0.0, min_elevation_deg=90.0)

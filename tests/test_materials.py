@@ -15,7 +15,7 @@ def test_polar_values_and_boundaries():
     assert region_at(data, -87.5, 0).id == 5
     assert region_at(data, -80, 180).id == 9
     assert region_at(data, -79.9, 0) is not None  # Celda que cruza 80° S.
-    assert set(data.Al_category) == {"Baja", "Media", "Alta"}
+    assert set(data.Al_category) == {"Low", "Medium", "High"}
 
 
 def test_global_lookup_and_longitude_wrapping():

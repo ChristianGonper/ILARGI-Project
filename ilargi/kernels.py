@@ -1,4 +1,4 @@
-"""Descarga y verificación de un conjunto explícito de kernels NAIF."""
+"""Download and verify a pinned set of NAIF kernels."""
 
 import os
 import shutil
@@ -57,7 +57,7 @@ def verify() -> None:
         path = KERNEL_DIR / name
         if not path.is_file() or digest(path) != expected:
             raise ValueError(
-                f"Kernel ausente o incorrecto: {path}. Ejecuta uv run python -m ilargi.kernels"
+                f"Missing or invalid kernel: {path}. Run uv run python -m ilargi.kernels"
             )
 
 
@@ -70,20 +70,20 @@ def download() -> None:
         if path.is_file() and digest(path) == expected:
             if not shared_path.is_file() or digest(shared_path) != expected:
                 shutil.copy2(path, shared_path)
-            print(f"Verificado: {name}")
+            print(f"Verified: {name}")
             continue
         if shared_path.is_file() and digest(shared_path) == expected:
             shutil.copy2(shared_path, path)
-            print(f"Copiado desde caché común: {name}")
+            print(f"Copied from shared cache: {name}")
             continue
         tmp = path.with_suffix(path.suffix + ".part")
         try:
-            print(f"Descargando: {name}")
+            print(f"Downloading: {name}")
             with urlopen(BASE + url, timeout=120) as source, tmp.open("wb") as dest:
                 while chunk := source.read(1024 * 1024):
                     dest.write(chunk)
             if digest(tmp) != expected:
-                raise ValueError(f"SHA-256 incorrecto: {name}")
+                raise ValueError(f"Invalid SHA-256: {name}")
             tmp.replace(path)
             shutil.copy2(path, shared_path)
         finally:

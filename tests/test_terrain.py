@@ -19,9 +19,9 @@ def test_sample_matches_source_pixel_and_crs():
 
 
 def test_rejects_outside_or_invalid_sample():
-    with pytest.raises(ValueError, match="fuera del recorte"):
+    with pytest.raises(ValueError, match="outside the available"):
         sample_elevation(-80, 0)
-    with pytest.raises(ValueError, match="finitas"):
+    with pytest.raises(ValueError, match="finite"):
         sample_elevation(float("nan"), 0)
 
 
@@ -60,7 +60,7 @@ def test_missing_crs_is_rejected(tmp_path):
         transform=from_origin(0, 16000, 80, 80),
     ) as ds:
         ds.write(np.zeros((2, 2), dtype="float32"), 1)
-    with pytest.raises(ValueError, match="sistema de coordenadas"):
+    with pytest.raises(ValueError, match="coordinate reference system"):
         sample_elevation(-89.5, 0, path)
 
 
@@ -79,5 +79,5 @@ def test_projected_coordinates_must_use_metres(tmp_path):
         transform=from_origin(0, 20, 1, 1),
     ) as ds:
         ds.write(np.zeros((2, 2), dtype="float32"), 1)
-    with pytest.raises(ValueError, match="deben estar en metros"):
+    with pytest.raises(ValueError, match="must be in meters"):
         sample_elevation(-89.5, 0, path)

@@ -1,4 +1,4 @@
-"""API FastAPI de ILARGI para servir efemérides, horizontes LOLA, visibilidad y materiales."""
+"""FastAPI transport for the ILARGI scientific engine."""
 
 from datetime import UTC, datetime
 from functools import lru_cache
@@ -15,12 +15,12 @@ from pydantic import BaseModel, Field
 from spiceypy.utils.exceptions import SpiceyError
 
 from ilargi.analysis import (
-    SiteAnalysis,
     analyze_site,
     dem_availability,
 )
 from ilargi.education import compute_education_cycle
 from ilargi.materials import load_regions
+from ilargi.models import SiteAnalysis
 from ilargi.sites import EDUCATION_SITES, HISTORICAL_SITES
 
 WEB_DIST = Path(__file__).resolve().parent.parent / "web" / "dist"
@@ -34,43 +34,43 @@ def _cached_regions():
 @lru_cache(maxsize=1)
 def _cached_materials_overlay() -> dict:
     df = load_regions(south_pole_only=False)
-    cat_code = {"Sin datos": 0, "Baja": 1, "Media": 2, "Alta": 3}
+    cat_code = {"No data": 0, "Low": 1, "Medium": 2, "High": 3}
     elements = [
         {
             "id": "Al",
-            "label": "Aluminio (Al)",
-            "unit": "% en masa",
+            "label": "Aluminum (Al)",
+            "unit": "mass %",
             "color": "#A78BFA",
             "available": True,
         },
         {
             "id": "Ca",
-            "label": "Calcio (Ca)",
-            "unit": "% en masa",
+            "label": "Calcium (Ca)",
+            "unit": "mass %",
             "color": "#34D399",
             "available": True,
         },
         {
             "id": "FeO",
-            "label": "Óxido de hierro (FeO)",
-            "unit": "% en masa",
+            "label": "Iron oxide (FeO)",
+            "unit": "mass %",
             "color": "#EF4444",
             "available": True,
         },
         {
             "id": "Th",
-            "label": "Torio (Th)",
+            "label": "Thorium (Th)",
             "unit": "ppm",
             "color": "#FBBF24",
             "available": True,
         },
         {
             "id": "WEH",
-            "label": "Hidrógeno equivalente en agua (WEH)",
-            "unit": "ppm H₂O equivalente",
+            "label": "Water-equivalent hydrogen (WEH)",
+            "unit": "ppm H₂O equivalent",
             "color": "#22D3EE",
             "available": True,
-            "status": "Estimación a partir de hidrógeno; no identifica hielo",
+            "status": "Hydrogen-based estimate; does not identify ice",
         },
     ]
     regions = [
@@ -137,35 +137,33 @@ def _serialize_analysis(analysis: SiteAnalysis) -> dict:
     ) & np.isfinite(horizon.elevation_deg)
 
     def _serialize_track(body: str) -> list[dict]:
-        sub = analysis.series[analysis.series["objetivo"] == body].sort_values("utc")
+        sub = analysis.series[analysis.series["body"] == body].sort_values("utc")
         return [
             {
                 "utc": row.utc.isoformat(),
-                "azimuth_deg": float(row.azimut_deg),
-                "elevation_deg": float(row.elevacion_deg),
-                "horizon_deg": float(row.horizonte_efectivo_deg),
+                "azimuth_deg": float(row.azimuth_deg),
+                "elevation_deg": float(row.elevation_deg),
+                "horizon_deg": float(row.effective_horizon_deg),
                 "horizon_source": (
                     "ideal"
                     if analysis.horizon_mode == "ideal"
                     else "terrain"
-                    if np.isfinite(row.horizonte_parcial_deg)
+                    if np.isfinite(row.sampled_horizon_deg)
                     else "ideal_fallback"
                 ),
-                "margin_deg": float(row.margen_efectivo_deg),
+                "margin_deg": float(row.effective_margin_deg),
                 "visible": bool(row.visible),
-                "range_km": float(row.distancia_km),
-                "angular_radius_deg": float(row.radio_angular_deg),
-                "above_horizon_fraction": _finite_or_none(row.fraccion_sobre_horizonte),
-                "eclipsed_fraction": _finite_or_none(row.fraccion_eclipsada),
-                "direct_visible_fraction": _finite_or_none(
-                    row.fraccion_visible_directa
-                ),
+                "range_km": float(row.range_km),
+                "angular_radius_deg": float(row.angular_radius_deg),
+                "above_horizon_fraction": _finite_or_none(row.above_horizon_fraction),
+                "eclipsed_fraction": _finite_or_none(row.eclipsed_fraction),
+                "direct_visible_fraction": _finite_or_none(row.direct_visible_fraction),
             }
             for row in sub.itertuples()
         ]
 
     sun_eclipsed = analysis.series.loc[
-        analysis.series["objetivo"] == "SUN", "fraccion_eclipsada"
+        analysis.series["body"] == "SUN", "eclipsed_fraction"
     ].to_numpy(dtype=float)
     finite_eclipsed = sun_eclipsed[np.isfinite(sun_eclipsed)]
     max_eclipse_pct = (
@@ -325,7 +323,7 @@ def create_app() -> FastAPI:
         if payload.step_minutes % 10 != 0:
             raise HTTPException(
                 status_code=422,
-                detail="step_minutes debe ser múltiplo de 10 minutos (mínimo 10).",
+                detail="step_minutes must be a multiple of 10 minutes (minimum 10).",
             )
 
         def _run_batch() -> list[dict]:

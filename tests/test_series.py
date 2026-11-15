@@ -11,8 +11,8 @@ def test_series_includes_final_instant_and_both_targets():
     assert len(result) == 8
     assert result.utc.max().hour == 2
     assert result.utc.max().minute == 30
-    assert set(result.objetivo) == {"SUN", "EARTH"}
-    assert result[result.objetivo == "SUN"].azimut_deg.nunique() == 4
+    assert set(result.body) == {"SUN", "EARTH"}
+    assert result[result.body == "SUN"].azimuth_deg.nunique() == 4
 
 
 @pytest.mark.parametrize("duration_minutes", [5, 65])
@@ -34,12 +34,12 @@ def test_series_uses_surface_height_in_metres_and_apparent_corrections():
     result = sky_series(instant, 1, 60, -89.5, 0, -718)
     assert reference.provenance.abcorr == "LT+S"
     for body in ("EARTH", "SUN"):
-        row = result[(result.utc == instant) & (result.objetivo == body)].iloc[0]
-        assert row.elevacion_deg == pytest.approx(reference.target(body).elevation_deg)
-        assert row.azimut_deg == pytest.approx(reference.target(body).azimuth_deg)
+        row = result[(result.utc == instant) & (result.body == body)].iloc[0]
+        assert row.elevation_deg == pytest.approx(reference.target(body).elevation_deg)
+        assert row.azimuth_deg == pytest.approx(reference.target(body).azimuth_deg)
 
 
 @pytest.mark.parametrize("step", [1, 9, 15])
 def test_series_rejects_invalid_step(step):
-    with pytest.raises(ValueError, match="10 minutos"):
+    with pytest.raises(ValueError, match="10 minutes"):
         sky_series(datetime(2026, 4, 2, tzinfo=UTC), 1, step, -89.5, 0, 0)

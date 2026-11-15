@@ -1,4 +1,4 @@
-"""Exportación reproducible del LDEM a PNG con Matplotlib."""
+"""Reproducible static terrain PNG export using Matplotlib."""
 
 import argparse
 from io import BytesIO
@@ -17,9 +17,9 @@ from ilargi.terrain import SAMPLE, TerrainSample, dem_metadata, sample_elevation
 
 
 def crop_window(ds, sample: TerrainSample, window_km: float) -> Window:
-    """Devuelve la envolvente en píxeles de un cuadrado proyectado."""
+    """Return the pixel envelope of a projected square around the site."""
     if not np.isfinite(window_km) or window_km <= 0:
-        raise ValueError("La ventana necesita un tamaño positivo")
+        raise ValueError("Window size must be positive")
     half = window_km * 500
     left, right = sample.x_m - half, sample.x_m + half
     bottom, top = sample.y_m - half, sample.y_m + half
@@ -29,7 +29,7 @@ def crop_window(ds, sample: TerrainSample, window_km: float) -> Window:
         or bottom < ds.bounds.bottom
         or top > ds.bounds.top
     ):
-        raise ValueError("La ventana solicitada rebasa el recorte disponible")
+        raise ValueError("Requested window exceeds the available crop")
     raw = from_bounds(left, bottom, right, top, transform=ds.transform)
     col0 = max(0, int(np.floor(raw.col_off + 1e-9)))
     row0 = max(0, int(np.floor(raw.row_off + 1e-9)))
@@ -45,11 +45,7 @@ def render_terrain_png(
     relief: bool = False,
     window_km: float | None = None,
 ) -> bytes:
-    """Representa el GeoTIFF o una ventana sin interpolar el raster de alturas.
-
-    El relieve opcional es una ayuda gráfica calculada a partir de pendientes;
-    no representa la iluminación del Sol en un instante ni altera el DEM.
-    """
+    """Render native elevations without interpolation. Optional slope shading is illustrative and does not represent dated solar lighting or alter the DEM."""
     with rasterio.open(path) as ds:
         _, scale, offset = dem_metadata(ds)
         if sample is not None and (
@@ -58,18 +54,16 @@ def render_terrain_png(
             or not ds.bounds.left <= sample.x_m < ds.bounds.right
             or not ds.bounds.bottom < sample.y_m <= ds.bounds.top
         ):
-            raise ValueError("El emplazamiento no pertenece al DEM")
+            raise ValueError("Site is outside the DEM")
         window = None
         if window_km is not None:
             if sample is None:
-                raise ValueError("La ventana necesita un emplazamiento")
+                raise ValueError("Window requires a site")
             window = crop_window(ds, sample, window_km)
         width = int(window.width) if window is not None else ds.width
         height = int(window.height) if window is not None else ds.height
         if width * height > 4_000_000:
-            raise ValueError(
-                "El DEM es demasiado grande para esta exportación; usa un recorte"
-            )
+            raise ValueError("DEM is too large for this export; use a crop")
         values = (
             ds.read(1, window=window, masked=True).astype(float).filled(np.nan) * scale
             + offset
@@ -78,9 +72,9 @@ def render_terrain_png(
         pixel_m = ds.transform.a
     valid = np.isfinite(values)
     if not np.any(valid):
-        raise ValueError("El DEM no contiene alturas válidas")
+        raise ValueError("DEM contains no valid heights")
     if relief and min(values.shape) < 2:
-        raise ValueError("El sombreado necesita al menos dos píxeles por lado")
+        raise ValueError("Shading requires at least two pixels per side")
     norm = Normalize(vmin=float(np.nanmin(values)), vmax=float(np.nanmax(values)))
     extent = [
         bounds[0] / 1000,
@@ -128,19 +122,19 @@ def render_terrain_png(
             label="Emplazamiento",
         )
         ax.legend(loc="upper right")
-    color_label = "Altura sobre la esfera lunar (m)"
+    color_label = "Height above the lunar sphere (m)"
     if relief:
-        color_label += " · colores base"
+        color_label += " · base colors"
     fig.colorbar(image, ax=ax, shrink=0.8, pad=0.03, label=color_label)
-    ax.set(xlabel="X estereográfico (km)", ylabel="Y estereográfico (km)")
+    ax.set(xlabel="Stereographic X (km)", ylabel="Stereographic Y (km)")
     detail = (
-        "sombreado ilustrativo, relieve exagerado 2×"
+        "illustrative shading, 2× vertical exaggeration"
         if relief
-        else "alturas sin sombreado"
+        else "unshaded heights"
     )
     ax.set_title(
-        f"LOLA · Elevación del polo sur · {pixel_m:g} m/píxel\n"
-        f"NASA LRO/LOLA PGDA · ME DE421 · {detail}\nEscala de color ajustada a esta vista",
+        f"LOLA · South pole elevation · {pixel_m:g} m/pixel\n"
+        f"NASA LRO/LOLA PGDA · ME DE421 · {detail}\nColor scale adjusted to this view",
         fontsize=11,
         pad=12,
     )
@@ -150,25 +144,27 @@ def render_terrain_png(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Genera un PNG del recorte lunar LOLA")
+    parser = argparse.ArgumentParser(
+        description="Generate a PNG of the lunar LOLA crop"
+    )
     parser.add_argument(
         "--dem",
         choices=("20", "80"),
         default="20",
-        help="resolución nominal en metros por píxel",
+        help="nominal resolution in meters per pixel",
     )
-    parser.add_argument("--output", type=Path, required=True, help="ruta de salida PNG")
+    parser.add_argument("--output", type=Path, required=True, help="output PNG path")
     parser.add_argument(
         "--relief",
         action="store_true",
-        help="añade sombreado ilustrativo, no iluminación real",
+        help="add illustrative shading, not physical lighting",
     )
     parser.add_argument("--latitude", type=float, default=-89.5)
     parser.add_argument("--longitude", type=float, default=0.0)
     parser.add_argument(
         "--window-km",
         type=float,
-        help="anchura del detalle centrado en el punto, en km",
+        help="width of the site-centered detail in km",
     )
     args = parser.parse_args()
     path = (
@@ -185,7 +181,7 @@ def main() -> None:
         parser.error(str(exc))
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(png)
-    print(f"Imagen guardada: {args.output.resolve()}")
+    print(f"Image saved: {args.output.resolve()}")
 
 
 if __name__ == "__main__":

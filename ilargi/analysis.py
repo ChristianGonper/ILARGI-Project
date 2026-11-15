@@ -1,13 +1,17 @@
-"""Análisis científico por emplazamiento: visibilidad, eventos, noches, incidencia y materiales."""
+"""Site visibility, events, incidence and regional materials."""
 
-from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 from ilargi.discs import angular_radius, disc_visibility
+from ilargi.events import (
+    _extract_body_events_and_spans,
+    _intersect_hours,
+    _intervals_hours,
+)
 from ilargi.horizon import (
     Horizon,
     calculate_horizon,
@@ -16,6 +20,7 @@ from ilargi.horizon import (
     horizon_at,
 )
 from ilargi.materials import MATERIALS, load_regions, region_at, weh_at
+from ilargi.models import IncidenceStats, MaterialsSummary, SiteAnalysis
 from ilargi.series import sky_series
 from ilargi.terrain import (
     GLOBAL,
@@ -29,82 +34,8 @@ from ilargi.terrain import (
 SAMPLE_20 = SAMPLE.with_name("lola_20m_south_pole_sample.tif")
 
 
-@dataclass(frozen=True)
-class VisibilityEvent:
-    body: str
-    event_type: str  # "sunset" | "sunrise" | "earthset" | "earthrise"
-    utc: datetime
-    azimuth_deg: float
-    horizon_deg: float
-
-
-@dataclass(frozen=True)
-class ShadowSpan:
-    body: str
-    start_utc: datetime
-    end_utc: datetime
-    duration_hours: float
-    bounded_start: bool
-    bounded_end: bool
-
-
-@dataclass(frozen=True)
-class IncidenceStats:
-    min_incidence_deg: float | None
-    max_incidence_deg: float | None
-    mean_incidence_deg: float | None
-    median_incidence_deg: float | None
-    std_incidence_deg: float | None
-    max_sun_elevation_deg: float
-    min_sun_elevation_deg: float
-    sunlit_samples: int
-    total_samples: int
-
-
-@dataclass(frozen=True)
-class MaterialsSummary:
-    in_coverage: bool
-    region_id: int | None
-    elements: dict[str, tuple[float | None, str, str]]  # symbol -> (val, unit, cat)
-    water_status: str
-
-
-@dataclass(frozen=True)
-class SiteAnalysis:
-    label: str
-    site_name: str
-    latitude_deg: float
-    longitude_east_deg: float
-    start_utc: datetime
-    duration_hours: float
-    step_minutes: int
-    instrument_height_m: float
-    horizon_mode: str  # "lola" | "ideal"
-    horizon_label: str
-    search_radius_km: float
-    terrain: TerrainSample | None
-    horizon: Horizon
-    series: pd.DataFrame
-    sun_visible_pct: float
-    earth_visible_pct: float
-    both_visible_pct: float
-    sun_visible_hours: float
-    earth_visible_hours: float
-    both_visible_hours: float
-    sunsets: tuple[VisibilityEvent, ...]
-    sunrises: tuple[VisibilityEvent, ...]
-    earthsets: tuple[VisibilityEvent, ...]
-    earthrises: tuple[VisibilityEvent, ...]
-    longest_night: ShadowSpan | None
-    other_nights: tuple[ShadowSpan, ...]
-    earth_outages: tuple[ShadowSpan, ...]
-    incidence: IncidenceStats
-    materials: MaterialsSummary
-    temperature_status: str = "Sin modelo térmico en esta versión"
-
-
 def ideal_horizon(observer_m: float = 2.0, azimuth_step_deg: float = 2.0) -> Horizon:
-    """Horizonte esférico ideal a 0° para ubicaciones fuera del recorte LOLA."""
+    """Construct the explicit ideal 0° horizon used without terrain coverage."""
     n_az = int(np.ceil(360.0 / azimuth_step_deg))
     azimuth = np.arange(n_az, dtype=float) * (360.0 / n_az)
     elevation = np.zeros(n_az, dtype=float)
@@ -122,147 +53,9 @@ def ideal_horizon(observer_m: float = 2.0, azimuth_step_deg: float = 2.0) -> Hor
     )
 
 
-def _circular_interp_deg(az0: float, az1: float, frac: float) -> float:
-    delta = ((az1 - az0 + 180.0) % 360.0) - 180.0
-    return float((az0 + frac * delta) % 360.0)
-
-
-def _extract_body_events_and_spans(
-    track: pd.DataFrame,
-    body: str,
-) -> tuple[
-    tuple[VisibilityEvent, ...],
-    tuple[VisibilityEvent, ...],
-    tuple[ShadowSpan, ...],
-    list[tuple[float, float]],
-]:
-    """Detecta cruces de visibilidad y tramos continuos de oclusión e iluminación."""
-    if track.empty:
-        return (), (), (), []
-
-    times = track["utc"].tolist()
-    margins = track["margen_efectivo_deg"].to_numpy(dtype=float)
-    azimuths = track["azimut_deg"].to_numpy(dtype=float)
-    horizons = track["horizonte_efectivo_deg"].to_numpy(dtype=float)
-    visible = margins > 0.0
-
-    t0 = times[0]
-    total_s = max(1e-9, (times[-1] - t0).total_seconds())
-    set_name = "sunset" if body == "SUN" else "earthset"
-    rise_name = "sunrise" if body == "SUN" else "earthrise"
-
-    sets: list[VisibilityEvent] = []
-    rises: list[VisibilityEvent] = []
-    spans: list[ShadowSpan] = []
-    lit_intervals: list[tuple[float, float]] = []
-
-    span_start: datetime | None = None
-    span_bounded_start = False
-    lit_start: float | None = 0.0 if visible[0] else None
-
-    if not visible[0]:
-        span_start = times[0]
-        span_bounded_start = False
-
-    for idx in range(len(times) - 1):
-        v0, v1 = bool(visible[idx]), bool(visible[idx + 1])
-        if v0 == v1:
-            continue
-        m0, m1 = float(margins[idx]), float(margins[idx + 1])
-        denom = m0 - m1
-        frac = 0.5 if denom == 0.0 else float(np.clip(m0 / denom, 0.0, 1.0))
-        dt_s = (times[idx + 1] - times[idx]).total_seconds()
-        t_cross = times[idx] + timedelta(seconds=dt_s * frac)
-        az_cross = _circular_interp_deg(
-            float(azimuths[idx]), float(azimuths[idx + 1]), frac
-        )
-        h_cross = float(horizons[idx] + frac * (horizons[idx + 1] - horizons[idx]))
-        rel_cross = (t_cross - t0).total_seconds()
-
-        if v0 and not v1:
-            sets.append(
-                VisibilityEvent(
-                    body=body,
-                    event_type=set_name,
-                    utc=t_cross,
-                    azimuth_deg=az_cross,
-                    horizon_deg=h_cross,
-                )
-            )
-            if lit_start is not None:
-                lit_intervals.append((lit_start, rel_cross))
-                lit_start = None
-            span_start = t_cross
-            span_bounded_start = True
-        else:
-            rises.append(
-                VisibilityEvent(
-                    body=body,
-                    event_type=rise_name,
-                    utc=t_cross,
-                    azimuth_deg=az_cross,
-                    horizon_deg=h_cross,
-                )
-            )
-            if span_start is not None:
-                dur_h = (t_cross - span_start).total_seconds() / 3600.0
-                spans.append(
-                    ShadowSpan(
-                        body=body,
-                        start_utc=span_start,
-                        end_utc=t_cross,
-                        duration_hours=dur_h,
-                        bounded_start=span_bounded_start,
-                        bounded_end=True,
-                    )
-                )
-                span_start = None
-            lit_start = rel_cross
-
-    if lit_start is not None:
-        lit_intervals.append((lit_start, total_s))
-    if span_start is not None:
-        dur_h = (times[-1] - span_start).total_seconds() / 3600.0
-        spans.append(
-            ShadowSpan(
-                body=body,
-                start_utc=span_start,
-                end_utc=times[-1],
-                duration_hours=dur_h,
-                bounded_start=span_bounded_start,
-                bounded_end=False,
-            )
-        )
-
-    return tuple(sets), tuple(rises), tuple(spans), lit_intervals
-
-
-def _intervals_hours(intervals: list[tuple[float, float]]) -> float:
-    return sum(max(0.0, b - a) for a, b in intervals) / 3600.0
-
-
-def _intersect_hours(
-    a_list: list[tuple[float, float]], b_list: list[tuple[float, float]]
-) -> float:
-    total_s = 0.0
-    i = j = 0
-    while i < len(a_list) and j < len(b_list):
-        a0, a1 = a_list[i]
-        b0, b1 = b_list[j]
-        lo = max(a0, b0)
-        hi = min(a1, b1)
-        if hi > lo:
-            total_s += hi - lo
-        if a1 < b1:
-            i += 1
-        else:
-            j += 1
-    return total_s / 3600.0
-
-
 def compute_incidence_stats(sun_track: pd.DataFrame) -> IncidenceStats:
-    """Calcula estadísticas del ángulo de incidencia solar respecto a la normal local."""
-    elevations = sun_track["elevacion_deg"].to_numpy(dtype=float)
+    """Summarize incidence relative to the ideal spherical normal at visible samples."""
+    elevations = sun_track["elevation_deg"].to_numpy(dtype=float)
     sunlit = sun_track["visible"].to_numpy(dtype=bool)
     sunlit_elev = elevations[sunlit]
     if sunlit_elev.size == 0:
@@ -294,12 +87,12 @@ def compute_incidence_stats(sun_track: pd.DataFrame) -> IncidenceStats:
 def summarize_materials(
     latitude_deg: float, longitude_east_deg: float, regions: pd.DataFrame | None = None
 ) -> MaterialsSummary:
-    """Consulta abundancias regionales globales de LP-GRS y el estado de WEH."""
+    """Query regional LP-GRS abundances and water-equivalent hydrogen."""
     weh = weh_at(latitude_deg, longitude_east_deg)
     water_status = (
-        f"{weh:.0f} ppm H₂O equivalente (Lawrence et al. 2022)"
+        f"{weh:.0f} ppm H₂O equivalent (Lawrence et al. 2022)"
         if weh is not None
-        else "Sin datos WEH"
+        else "No WEH data"
     )
     if regions is None:
         regions = load_regions()
@@ -325,7 +118,7 @@ def summarize_materials(
 
 
 def dem_availability() -> dict[str, bool]:
-    """Indica qué productos topográficos LOLA están presentes en disco."""
+    """Report which supported LOLA products are present on disk."""
     return {
         "polar_80m": POLAR.is_file() and POLAR.stat().st_size == 189158392,
         "global_240m": (
@@ -356,7 +149,7 @@ def _resolve_dem_candidates(
         return [SAMPLE_20] if avail["sample_20m"] else []
     if dem_mode == "sample80":
         return [SAMPLE] if avail["sample_80m"] else []
-    # Modo automático: mejor resolución disponible que cubra la latitud.
+    # Automatic selection: finest available resolution covering the latitude.
     candidates: list[Path] = []
     if latitude_deg <= -80.0:
         if avail["polar_80m"]:
@@ -391,11 +184,15 @@ def analyze_site(
     dem_mode: str = "auto",
     regions: pd.DataFrame | None = None,
 ) -> SiteAnalysis:
-    """Ejecuta el análisis completo de un punto lunar con radio del plano tangente."""
+    """Combine terrain, apparent tracks, visibility intervals and material context."""
+    if not np.isfinite(longitude_east_deg) or not -180 <= longitude_east_deg <= 360:
+        raise ValueError("Longitude must be finite and in [-180, 360]")
+    # The API accepts east longitudes up to 360°; raster queries use [-180, 180).
+    longitude_east_deg = (longitude_east_deg + 180) % 360 - 180
     terrain: TerrainSample | None = None
     horizon: Horizon | None = None
     horizon_mode = "ideal"
-    horizon_label = "Esfera ideal (0°) — sin cobertura DEM"
+    horizon_label = "Ideal sphere (0°) — no DEM coverage"
     avail = dem_availability()
     search_radius_km = (
         estimate_search_radius(
@@ -455,9 +252,9 @@ def analyze_site(
                 "≈237" if candidate == GLOBAL else f"{int(round(horizon.pixel_m))}"
             )
             horizon_label = (
-                f"LOLA {res_tag} m/píxel + Global"
+                f"LOLA {res_tag} m/pixel + Global"
                 if coarse_path == GLOBAL
-                else f"LOLA {res_tag} m/píxel ({candidate.stem})"
+                else f"LOLA {res_tag} m/pixel ({candidate.stem})"
             )
             break
         except TerrainCoverageError:
@@ -482,35 +279,35 @@ def analyze_site(
         longitude_east_deg,
         observer_height_m,
     )
-    sampled_h = horizon_at(horizon, series["azimut_deg"])
+    sampled_h = horizon_at(horizon, series["azimuth_deg"])
     effective_h = np.where(np.isfinite(sampled_h), sampled_h, 0.0)
-    series["horizonte_parcial_deg"] = sampled_h
-    series["horizonte_efectivo_deg"] = effective_h
-    series["margen_efectivo_deg"] = series["elevacion_deg"] - effective_h
-    series["visible"] = series["margen_efectivo_deg"] > 0.0
-    series["radio_angular_deg"] = [
-        float(np.rad2deg(angular_radius(row.objetivo, row.distancia_km)))
+    series["sampled_horizon_deg"] = sampled_h
+    series["effective_horizon_deg"] = effective_h
+    series["effective_margin_deg"] = series["elevation_deg"] - effective_h
+    series["visible"] = series["effective_margin_deg"] > 0.0
+    series["angular_radius_deg"] = [
+        float(np.rad2deg(angular_radius(row.body, row.range_km)))
         for row in series.itertuples()
     ]
     earth_by_utc = {
-        row.utc: row for row in series[series["objetivo"] == "EARTH"].itertuples()
+        row.utc: row for row in series[series["body"] == "EARTH"].itertuples()
     }
     above_frac: list[float] = []
     eclipsed_frac: list[float] = []
     visible_frac: list[float] = []
     for row in series.itertuples():
         above, eclipsed, visible = disc_visibility(
-            row.objetivo, row, horizon, earth_by_utc.get(row.utc)
+            row.body, row, horizon, earth_by_utc.get(row.utc)
         )
         above_frac.append(above)
         eclipsed_frac.append(eclipsed)
         visible_frac.append(visible)
-    series["fraccion_sobre_horizonte"] = above_frac
-    series["fraccion_eclipsada"] = eclipsed_frac
-    series["fraccion_visible_directa"] = visible_frac
+    series["above_horizon_fraction"] = above_frac
+    series["eclipsed_fraction"] = eclipsed_frac
+    series["direct_visible_fraction"] = visible_frac
 
-    sun_track = series[series["objetivo"] == "SUN"].sort_values("utc")
-    earth_track = series[series["objetivo"] == "EARTH"].sort_values("utc")
+    sun_track = series[series["body"] == "SUN"].sort_values("utc")
+    earth_track = series[series["body"] == "EARTH"].sort_values("utc")
 
     sunsets, sunrises, sun_spans, sun_lit = _extract_body_events_and_spans(
         sun_track, "SUN"
@@ -570,29 +367,4 @@ def analyze_site(
         earth_outages=sorted_outages,
         incidence=incidence,
         materials=materials,
-    )
-
-
-def format_events_summary(events: tuple[VisibilityEvent, ...]) -> str:
-    """Resume todos los eventos de puesta detectados o indica ausencia."""
-    if not events:
-        return "Sin evento en el periodo evaluado"
-    parts = [
-        f"{ev.utc.strftime('%Y-%m-%d %H:%M')} UTC ({ev.azimuth_deg:.1f}°)"
-        for ev in events
-    ]
-    return " · ".join(parts)
-
-
-def format_span(span: ShadowSpan) -> str:
-    """Formatea un intervalo de sombra o pérdida con marcas de borde si aplica."""
-    flags = []
-    if not span.bounded_start:
-        flags.append("inicio ventana")
-    if not span.bounded_end:
-        flags.append("fin ventana")
-    suffix = f" [{', '.join(flags)}]" if flags else ""
-    return (
-        f"{span.duration_hours:.1f} h "
-        f"({span.start_utc.strftime('%m-%d %H:%M')} → {span.end_utc.strftime('%m-%d %H:%M')} UTC){suffix}"
     )

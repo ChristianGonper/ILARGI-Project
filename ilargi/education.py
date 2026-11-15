@@ -1,4 +1,4 @@
-"""Cálculo rápido de ciclos lunares completos y órbitas de 3 cuerpos para Modo Educación."""
+"""Generate lunar-cycle frames for the educational experience."""
 
 from datetime import UTC, datetime, timedelta
 
@@ -28,16 +28,16 @@ def compute_education_cycle(
     duration_hours: float = 709.0,
     step_minutes: int = 180,
 ) -> dict:
-    """Calcula en una pasada SPICE el ciclo solar lunar completo y las órbitas 3 cuerpos."""
+    """Compute educational solar-cycle and three-body frames in one SPICE session."""
     utc = require_aware_utc(start_utc)
     if not (-90.0 < latitude_deg < 90.0):
-        raise ValueError("La latitud debe estar en (-90°, 90°)")
+        raise ValueError("Latitude must be in (-90°, 90°)")
     if not 1.0 <= duration_hours <= 24.0 * 60.0:
-        raise ValueError("duration_hours debe estar entre 1 y 1440 horas")
+        raise ValueError("duration_hours must be between 1 and 1440 hours")
     if not 30 <= step_minutes <= 720:
-        raise ValueError("step_minutes debe estar entre 30 y 720 minutos")
+        raise ValueError("step_minutes must be between 30 and 720 minutes")
 
-    # Muestreo opcional del terreno/horizonte LOLA a paso grueso (5°) si el DEM cubre el punto.
+    # Optionally sample a coarse 5° terrain horizon where the DEM covers the site.
     ground_elevation_m: float | None = None
     horizon = None
     horizon_mode = "ideal"
@@ -89,7 +89,7 @@ def compute_education_cycle(
 
         for instant in times:
             et = utc_to_et(instant)
-            # 1. Direcciones desde el centro lunar en MOON_ME (iluminación global del globo 3D).
+            # Lunar-center directions in MOON_ME for globe illumination.
             sun_me_raw, _ = spice.spkpos("SUN", et, LUNAR_FRAME, ABCORR, OBSERVER_BODY)
             earth_me_raw, _ = spice.spkpos(
                 "EARTH", et, LUNAR_FRAME, ABCORR, OBSERVER_BODY
@@ -99,7 +99,7 @@ def compute_education_cycle(
             sun_me_unit = sun_me / max(1e-12, float(np.linalg.norm(sun_me)))
             earth_me_unit = earth_me / max(1e-12, float(np.linalg.norm(earth_me)))
 
-            # 2. Acimut y elevación locales en el emplazamiento elegido.
+            # Local azimuth and elevation at the selected site.
             sun_state, _ = spice.spkcpo(
                 "SUN",
                 et,
@@ -144,7 +144,7 @@ def compute_education_cycle(
             if not np.isfinite(earth_hor_deg):
                 earth_hor_deg = 0.0
 
-            # 3. Posiciones geométricas simultáneas de los 3 cuerpos en J2000 (relativas al Sol).
+            # Simultaneous geometric J2000 positions relative to the Sun.
             sun_earth = np.asarray(
                 spice.spkpos("EARTH", et, "J2000", "NONE", "SUN")[0], dtype=float
             )
@@ -157,9 +157,9 @@ def compute_education_cycle(
             d_sm = float(np.linalg.norm(sun_moon))
             d_em = float(np.linalg.norm(earth_moon))
 
-            # Ángulo de fase lunar visto desde la Tierra:
-            # 0° = Luna Llena (Sol-Tierra-Luna alineados con Luna opuesta al Sol),
-            # 180° = Luna Nueva (Luna entre Sol y Tierra).
+            # Lunar phase angle seen from Earth:
+            # 0° is full Moon, opposite the Sun as seen from Earth;
+            # 180° is new Moon, between Sun and Earth.
             v_ms = -sun_moon
             v_me = -earth_moon
             cos_phase = float(
