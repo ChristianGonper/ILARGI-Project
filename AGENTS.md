@@ -4,22 +4,24 @@
 
 The project has two aims: to make lunar geometric phenomena understandable and to maintain **scientific accuracy**. Academic approximations are nevertheless adopted where necessary because of the event's constraints.
 
+The intended use is from a desktop browser, not mobile.
+
 ## System duality
 
-ILARGI offers **two distinct experiences built on the same scientific engine** (FastAPI + SPICE + LOLA + LP-GRS), selectable from [HomeScreen.tsx](web/src/components/HomeScreen.tsx):
+ILARGI offers **two distinct experiences built on the same scientific engine** (FastAPI + SPICE + LOLA + LP-GRS):
 
-1. **PRO mode (`pro`) — Technical mission analysis:** a scientific workspace with multiple preset or custom points, apparent Sun/Earth tracks, LOLA terrain horizons, visible disc fractions and geometric eclipses, events (`sunrise`/`sunset`/`earthrise`/`earthset`), dark-interval durations, solar incidence, regional LP-GRS/WEH abundances, site comparisons, and data export.
-2. **Education mode (`education`) — Guided exploration with the ILARGI mascot:** a gamified visual experience covering a lunar synodic cycle (~29.53 days / 708.7 h) on the 3D globe, historically significant locations, a **water-equivalent hydrogen (WEH)** layer, a simultaneous **three-body orbital visualization (Sun · Earth · Moon)**, and a **Lunar Landing Game**.
+1. **Mission Analysis — Technical mission analysis:** a scientific workspace with multiple preset or custom points, apparent Sun/Earth tracks, LOLA terrain horizons, visible disc fractions and geometric eclipses, events (`sunrise`/`sunset`/`earthrise`/`earthset`), dark-interval durations, solar incidence, regional LP-GRS/WEH abundances, site comparisons, and data export.
+2. **Education mode — Guided exploration with the ILARGI mascot:** a gamified visual experience covering a lunar synodic cycle on the 3D globe, historically significant locations, a **water-equivalent hydrogen (WEH)** layer, a simultaneous **three-body orbital visualization (Sun · Earth · Moon)**, and a **Lunar Landing Game**.
 
 ## Key characteristics and conventions
 
 - **Ephemerides and two non-interchangeable observers:**
   - `ephemeris.py` manages kernel loading, UTC validation, time conversion, and serialized access to SPICE. `education.py` computes geometric `J2000` vectors without corrections (`NONE`) for the three-body view.
   - `apparent.py` computes apparent directions with `LT+S` in the explicit **`MOON_ME_DE440_ME421`** frame on the reference sphere. The surface observer includes the velocity due to lunar rotation.
-- **Visual 3D terrain versus scientific DEM:** the Three.js globe uses a reduced global DEM (`web/public/textures/moon_height.bin.gz`, ~3.8 km/pixel) and illustrative lighting.
+- **Visual 3D terrain versus scientific DEM:** the Three.js globe uses a reduced global DEM, (~3.8 km/pixel) and illustrative lighting.
 - **LOLA topography and frames ([ilargi/terrain.py](ilargi/terrain.py), [ilargi/horizon.py](ilargi/horizon.py)):**
   - LOLA DEMs use the **DE421** `ME` frame.
-  - The repository includes local crops (`lola_80m_south_pole_sample.tif` and `lola_20m_south_pole_sample.tif` around `89.5° S, 0° E`) and supports downloading the full DEMs (~2.3 GB: polar 80 m and global `ldem_128.vrt` at approximately 237 m).
+  - The repository includes local crops ()`89.5° S, 0° E`) and supports downloading the full DEMs.
 
 ## Basic structure
 
