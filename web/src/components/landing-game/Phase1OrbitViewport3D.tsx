@@ -407,8 +407,8 @@ export function Phase1OrbitViewport3D({
     const trackMat = groundTrackLine.material as THREE.LineBasicMaterial;
     const orbitMat = orbitLine.material as THREE.LineBasicMaterial;
     if (groundTrackAligned) {
-      trackMat.color.setHex(0x10b981);
-      orbitMat.color.setHex(0x10b981);
+      trackMat.color.setHex(0xc4b5fd);
+      orbitMat.color.setHex(0x38bdf8);
     } else {
       trackMat.color.setHex(0xf59e0b);
       orbitMat.color.setHex(0x38bdf8);
@@ -602,9 +602,7 @@ export function Phase1OrbitViewport3D({
           </span>
         </div>
         <span className="pill pill-muted">
-          {pinMode
-            ? "Pin mode active: click the Moon"
-            : "Drag to rotate · Shift+click to choose a location"}
+          {pinMode ? "Pin mode active: click the Moon" : "Drag to rotate"}
         </span>
       </div>
     </div>

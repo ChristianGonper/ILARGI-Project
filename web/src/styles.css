@@ -201,3 +201,12 @@
     padding: 8px;
   }
 }
+
+.phase2-control-card > .panel-header {
+  display: block;
+}
+.phase2-control-card > .panel-header > .pill {
+  display: block;
+  margin-top: 10px;
+  white-space: normal;
+}

@@ -134,6 +134,7 @@ export function App() {
         const res = await analyzePoints(targetPoints, activeParams);
         if (request !== analysisRequest.current) return;
         setResults(res);
+        setResultsHidden(false);
         const valid = new Set(res.map((r) => r.label));
         setComparedLabels((prev) => prev.filter((l) => valid.has(l)));
       } catch (err: unknown) {
