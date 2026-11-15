@@ -5,6 +5,9 @@ on:
     branches: [main, deployment/jury-hybrid]
 permissions:
   contents: read
+concurrency:
+  group: deployment-checks-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
 jobs:
   validate:
     runs-on: ubuntu-latest

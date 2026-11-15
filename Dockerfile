@@ -10,6 +10,8 @@ RUN uv run --no-sync python -m ilargi.kernels
 
 FROM python:3.13-slim
 WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends libexpat1 \
+    && rm -rf /var/lib/apt/lists/*
 ENV PATH="/app/.venv/bin:$PATH" PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
     ILARGI_KERNEL_DIR=/app/data/kernels ILARGI_TERRAIN_DIR=/app/data/terrain \
     OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 GDAL_CACHEMAX=128
@@ -18,6 +20,7 @@ COPY --from=build /app/data/kernels ./data/kernels
 COPY ilargi ./ilargi
 COPY data/materials ./data/materials
 COPY data/terrain/*.tif data/terrain/*.vrt ./data/terrain/
+RUN python -c "import rasterio; import ilargi.api"
 RUN useradd --uid 10001 --create-home ilargi
 USER 10001
 EXPOSE 8080
