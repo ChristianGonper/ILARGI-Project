@@ -153,6 +153,11 @@ def test_education_sites_and_cycle_endpoint():
     )
     assert cycle_resp.status_code == 200
     data = cycle_resp.json()
+    avail = dem_availability()
+    expected_edu_mode = (
+        "lola" if (avail["polar_80m"] or avail["global_240m"]) else "ideal"
+    )
+    assert data["site"]["horizon_mode"] == expected_edu_mode
     assert data["lunar_day_hours"] > 700.0
     assert len(data["frames"]) >= 100
     first = data["frames"][0]
@@ -163,3 +168,27 @@ def test_education_sites_and_cycle_endpoint():
     assert len(first["earth_moon_km"]) == 3
     assert 350_000.0 <= first["earth_moon_dist_km"] <= 415_000.0
     assert 140_000_000.0 <= first["sun_earth_dist_km"] <= 155_000_000.0
+
+
+def test_api_respects_terrain_dir_override(tmp_path, monkeypatch):
+    monkeypatch.setenv("ILARGI_TERRAIN_DIR", str(tmp_path))
+    health = client.get("/api/health")
+    assert health.status_code == 200
+    assert health.json()["dem"] == {
+        "polar_80m": False,
+        "global_240m": False,
+        "sample_20m": True,
+        "sample_80m": True,
+    }
+    cycle_resp = client.post(
+        "/api/education/cycle",
+        json={
+            "latitude_deg": -84.678,
+            "longitude_east_deg": -48.693,
+            "start_utc": "2026-04-02T15:00:00Z",
+            "duration_hours": 12.0,
+            "step_minutes": 180,
+        },
+    )
+    assert cycle_resp.status_code == 200
+    assert cycle_resp.json()["site"]["horizon_mode"] == "ideal"

@@ -19,7 +19,7 @@ uv run python main.py
 
 Open http://127.0.0.1:8000. During development, run the Python server and `npm --prefix web run dev` in separate terminals; Vite proxies `/api` to port 8000.
 
-The initial NAIF kernel download is about 45 MB. Kernels are verified by SHA-256, with a shared cache under `~/.ilargi/kernels`; `ILARGI_KERNEL_DIR` selects an existing alternative. Local terrain samples are included. Full DEMs in `~/.ilargi/terrain` are shared across worktrees; the global product requires both `ldem_128.vrt` and `ldem_128.img` there. Otherwise, to download the full polar and global DEMs (about 2.3 GB) into the checkout, run `uv run python -m ilargi.download_terrain`.
+The initial NAIF kernel download is about 45 MB. Kernels are verified by SHA-256, with a shared cache under `~/.ilargi/kernels`; `ILARGI_KERNEL_DIR` selects an existing alternative. Local terrain samples are included. To download the full polar and global DEMs (about 2.3 GB) into the shared terrain cache (`~/.ilargi/terrain`, overrideable via `ILARGI_TERRAIN_DIR`), run `uv run python -m ilargi.download_terrain`.
 
 ## Documentation
 

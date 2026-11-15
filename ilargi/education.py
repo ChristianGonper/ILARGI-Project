@@ -1,6 +1,7 @@
 """Generate lunar-cycle frames for the educational experience."""
 
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 
 import numpy as np
 import spiceypy as spice
@@ -15,7 +16,12 @@ from ilargi.apparent import (
 )
 from ilargi.ephemeris import require_aware_utc, spice_session, utc_to_et
 from ilargi.horizon import calculate_horizon, estimate_search_radius, horizon_at
-from ilargi.terrain import GLOBAL, POLAR, SAMPLE, sample_elevation
+from ilargi.terrain import (
+    SAMPLE,
+    resolve_global_dem,
+    resolve_polar_dem,
+    sample_elevation,
+)
 
 SYNODIC_LUNAR_DAY_HOURS = 708.734
 
@@ -41,7 +47,17 @@ def compute_education_cycle(
     ground_elevation_m: float | None = None
     horizon = None
     horizon_mode = "ideal"
-    for cand in [POLAR, SAMPLE, GLOBAL] if latitude_deg <= -80.0 else [GLOBAL]:
+    polar_path = resolve_polar_dem()
+    global_path = resolve_global_dem()
+    candidates: list[Path] = []
+    if latitude_deg <= -80.0:
+        if polar_path is not None:
+            candidates.append(polar_path)
+        if SAMPLE.is_file():
+            candidates.append(SAMPLE)
+    if global_path is not None:
+        candidates.append(global_path)
+    for cand in candidates:
         try:
             terrain = sample_elevation(latitude_deg, longitude_east_deg, cand)
             ground_elevation_m = float(terrain.elevation_m)

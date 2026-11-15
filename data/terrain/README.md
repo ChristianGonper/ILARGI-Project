@@ -2,7 +2,7 @@
 
 ## Downloadable full products
 
-`uv run python -m ilargi.download_terrain` downloads the polar 80 m GeoTIFF and [PDS LDEM_128](https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/img/ldem_128.lbl). Large files are excluded from Git. Downloads verify size and SHA-256 before installing temporary files. Recorded hashes from 2026-11-14:
+`uv run python -m ilargi.download_terrain` downloads the polar 80 m GeoTIFF and [PDS LDEM_128](https://pds-geosciences.wustl.edu/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/img/ldem_128.lbl) into the shared cache `~/.ilargi/terrain` (or `ILARGI_TERRAIN_DIR` when set) so separate Git worktrees can share a single copy without duplicating 2.3 GB. At runtime, `ilargi.terrain` checks `ILARGI_TERRAIN_DIR`, `data/terrain/`, and `~/.ilargi/terrain`. Large files are excluded from Git. Downloads verify size and SHA-256 before installing temporary files. Recorded hashes from 2026-11-14:
 
 - Polar: `82030dcbdd7c4bb0c7d858e9b4b293b9f2cda5a543ba31ec0f42784bd6beee5a`
 - Global: `0e4fea9b863e3255f58de15ccbd2bb8b1e248cb09217fd55d23ed37489f764b4`

@@ -1,5 +1,7 @@
 """Read lunar DEM metadata and elevations."""
 
+import os
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -7,22 +9,63 @@ import numpy as np
 import rasterio
 from pyproj import CRS, Transformer
 
-SAMPLE = (
-    Path(__file__).resolve().parent.parent
-    / "data/terrain/lola_80m_south_pole_sample.tif"
-)
+LOCAL_TERRAIN_DIR = Path(__file__).resolve().parent.parent / "data" / "terrain"
+SHARED_TERRAIN_DIR = Path.home() / ".ilargi" / "terrain"
+SAMPLE = LOCAL_TERRAIN_DIR / "lola_80m_south_pole_sample.tif"
 RADIUS_M = 1_737_400.0
-SHARED_TERRAIN = Path.home() / ".ilargi" / "terrain"
-_SHARED_POLAR = SHARED_TERRAIN / "LDEM_80S_80MPP_ADJ.TIF"
-_SHARED_GLOBAL = SHARED_TERRAIN / "ldem_128.vrt"
-POLAR = (
-    _SHARED_POLAR if _SHARED_POLAR.is_file() else SAMPLE.with_name(_SHARED_POLAR.name)
-)
-GLOBAL = (
-    _SHARED_GLOBAL
-    if _SHARED_GLOBAL.is_file() and _SHARED_GLOBAL.with_suffix(".img").is_file()
-    else SAMPLE.with_name(_SHARED_GLOBAL.name)
-)
+
+POLAR_FILENAME = "LDEM_80S_80MPP_ADJ.TIF"
+POLAR_SIZE_BYTES = 189_158_392
+GLOBAL_VRT_FILENAME = "ldem_128.vrt"
+GLOBAL_IMG_FILENAME = "ldem_128.img"
+GLOBAL_IMG_SIZE_BYTES = 2_123_366_400
+
+
+def terrain_search_dirs() -> list[Path]:
+    """Return ordered directories searched for optional downloaded LOLA DEMs."""
+    env_dir = os.environ.get("ILARGI_TERRAIN_DIR")
+    if env_dir:
+        return [Path(env_dir)]
+    return [LOCAL_TERRAIN_DIR, SHARED_TERRAIN_DIR]
+
+
+def resolve_polar_dem() -> Path | None:
+    """Locate the verified 80 m south-polar LOLA DEM across local and shared caches."""
+    for directory in terrain_search_dirs():
+        candidate = directory / POLAR_FILENAME
+        if candidate.is_file() and candidate.stat().st_size == POLAR_SIZE_BYTES:
+            return candidate
+    return None
+
+
+def resolve_global_dem() -> Path | None:
+    """Locate the global LDEM_128 dataset, syncing the companion VRT if needed."""
+    local_vrt = LOCAL_TERRAIN_DIR / GLOBAL_VRT_FILENAME
+    for directory in terrain_search_dirs():
+        img_path = directory / GLOBAL_IMG_FILENAME
+        if not (
+            img_path.is_file() and img_path.stat().st_size == GLOBAL_IMG_SIZE_BYTES
+        ):
+            continue
+        vrt_path = directory / GLOBAL_VRT_FILENAME
+        if directory != LOCAL_TERRAIN_DIR and local_vrt.is_file():
+            try:
+                needs_sync = (
+                    not vrt_path.is_file()
+                    or vrt_path.read_bytes() != local_vrt.read_bytes()
+                )
+                if needs_sync:
+                    directory.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(local_vrt, vrt_path)
+            except OSError:
+                pass
+        if vrt_path.is_file():
+            return vrt_path
+    return None
+
+
+POLAR = resolve_polar_dem() or (LOCAL_TERRAIN_DIR / POLAR_FILENAME)
+GLOBAL = resolve_global_dem() or (LOCAL_TERRAIN_DIR / GLOBAL_VRT_FILENAME)
 
 
 class TerrainCoverageError(ValueError):

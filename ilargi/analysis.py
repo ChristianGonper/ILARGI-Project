@@ -23,11 +23,12 @@ from ilargi.materials import MATERIALS, load_regions, region_at, weh_at
 from ilargi.models import IncidenceStats, MaterialsSummary, SiteAnalysis
 from ilargi.series import sky_series
 from ilargi.terrain import (
-    GLOBAL,
-    POLAR,
+    GLOBAL_VRT_FILENAME,
     SAMPLE,
     TerrainCoverageError,
     TerrainSample,
+    resolve_global_dem,
+    resolve_polar_dem,
     sample_elevation,
 )
 
@@ -120,12 +121,8 @@ def summarize_materials(
 def dem_availability() -> dict[str, bool]:
     """Report which supported LOLA products are present on disk."""
     return {
-        "polar_80m": POLAR.is_file() and POLAR.stat().st_size == 189158392,
-        "global_240m": (
-            GLOBAL.is_file()
-            and GLOBAL.with_suffix(".img").is_file()
-            and GLOBAL.with_suffix(".img").stat().st_size == 2123366400
-        ),
+        "polar_80m": resolve_polar_dem() is not None,
+        "global_240m": resolve_global_dem() is not None,
         "sample_20m": SAMPLE_20.is_file(),
         "sample_80m": SAMPLE.is_file(),
     }
@@ -136,28 +133,29 @@ def _resolve_dem_candidates(
 ) -> list[Path]:
     if dem_path is not None:
         return [dem_path]
-    avail = dem_availability()
+    polar_path = resolve_polar_dem()
+    global_path = resolve_global_dem()
     if dem_mode == "ideal":
         return []
     if dem_mode == "polar":
-        return (
-            [POLAR] if avail["polar_80m"] else ([SAMPLE] if avail["sample_80m"] else [])
-        )
+        if polar_path is not None:
+            return [polar_path]
+        return [SAMPLE] if SAMPLE.is_file() else []
     if dem_mode == "global":
-        return [GLOBAL] if avail["global_240m"] else []
+        return [global_path] if global_path is not None else []
     if dem_mode == "sample20":
-        return [SAMPLE_20] if avail["sample_20m"] else []
+        return [SAMPLE_20] if SAMPLE_20.is_file() else []
     if dem_mode == "sample80":
-        return [SAMPLE] if avail["sample_80m"] else []
+        return [SAMPLE] if SAMPLE.is_file() else []
     # Automatic selection: finest available resolution covering the latitude.
     candidates: list[Path] = []
     if latitude_deg <= -80.0:
-        if avail["polar_80m"]:
-            candidates.append(POLAR)
-        if avail["sample_80m"]:
+        if polar_path is not None:
+            candidates.append(polar_path)
+        if SAMPLE.is_file():
             candidates.append(SAMPLE)
-    if avail["global_240m"]:
-        candidates.append(GLOBAL)
+    if global_path is not None:
+        candidates.append(global_path)
     return candidates
 
 
@@ -193,7 +191,8 @@ def analyze_site(
     horizon: Horizon | None = None
     horizon_mode = "ideal"
     horizon_label = "Ideal sphere (0°) — no DEM coverage"
-    avail = dem_availability()
+    polar_path = resolve_polar_dem()
+    global_path = resolve_global_dem()
     search_radius_km = (
         estimate_search_radius(
             instrument_height_m, min_elevation_deg=0.0
@@ -209,11 +208,14 @@ def analyze_site(
                 observer_m, min_elevation_deg=0.0
             ).tangent_plane_m
 
+            is_global = (
+                global_path is not None and candidate == global_path
+            ) or candidate.name == GLOBAL_VRT_FILENAME
             coarse_path: Path | None = None
-            if candidate in (SAMPLE_20, SAMPLE) and avail["polar_80m"]:
-                coarse_path = POLAR
-            elif candidate != GLOBAL and avail["global_240m"]:
-                coarse_path = GLOBAL
+            if candidate in (SAMPLE_20, SAMPLE) and polar_path is not None:
+                coarse_path = polar_path
+            elif not is_global and global_path is not None:
+                coarse_path = global_path
 
             if coarse_path is not None:
                 fine_limit = (
@@ -248,12 +250,14 @@ def analyze_site(
 
             horizon_mode = "lola"
             search_radius_km = float(horizon.requested_m / 1000.0)
-            res_tag = (
-                "≈237" if candidate == GLOBAL else f"{int(round(horizon.pixel_m))}"
+            res_tag = "≈237" if is_global else f"{int(round(horizon.pixel_m))}"
+            coarse_is_global = coarse_path is not None and (
+                (global_path is not None and coarse_path == global_path)
+                or coarse_path.name == GLOBAL_VRT_FILENAME
             )
             horizon_label = (
                 f"LOLA {res_tag} m/pixel + Global"
-                if coarse_path == GLOBAL
+                if coarse_is_global
                 else f"LOLA {res_tag} m/pixel ({candidate.stem})"
             )
             break
