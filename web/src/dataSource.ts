@@ -17,6 +17,10 @@ export interface DemoManifest {
 
 const env = import.meta.env ?? {};
 const apiBase = (env.VITE_API_BASE_URL ?? "").replace(/\/$/, "");
+// Full-terrain analysis can exceed 25 s on a cold Cloud Run instance.
+// Leave 30 s before the backend's 180 s deadline for a controlled fallback.
+const calculationTimeoutMs = 150_000;
+const metadataTimeoutMs = 30_000;
 let forcedStatic = env.VITE_DATA_MODE === "static";
 let unavailableUntil = 0;
 let usedDemo = forcedStatic;
@@ -137,7 +141,9 @@ export async function requestData<T>(
         method: body ? "POST" : "GET",
         headers: body ? { "Content-Type": "application/json" } : undefined,
         body: body ? JSON.stringify(body) : undefined,
-        signal: AbortSignal.timeout(body ? 25000 : 8000),
+        signal: AbortSignal.timeout(
+          body ? calculationTimeoutMs : metadataTimeoutMs,
+        ),
       });
       if (
         !response.ok &&

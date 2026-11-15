@@ -54,6 +54,12 @@ test("saved responses preserve coordinates and reject missing dates, points and 
 
 test("live success and validation errors stay live; overload opens the saved-data circuit", async () => {
   const original = globalThis.fetch;
+  const originalTimeout = AbortSignal.timeout;
+  const timeouts: number[] = [];
+  AbortSignal.timeout = (ms) => {
+    timeouts.push(ms);
+    return new AbortController().signal;
+  };
   let fail = false;
   let liveCalls = 0;
   globalThis.fetch = async (url) => {
@@ -72,6 +78,7 @@ test("live success and validation errors stay live; overload opens the saved-dat
       requestData("/api/analyze", payload),
       /Invalid request/,
     );
+    assert.deepEqual(timeouts, [30000, 150000]);
     fail = true;
     const saved = await requestData<{ id: string }[]>("/api/sites");
     assert.equal(saved.length, 11);
@@ -80,5 +87,6 @@ test("live success and validation errors stay live; overload opens the saved-dat
     assert.equal(liveCalls, count);
   } finally {
     globalThis.fetch = original;
+    AbortSignal.timeout = originalTimeout;
   }
 });

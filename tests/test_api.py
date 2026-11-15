@@ -192,3 +192,43 @@ def test_api_respects_terrain_dir_override(tmp_path, monkeypatch):
     )
     assert cycle_resp.status_code == 200
     assert cycle_resp.json()["site"]["horizon_mode"] == "ideal"
+
+
+def test_metadata_remains_available_while_calculation_lock_rejects_overlap(monkeypatch):
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Event
+
+    from ilargi import api
+
+    started, release = Event(), Event()
+
+    def blocked_cycle(**kwargs):
+        started.set()
+        assert release.wait(timeout=10)
+        return {"frames": []}
+
+    monkeypatch.setattr(api, "compute_education_cycle", blocked_cycle)
+    payload = {
+        "latitude_deg": -89.5,
+        "longitude_east_deg": 0,
+        "start_utc": "2026-04-02T15:00:00Z",
+        "duration_hours": 12,
+        "step_minutes": 180,
+    }
+    with (
+        TestClient(api.create_app()) as concurrent_client,
+        ThreadPoolExecutor() as pool,
+    ):
+        first = pool.submit(
+            concurrent_client.post, "/api/education/cycle", json=payload
+        )
+        try:
+            assert started.wait(timeout=5)
+            assert concurrent_client.get("/api/health").status_code == 200
+            assert concurrent_client.get("/api/sites").status_code == 200
+            second = concurrent_client.post("/api/education/cycle", json=payload)
+            assert second.status_code == 503
+            assert "busy" in second.json()["detail"]
+        finally:
+            release.set()
+        assert first.result(timeout=5).status_code == 200

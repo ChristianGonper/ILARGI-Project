@@ -19,6 +19,7 @@ POLAR_SIZE_BYTES = 189_158_392
 GLOBAL_VRT_FILENAME = "ldem_128.vrt"
 GLOBAL_IMG_FILENAME = "ldem_128.img"
 GLOBAL_IMG_SIZE_BYTES = 2_123_366_400
+GLOBAL_COG_FILENAME = "ldem_128_cog.tif"
 
 
 def terrain_search_dirs() -> list[Path]:
@@ -42,6 +43,11 @@ def resolve_global_dem() -> Path | None:
     """Locate the global LDEM_128 dataset, syncing the companion VRT if needed."""
     local_vrt = LOCAL_TERRAIN_DIR / GLOBAL_VRT_FILENAME
     for directory in terrain_search_dirs():
+        # Optional lossless tiled derivative, verified pixel-for-pixel at creation.
+        # Reading blocks avoids thousands of remote single-row reads of the raw IMG.
+        cloud_path = directory / GLOBAL_COG_FILENAME
+        if cloud_path.is_file():
+            return cloud_path
         img_path = directory / GLOBAL_IMG_FILENAME
         if not (
             img_path.is_file() and img_path.stat().st_size == GLOBAL_IMG_SIZE_BYTES
