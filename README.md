@@ -24,6 +24,7 @@ The initial NAIF kernel download is about 45 MB. Kernels are verified by SHA-256
 ## Documentation
 
 - [Project concept and scope](docs/project-concept.md)
+- [Scientific architecture and pipeline](docs/scientific-architecture.md): module connections and implementation overview
 - [Scientific results and limitations](docs/scientific-results.md): interpreting visibility, incidence and discs
 - [Apparent geometry](docs/apparent-geometry.md): observer, frames, units and corrections
 - [Terrain and horizons](docs/terrain-and-horizons.md): sampling, coverage and convergence
