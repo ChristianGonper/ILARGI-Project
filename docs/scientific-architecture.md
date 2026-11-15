@@ -73,3 +73,13 @@ flowchart LR
 
 - **Educational lunar cycle:** Reuses the SPICE surface geometry and an optional single-DEM coarser (`5°` azimuth, up to `120 km`) LOLA horizon over one synodic lunar day (`~708.734 h`), while separately computing lunar-center Sun/Earth unit vectors in `MOON_ME_DE440_ME421` (for 3D globe illumination) and instantaneous `J2000` (`NONE`) heliocentric vectors (for the 3-body orbit view and lunar phase fraction).
 - **Display and gameplay separation:** The 3D globe relief uses a `2 × 2` block-averaged 8-samples/degree (~3.8 km/pixel) height field from NASA SVS CGI Moon Kit, and the landing game uses idealized two-body circular/impulsive orbital mechanics (`R = 1,737.4 km`, `GM = 4.9028 × 10¹² m³/s²`, `g = 1.622 m/s²`). Neither replaces the scientific backend calculations.
+
+## Live analytical output examples
+
+The screenshots below show how the backend outputs map directly into the Mission Analysis interface—including `Terrain coverage interrupted` flags where LOLA DEM bounds terminate, `61 × 61` direct solar/Earth disc fractions, regional LP-GRS/WEH context, and multi-site comparisons between sunlit ridges and shadowed targets:
+
+![Mission Analysis Workspace: LOLA Horizon, Sky Tracks, and Finite-Disc Series](media/science_1.png)
+
+| Multi-Site Comparison Table (`P1` vs. `P2` + LP-GRS / WEH) | Stacked Sky Track & Daily Evolution Charts (`P1` vs. `P2`)  |
+| ---------------------------------------------------------- | ----------------------------------------------------------- |
+| ![Multi-Site Comparison Outputs](media/science_2.png)      | ![Stacked Sky and Time-Series Outputs](media/science_3.png) |

@@ -159,10 +159,17 @@ sequenceDiagram
 ### Experience 01: Education mode & Lunar Landing Game
 
 - **Guided Globe & 3-Body View:** [`EducationWorkspace.tsx`](../web/src/components/EducationWorkspace.tsx), [`EducationMoonViewport3D.tsx`](../web/src/components/EducationMoonViewport3D.tsx), [`ThreeBodyOrbitMini.tsx`](../web/src/components/ThreeBodyOrbitMini.tsx), [`IlargiMascot.tsx`](../web/src/components/IlargiMascot.tsx), and [`SpacecraftGuide.tsx`](../web/src/components/SpacecraftGuide.tsx). Supports synodic cycle playback (`~708.7 h`), phase presets (New/First Quarter/Full/Last Quarter), the vivid WEH hydrogen layer ([`wehOverlay.ts`](../web/src/three/wehOverlay.ts)), laser retroreflector visualizations, and classroom spacecraft parameters ([classroom-spacecraft.md](classroom-spacecraft.md)).
+
+![Education Mode UI](media/education.png)
+
 - **Lunar Landing Game (`web/src/components/landing-game/`):** Runs entirely client-side using idealized circular/two-impulse lunar physics in [`gamePhysics.ts`](../web/src/components/landing-game/gamePhysics.ts) (`R = 1,737.4 km`, `μ = 4.9028 × 10¹² m³/s²`, `g = 1.622 m/s²`):
   - **Phase 1** ([`Phase1OrbitViewport3D.tsx`](../web/src/components/landing-game/Phase1OrbitViewport3D.tsx), [`SuperCalculator.tsx`](../web/src/components/landing-game/SuperCalculator.tsx)): Select a preset or click the 3D Moon, verify target coordinates on the calculator keypad, compute $i = |\phi|$ and plane-change $\Delta V$, and watch the equatorial parking orbit tilt to cross the site.
   - **Phase 2** ([`Phase2DescentView.tsx`](../web/src/components/landing-game/Phase2DescentView.tsx)): Compute the descent altitude step $\Delta h = h_{\text{orb}} - h_{\text{gate}}$ on the keypad to unlock the two-stage Hohmann/retro-braking animation to the landing gate.
   - **Phase 3** ([`Phase3LandingCanvas.tsx`](../web/src/components/landing-game/Phase3LandingCanvas.tsx)): Downward-camera 2D canvas from `175 m` altitude over `moon_color.jpg` + 240 procedural craters. Steer laterally with `WASD`/Arrows (`30 m/s²`) and hold `SPACE` to slow vertical descent (`-10.5 → -0.25 m/s`); touch down inside the `15 m` circle (`±2 m` tolerance) at `|vz| ≤ 4.5 m/s`.
+
+| Phase 1 (3D Orbit Alignment)          | Phase 3 (Downward Landing Canvas)     |
+| ------------------------------------- | ------------------------------------- |
+| ![Phase 1 UI](media/game_phase_1.png) | ![Phase 3 UI](media/game_phase_3.png) |
 
 ![Lunar Landing Game 3-Phase Mechanics & Envelope](diagrams/landing_game_mechanics.png)
 
@@ -171,6 +178,12 @@ sequenceDiagram
 - [`InputPanel.tsx`](../web/src/components/InputPanel.tsx): Configures 1–10 sites (presets or 3D pin-drop), UTC start dates, window duration, time step, instrument height, and LP-GRS/WEH overlays.
 - [`MoonViewport3D.tsx`](../web/src/components/MoonViewport3D.tsx) & `web/src/three/`: Renders the 8-samples/deg (`~3.8 km/px`) LOLA relief mesh (`lunarTerrain.ts`), coordinate conversions (`moonCoordinates.ts`), camera tweening (`moonNavigation.ts`), and mineral/WEH overlays.
 - [`OutputsPanel.tsx`](../web/src/components/OutputsPanel.tsx), [`ComparisonPanel.tsx`](../web/src/components/ComparisonPanel.tsx), [`SkyAzimuthPlot.tsx`](../web/src/components/SkyAzimuthPlot.tsx), [`DailyEvolutionPlot.tsx`](../web/src/components/DailyEvolutionPlot.tsx), and [`DiscVisibilityPanel.tsx`](../web/src/components/DiscVisibilityPanel.tsx): Interactive Plotly.js charts (with animated Sun/Earth sky markers over persistent trails), `61 × 61` finite-disc occlusion & eclipse inspector, dark-span & outage tables, and CSV export.
+
+![Mission Analysis Workspace UI](media/science_1.png)
+
+| Multi-Site Comparison Table (`ComparisonPanel`)  | Stacked Sky & Time-Series Charts (`SkyAzimuthPlot` + `DailyEvolutionPlot`) |
+| ------------------------------------------------ | -------------------------------------------------------------------------- |
+| ![Multi-Site Comparison UI](media/science_2.png) | ![Stacked Comparison Charts UI](media/science_3.png)                       |
 
 ### Styling layers (`web/src/styles.css`)
 
