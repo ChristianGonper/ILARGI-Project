@@ -332,6 +332,8 @@ export function Phase1OrbitViewport3D({
 
     let rafId = 0;
     const clock = new THREE.Clock();
+    const landerUp = new THREE.Vector3(0, 1, 0);
+    const outward = new THREE.Vector3();
     const animate = () => {
       rafId = requestAnimationFrame(animate);
       const t = clock.getElapsedTime();
@@ -342,7 +344,11 @@ export function Phase1OrbitViewport3D({
       if (spacecraftRef.current) {
         const pos = latLonToThreeVector(latitudeDeg, longitudeEastDeg, 1.18);
         spacecraftRef.current.position.copy(pos);
-        spacecraftRef.current.lookAt(0, 0, 0);
+        // The lander's feet point along local -Y, toward the lunar surface.
+        spacecraftRef.current.quaternion.setFromUnitVectors(
+          landerUp,
+          outward.copy(pos).normalize(),
+        );
       }
 
       if (focusGroupRef.current && focusGroupRef.current.children.length > 0) {
