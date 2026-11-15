@@ -1,4 +1,4 @@
-"""Series temporales aparentes desde un único emplazamiento lunar."""
+"""Apparent time series from a single lunar surface site."""
 
 from datetime import datetime, timedelta
 
@@ -19,14 +19,15 @@ def sky_series(
     start = require_aware_utc(start)
     if not 0 < duration_hours <= 24 * 90 or step_minutes < 10 or step_minutes % 10:
         raise ValueError(
-            "Duración hasta 90 días y paso en múltiplos de 10 minutos (mínimo 10)"
+            "Duration up to 90 days and step in multiples of 10 minutes (minimum 10)"
         )
     duration = timedelta(hours=duration_hours)
     step = timedelta(minutes=step_minutes)
     count = int(duration // step)
-    extra = int(duration - count * step >= timedelta(minutes=10))
+    # Always include the requested endpoint, even for a short final interval.
+    extra = int(duration > count * step)
     if count + 1 + extra > 3000:
-        raise ValueError("El intervalo supera 3000 muestras; aumenta el paso")
+        raise ValueError("Interval exceeds 3000 samples; increase step")
     times = [start + index * step for index in range(count + 1)]
     if extra:
         times.append(start + duration)
@@ -39,10 +40,10 @@ def sky_series(
             rows.append(
                 {
                     "utc": instant,
-                    "objetivo": target.target,
-                    "azimut_deg": target.azimuth_deg,
-                    "elevacion_deg": target.elevation_deg,
-                    "distancia_km": target.range_km,
+                    "body": target.target,
+                    "azimuth_deg": target.azimuth_deg,
+                    "elevation_deg": target.elevation_deg,
+                    "range_km": target.range_km,
                 }
             )
     return pd.DataFrame(rows)

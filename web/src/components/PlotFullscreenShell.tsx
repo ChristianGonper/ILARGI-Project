@@ -58,11 +58,11 @@ export function PlotFullscreenShell({
             type="button"
             className="btn-mini plot-expand-btn"
             onClick={() => setIsFullscreen(true)}
-            title={`Ampliar "${title}" a pantalla completa`}
-            aria-label={`Ampliar ${title} a pantalla completa`}
+            title={`Expand "${title}" to fullscreen`}
+            aria-label={`Expand ${title} to fullscreen`}
           >
             <Maximize2 size={12} />
-            <span>Ampliar</span>
+            <span>Expand</span>
           </button>
         </div>
         {!isFullscreen && children(height, false)}
@@ -90,11 +90,11 @@ export function PlotFullscreenShell({
                   type="button"
                   className="btn-secondary btn-compact"
                   onClick={() => setIsFullscreen(false)}
-                  title="Salir de pantalla completa (Esc)"
-                  aria-label="Cerrar vista ampliada"
+                  title="Exit fullscreen (Esc)"
+                  aria-label="Close expanded view"
                 >
                   <Minimize2 size={14} />
-                  <span>Cerrar (Esc)</span>
+                  <span>Close (Esc)</span>
                 </button>
               </div>
               <div className="plot-fullscreen-body">

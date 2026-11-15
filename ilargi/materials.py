@@ -1,4 +1,4 @@
-"""Abundancias regionales derivadas de la tabla PDS de Lunar Prospector."""
+"""Regional abundance derived from Lunar Prospector PDS data."""
 
 from functools import lru_cache
 from pathlib import Path
@@ -11,15 +11,15 @@ DATA = (
     / "data/materials/lpgrs_high1_elem_abundance_5deg.tab"
 )
 MATERIALS = {
-    "Aluminio": ("Al", "% en masa"),
-    "Calcio": ("Ca", "% en masa"),
-    "Óxido de hierro (FeO)": ("FeO", "% en masa"),
-    "Torio": ("Th", "ppm"),
+    "Aluminum": ("Al", "mass %"),
+    "Calcium": ("Ca", "mass %"),
+    "Iron oxide (FeO)": ("FeO", "mass %"),
+    "Thorium": ("Th", "ppm"),
 }
 
 
 def load_regions(path=DATA, *, south_pole_only: bool = False):
-    """Lee los campos de ancho fijo de LP-GRS y calcula categorías por terciles."""
+    """Read fixed-width LP-GRS fields and derive relative abundance terciles."""
     widths = [10, 7, 7, 7, 7] + [15] * 11
     names = [
         "id",
@@ -52,13 +52,13 @@ def load_regions(path=DATA, *, south_pole_only: bool = False):
         data.loc[~np.isfinite(data[col]) | (data[col] < 0), col] = np.nan
         valid = data[col].dropna()
         if valid.empty:
-            data[col + "_category"] = "Sin datos"
+            data[col + "_category"] = "No data"
             continue
         low, high = valid.quantile([1 / 3, 2 / 3])
         data[col + "_category"] = np.select(
             [data[col].isna(), data[col] <= low, data[col] <= high],
-            ["Sin datos", "Baja", "Media"],
-            default="Alta",
+            ["No data", "Low", "Medium"],
+            default="High",
         )
     return data
 
@@ -78,14 +78,14 @@ def region_at(data, lat, lon):
 
 @lru_cache(maxsize=1)
 def hydrogen_map():
-    """Malla global de hidrógeno (ppm en masa), Lawrence et al. (2022)."""
+    """Read the global hydrogen grid in mass ppm from Lawrence et al. (2022)."""
     path = DATA.parent / "lawrence2022_hydrogen.npz"
     with np.load(path) as source:
         return source["hydrogen"]
 
 
 def weh_at(lat: float, lon: float) -> float | None:
-    """WEH en ppm de H₂O equivalente; consulta la celda de 0,5° que contiene el punto."""
+    """Read the containing 0.5° cell and convert hydrogen to water-equivalent ppm."""
     if not (-90 <= lat <= 90 and -180 <= lon <= 360):
         return None
     lon = (lon + 180) % 360 - 180

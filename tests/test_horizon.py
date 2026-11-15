@@ -11,7 +11,6 @@ from ilargi.horizon import (
     Horizon,
     calculate_horizon,
     calculate_multiresolution_horizon,
-    coverage_at,
     estimate_search_radius,
     horizon_at,
     max_search_distance_m,
@@ -139,11 +138,10 @@ def test_missing_neighbour_never_produces_a_finite_interpolated_horizon():
     result = horizon_at(profile, angles)
     assert np.isnan(result[:2]).all()
     np.testing.assert_allclose(result[2:], [3.0, 4.0])
-    np.testing.assert_allclose(coverage_at(profile, angles), [0.0, 0.0, 600.0, 900.0])
 
 
 def test_excessive_ray_arrays_are_refused_before_allocation():
-    with pytest.raises(ValueError, match="Demasiadas muestras"):
+    with pytest.raises(ValueError, match="Too many horizon samples"):
         calculate_horizon(-89.5, 0, 2, 100_000, 0.001, SAMPLE)
 
 
@@ -166,8 +164,8 @@ def test_negative_horizon_requires_larger_radius_than_tangent_plane():
     summary = estimate_search_radius(obs_m)
     assert summary.spherical_horizon_m > summary.tangent_plane_m
 
-    # Montaña máxima situada más allá del corte del plano tangente a 0°:
-    # sigue teniendo elevación negativa, pero por encima del horizonte esférico mínimo.
+    # Maximum-height mountain beyond the 0° tangent-plane cutoff:
+    # still below 0° but above the minimum spherical horizon.
     d_beyond = 0.5 * (summary.tangent_plane_m + summary.spherical_horizon_m)
     theta = d_beyond / RADIUS_M
     elev_mountain = np.rad2deg(
@@ -187,7 +185,7 @@ def test_elevated_observer_above_max_terrain_still_has_positive_spherical_horizo
     assert max_search_distance_m(obs_m, min_elevation_deg=0.0) == 0.0
     assert max_search_distance_m(obs_m, min_elevation_deg=30.0) == 0.0
 
-    # Tangente exacta a r_max desde arriba: el único punto está a distancia R * |alpha|
+    # Exact tangent to r_max from above: the single point lies at R * |alpha|
     alpha_tan_max = -np.rad2deg(
         np.arccos((RADIUS_M + LUNAR_MAX_ELEVATION_M) / (RADIUS_M + obs_m))
     )
@@ -208,12 +206,12 @@ def test_vector_search_distance_monotonic_and_handles_nan_and_floor():
     angles = np.array([15.0, 2.0, 0.0, -2.0, np.nan, -12.0])
     dists = max_search_distance_m(0.0, min_elevation_deg=angles)
     assert dists.shape == angles.shape
-    # Monótonamente decreciente entre 15° y -2°
+    # Monotonically decreasing between 15° and -2°
     assert dists[0] < dists[1] < dists[2] < dists[3]
-    # NaN cae en la cota física absoluta
+    # NaN uses the absolute physical bound
     worst = max_search_distance_m(0.0, min_elevation_deg=None)
     assert dists[4] == pytest.approx(worst)
-    # Rayo por debajo del ángulo rasante (-12°) satura monótonamente en la cota absoluta
+    # A ray below the grazing angle (-12°) saturates at the absolute bound
     assert dists[5] == pytest.approx(worst)
 
 
@@ -243,7 +241,7 @@ def test_multiresolution_horizon_combines_near_fine_and_far_coarse(tmp_path):
     project = Transformer.from_crs(projection.geodetic_crs, projection, always_xy=True)
     geod = Geod(a=RADIUS_M, b=RADIUS_M)
 
-    # Malla fina de 50 m/píxel cubriendo ±5 km con cresta cercana al norte (+12°)
+    # Fine 50 m/pixel grid over ±5 km with a nearby northern ridge (+12°)
     fine_path = tmp_path / "fine.tif"
     fine_data = np.zeros((201, 201), dtype="float32")
     fine_transform = from_origin(-5025, 15161.771431773632 + 5025, 50, 50)
@@ -265,8 +263,8 @@ def test_multiresolution_horizon_combines_near_fine_and_far_coarse(tmp_path):
     ) as ds:
         ds.write(fine_data, 1)
 
-    # Malla gruesa de 400 m/píxel cubriendo ±40 km con montaña lejana al sur (15 km, 2500 m)
-    # y montaña artificial muy alta al norte a 25 km (más allá del corte físico de la cresta).
+    # Coarse 400 m/pixel grid over ±40 km with a southern mountain (15 km, 2500 m)
+    # and an artificial northern peak at 25 km beyond the ridge physical cutoff.
     coarse_path = tmp_path / "coarse.tif"
     coarse_data = np.zeros((201, 201), dtype="float32")
     coarse_transform = from_origin(-40200, 15161.771431773632 + 40200, 400, 400)
@@ -306,20 +304,20 @@ def test_multiresolution_horizon_combines_near_fine_and_far_coarse(tmp_path):
         max_terrain_m=3_000.0,
         min_terrain_m=0.0,
     )
-    # Norte (índice 0, 0°): capturado por la malla fina (> 11°) y cerrado temprano (< 20 km)
+    # North (index 0, 0°): captured by the fine grid (> 11°), closed early (< 20 km)
     assert result.elevation_deg[0] > 11.0
     assert result.required_m is not None
     assert result.required_m[0] < 20_000.0
     assert result.coverage_m[0] <= result.required_m[0] + 400.0
-    # Sur (índice 18, 180°): capturado por la malla gruesa a 15 km (> 8°)
+    # South (index 18, 180°): captured by the coarse grid at 15 km (> 8°)
     assert result.elevation_deg[18] > 8.0
     assert result.coverage_m[18] > 14_000.0
 
 
 def test_max_search_distance_rejects_invalid_bounds():
-    with pytest.raises(ValueError, match="inferior a min_terrain_m"):
+    with pytest.raises(ValueError, match="below min_terrain_m"):
         max_search_distance_m(-10_000.0)
-    with pytest.raises(ValueError, match="min_terrain_m no puede superar"):
+    with pytest.raises(ValueError, match="min_terrain_m cannot exceed"):
         max_search_distance_m(0.0, max_terrain_m=100.0, min_terrain_m=200.0)
     with pytest.raises(ValueError, match=r"\(-90, 90\)"):
         max_search_distance_m(0.0, min_elevation_deg=90.0)
@@ -349,7 +347,7 @@ def test_multiresolution_horizon_stops_at_coarse_nodata(tmp_path):
     ) as ds:
         ds.write(fine_data, 1)
 
-    # Malla gruesa con un hueco nodata a 10 km al sur y una montaña a 18 km detrás del hueco
+    # Coarse grid with a southern nodata gap at 10 km and a mountain behind it at 18 km
     coarse_path = tmp_path / "coarse_hole.tif"
     coarse_data = np.zeros((201, 201), dtype="float32")
     coarse_transform = from_origin(-40200, 15161.771431773632 + 40200, 400, 400)
@@ -389,6 +387,6 @@ def test_multiresolution_horizon_stops_at_coarse_nodata(tmp_path):
         max_terrain_m=3_000.0,
         min_terrain_m=0.0,
     )
-    # Al sur (índice 18, 180°), el rayo se detiene antes del hueco (10 km) y no salta a la montaña
+    # South (index 18, 180°): the ray stops before the gap and does not jump to the mountain
     assert result.coverage_m[18] < 10_000.0
     assert result.elevation_deg[18] < 0.0

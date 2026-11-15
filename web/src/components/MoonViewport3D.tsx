@@ -38,7 +38,6 @@ function buildLunarTextures(): {
   const cImg = cCtx.createImageData(w, h);
   const bImg = bCtx.createImageData(w, h);
 
-  // Semilla determinista para mares lunares y cráteres procedurales (solo visual).
   const maria = [
     { lat: 18, lon: -18, rLat: 20, rLon: 26, depth: 0.34 }, // Mare Imbrium
     { lat: 12, lon: 18, rLat: 16, rLon: 22, depth: 0.32 }, // Mare Serenitatis / Tranquillitatis
@@ -47,7 +46,6 @@ function buildLunarTextures(): {
     { lat: -54, lon: 175, rLat: 24, rLon: 36, depth: 0.24 }, // South Pole-Aitken
   ];
 
-  // Generador pseudoaleatorio determinista para cráteres.
   let seed = 4219;
   const rand = () => {
     seed = (seed * 16807) % 2147483647;
@@ -66,7 +64,6 @@ function buildLunarTextures(): {
     const cosLat = Math.max(0.15, Math.cos(latRad));
 
     for (let px = 0; px < w; px++) {
-      // Three.js SphereGeometry u=0.5 corresponde a lon=0° en +Z con nuestra proyección.
       const lon = (px / (w - 1)) * 360 - 180;
       let val =
         0.58 +
@@ -174,7 +171,7 @@ export function MoonViewport3D({
 }: MoonViewport3DProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [tooltip, setTooltip] = useState<HoverTooltip | null>(null);
-  const [terrainStatus, setTerrainStatus] = useState("Cargando relieve LOLA…");
+  const [terrainStatus, setTerrainStatus] = useState("Loading LOLA terrain…");
   const [cameraPreset, setCameraPreset] = useState<"south" | "nearside">(
     "south",
   );
@@ -239,7 +236,6 @@ export function MoonViewport3D({
     controls.enablePan = false;
     controlsRef.current = controls;
 
-    // Iluminación espacial + ambiental suficiente para leer toda la esfera.
     scene.add(new THREE.AmbientLight(0xdbeafe, 0.45));
     const sunLight = new THREE.DirectionalLight(0xfff7ed, 1.4);
     sunLight.position.set(4.5, 1.2, 3.8);
@@ -248,7 +244,6 @@ export function MoonViewport3D({
     fillLight.position.set(-3.0, -2.5, -2.5);
     scene.add(fillLight);
 
-    // Campo de estrellas discreto.
     const starPositions = new Float32Array(450 * 3);
     for (let i = 0; i < 450; i++) {
       const r = 14 + Math.random() * 14;
@@ -271,14 +266,13 @@ export function MoonViewport3D({
     });
     scene.add(new THREE.Points(starGeo, starMat));
 
-    // Esfera lunar texturizada en MOON_ME (LROC WAC + relieve LOLA, con fallback procedural).
     const { colorMap: fallbackColor, bumpMap: fallbackBump } =
       buildLunarTextures();
     let activeColorMap: THREE.Texture = fallbackColor;
     let activeBumpMap: THREE.Texture = fallbackBump;
 
     const sphereGeo = new THREE.SphereGeometry(1.0, 128, 96);
-    // Alinear u=0.5 (lon=0°) con +Z: SphereGeometry empieza en -X, rotamos Y -90°.
+
     sphereGeo.rotateY(-Math.PI / 2);
     const sphereMat = new THREE.MeshStandardMaterial({
       map: activeColorMap,
@@ -320,7 +314,6 @@ export function MoonViewport3D({
       fallbackBump.dispose();
     });
 
-    // Máscara transparente de minerales LP-GRS sobre la esfera lunar.
     const overlayCanvas = document.createElement("canvas");
     overlayCanvas.width = 1440;
     overlayCanvas.height = 720;
@@ -369,16 +362,13 @@ export function MoonViewport3D({
         moonMesh.visible = false;
         overlayMesh.visible = false;
         sphereMat.bumpScale = 0.001;
-        setTerrainStatus("Relieve LOLA · escala real · acerca con la rueda");
+        setTerrainStatus("LOLA terrain · Physical scale · Scroll to zoom");
       })
       .catch(() => {
         if (!disposed)
-          setTerrainStatus(
-            "Relieve no disponible · mostrando esfera texturizada",
-          );
+          setTerrainStatus("Terrain unavailable · Showing textured sphere");
       });
 
-    // Anillos de referencia: ecuador (0°), meridiano 0° y límite polar sur 80° S.
     const addRing = (latDeg: number, color: number, opacity: number) => {
       const pts: THREE.Vector3[] = [];
       for (let lon = -180; lon <= 180; lon += 3) {
@@ -458,7 +448,7 @@ export function MoonViewport3D({
 
     const onPointerUp = (ev: PointerEvent) => {
       const moved = Math.hypot(ev.clientX - downPos.x, ev.clientY - downPos.y);
-      if (moved > 5) return; // Fue un arrastre de cámara.
+      if (moved > 5) return;
 
       updatePointer(ev);
       raycaster.setFromCamera(pointer, camera);
@@ -596,7 +586,6 @@ export function MoonViewport3D({
     };
   }, []);
 
-  // Actualizar máscara transparente de minerales LP-GRS cuando cambia la selección.
   useEffect(() => {
     const ov = overlayRef.current;
     if (!ov) return;
@@ -647,7 +636,6 @@ export function MoonViewport3D({
     mesh.visible = painted && moonMeshRef.current?.visible === true;
   }, [mineralOverlay, selectedMinerals, wehTexture]);
 
-  // Actualizar marcadores históricos cuando cambia la lista.
   useEffect(() => {
     const group = histGroupRef.current;
     if (!group) return;
@@ -679,7 +667,7 @@ export function MoonViewport3D({
         kind: "historical",
         site,
         title: site.name,
-        subtitle: `${site.mission} · Clic para añadir/analizar`,
+        subtitle: `${site.mission} · Click to add/analyze`,
         coords: `λ=${site.latitude_deg.toFixed(3)}°, θ=${site.longitude_east_deg.toFixed(3)}°E · MOON_ME (${mx.toFixed(0)}, ${my.toFixed(0)}, ${mz.toFixed(0)}) km`,
       };
       group.add(dot);
@@ -697,7 +685,6 @@ export function MoonViewport3D({
     }
   }, [historicalSites]);
 
-  // Actualizar puntos activos P1..P10 y marco de foco.
   useEffect(() => {
     const group = activeGroupRef.current;
     if (!group) return;
@@ -781,14 +768,14 @@ export function MoonViewport3D({
             className={`btn-mini ${cameraPreset === "south" ? "active" : ""}`}
             onClick={() => moveCamera("south")}
           >
-            Polo Sur
+            South Pole
           </button>
           <button
             type="button"
             className={`btn-mini ${cameraPreset === "nearside" ? "active" : ""}`}
             onClick={() => moveCamera("nearside")}
           >
-            Cara visible
+            Near side
           </button>
         </div>
       </div>
@@ -810,14 +797,14 @@ export function MoonViewport3D({
         <div className="moon-hud-minerals">
           {selectedMinerals.length === 0 ? (
             <span>
-              Clic en un punto histórico para añadirlo/analizarlo ·{" "}
+              Click a catalog site to add/analyze it ·{" "}
               {pinMode
-                ? "Modo pin activo: clic sobre la esfera para fijar coordenadas"
-                : "Shift + clic en superficie para elegir coordenadas manuales"}
+                ? "Pin mode active: click the globe to set coordinates"
+                : "Shift + click the surface for manual coordinates"}
             </span>
           ) : (
             <>
-              <span className="muted-note">Máscara LP-GRS:</span>
+              <span className="muted-note">LP-GRS overlay:</span>
               {selectedMinerals.map((id) => {
                 const meta = mineralOverlay?.elements.find((e) => e.id === id);
                 if (!meta) return null;
@@ -832,7 +819,7 @@ export function MoonViewport3D({
                     }}
                   >
                     {meta.id}
-                    {!meta.available ? " · sin datos validados" : ""}
+                    {!meta.available ? " · validated data unavailable" : ""}
                   </span>
                 );
               })}

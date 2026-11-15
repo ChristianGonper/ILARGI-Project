@@ -1,6 +1,11 @@
+from dataclasses import replace
+from datetime import UTC, datetime
+
+import numpy as np
 from fastapi.testclient import TestClient
 
-from ilargi.api import create_app
+from ilargi.analysis import analyze_site
+from ilargi.api import _serialize_analysis, create_app
 
 client = TestClient(create_app())
 
@@ -35,7 +40,7 @@ def test_analyze_single_and_multipoint_payload():
             "points": [
                 {
                     "label": "P1",
-                    "site_name": "Polo Sur · Muestra LOLA Centro",
+                    "site_name": "South Pole · LOLA Sample Center",
                     "latitude_deg": -89.5,
                     "longitude_east_deg": 0.0,
                     "start_utc": "2026-04-02T15:00:00Z",
@@ -64,7 +69,7 @@ def test_analyze_single_and_multipoint_payload():
     assert p1["search_radius_km"] > 100.0
     assert p1["materials"]["in_coverage"] is True
     assert "Al" in p1["materials"]["elements"]
-    assert "ppm H₂O equivalente" in p1["materials"]["water_status"]
+    assert "ppm H₂O equivalent" in p1["materials"]["water_status"]
     assert len(p1["series"]["sun"]) == 49
     assert len(p1["series"]["earth"]) == 49
     assert p1["series"]["sun"][0]["angular_radius_deg"] > 0.2
@@ -74,10 +79,33 @@ def test_analyze_single_and_multipoint_payload():
     assert p2["label"] == "P2"
     assert p2["search_radius_km"] > 100.0
     assert p2["materials"]["in_coverage"] is True
-    assert "Sin modelo" in p2["temperature_status"]
+    assert "No thermal model" in p2["temperature_status"]
     assert p2["series"]["sun"][0]["above_horizon_fraction"] is not None
     assert p2["series"]["sun"][0]["eclipsed_fraction"] is not None
     assert p2["series"]["sun"][0]["direct_visible_fraction"] is not None
+    assert p2["series"]["sun"][0]["horizon_source"] == "ideal"
+
+
+def test_serialized_track_identifies_missing_terrain_horizon():
+    analysis = analyze_site(
+        label="P1",
+        site_name="Test",
+        latitude_deg=0,
+        longitude_east_deg=0,
+        start_utc=datetime(2026, 4, 2, tzinfo=UTC),
+        duration_hours=1,
+        dem_mode="ideal",
+    )
+    series = analysis.series.copy()
+    series.loc[series.index[0], "sampled_horizon_deg"] = np.nan
+    data = _serialize_analysis(replace(analysis, horizon_mode="lola", series=series))
+    samples = data["series"]["sun"] + data["series"]["earth"]
+    assert sorted(sample["horizon_source"] for sample in samples) == [
+        "ideal_fallback",
+        "terrain",
+        "terrain",
+        "terrain",
+    ]
 
 
 def test_analyze_enforces_max_10_points_and_step_validation():

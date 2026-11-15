@@ -1,4 +1,4 @@
-"""Convierte figure6.txt de Lawrence et al. (2022) en datos y textura reproducibles."""
+"""Build reproducible data and texture assets from Lawrence et al. (2022) figure6.txt."""
 
 import argparse
 import io
@@ -25,14 +25,14 @@ def main(archive: Path) -> None:
     lon = np.arange(-179.75, 180, 0.5)
     lat = np.arange(-89.75, 90, 0.5)
     if rows.shape != (360 * 720, 3):
-        raise ValueError("La malla no tiene las dimensiones esperadas")
+        raise ValueError("Unexpected grid dimensions")
     if not np.array_equal(rows[:, 0], np.tile(lon, 360)) or not np.array_equal(
         rows[:, 1], np.repeat(lat, 720)
     ):
-        raise ValueError("Las coordenadas de la malla no son las esperadas")
+        raise ValueError("Unexpected grid coordinates")
     hydrogen = rows[:, 2].reshape(360, 720).astype(np.float32)
     if not np.isfinite(hydrogen).all() or (hydrogen < 0).any():
-        raise ValueError("Abundancias de hidrógeno inválidas")
+        raise ValueError("Invalid hydrogen abundance")
     np.savez_compressed(
         ROOT / "data/materials/lawrence2022_hydrogen.npz", hydrogen=hydrogen
     )

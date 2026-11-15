@@ -10,7 +10,6 @@ interface HomeScreenProps {
 export function HomeScreen({ health, onSelectMode }: HomeScreenProps) {
   return (
     <div className="home-shell">
-      <div className="home-stars" aria-hidden="true" />
       <header className="home-topbar">
         <div className="topbar-left">
           <span className="brand-title">ILARGI</span>
@@ -18,17 +17,12 @@ export function HomeScreen({ health, onSelectMode }: HomeScreenProps) {
             NASA Space Apps · Lunar Explorer
           </span>
         </div>
-        <div className="topbar-right">
-          <span className="pill pill-muted">
-            {health?.frame ?? "MOON_ME_DE440_ME421"} ·{" "}
-            {health?.abcorr ?? "LT+S"}
-          </span>
-          <span className="pill pill-ok">
-            {health?.kernels ?? "DE440s"} · OK
-          </span>
-        </div>
+        <span className={`pill ${health ? "pill-ok" : "pill-muted"}`}>
+          {health
+            ? `${health.kernels} · Connected`
+            : "Connecting to the science engine…"}
+        </span>
       </header>
-
       <main className="home-main">
         <section className="home-hero">
           <div className="eyebrow">
@@ -36,107 +30,70 @@ export function HomeScreen({ health, onSelectMode }: HomeScreenProps) {
             Intervisibility
           </div>
           <h1 className="home-title">
-            Explora la luz, las sombras y las órbitas de la Luna
+            Explore lunar light, shadows and motion
           </h1>
           <p className="home-lead">
-            Un mismo motor científico basado en efemérides reales{" "}
-            <strong>JPL SPICE DE440s</strong> y topografía láser{" "}
-            <strong>NASA LRO/LOLA</strong>, adaptado a dos experiencias:
-            análisis técnico de misión o viaje divulgativo guiado por nuestra
-            mascota <strong>ILARGI</strong>.
+            Choose a guided journey through the lunar day or examine sites,
+            terrain horizons and visibility in the technical explorer.
           </p>
-
-          <div className="home-mascot-box">
-            <IlargiMascot
-              speakerMood="¡Hola, tripulación!"
-              message="¡Bienvenidos a ILARGI! Soy vuestro guía lunar. Si queréis gráficas científicas, horizontes LOLA y comparar hasta 10 zonas, elegid Modo PRO. Si preferís ver el día lunar como una película, explorar el hidrógeno lunar, descubrir los espejos de la Luna y simular los 3 cuerpos, ¡venid conmigo al Modo Educación!"
-              showFunFacts
-            />
-          </div>
+          <IlargiMascot
+            speakerMood="Welcome aboard"
+            message="I am ILARGI, your lunar guide. Follow the changing sunlight in Education, or compare lunar locations and export their results in PRO."
+            compact
+            showFunFacts={false}
+          />
         </section>
-
-        <section className="home-cards" aria-label="Selector de modo">
+        <section className="home-cards" aria-label="Choose an experience">
           <article className="mode-card mode-card-edu">
-            <div className="mode-card-top">
-              <span className="mode-icon-badge edu">
-                <GraduationCap size={24} />
-              </span>
-              <span className="pill pill-cyan">Divulgación · Interactivo</span>
+            <div className="mode-icon-badge edu">
+              <GraduationCap size={30} />
             </div>
-            <h2>Modo Educación</h2>
+            <span className="pill pill-cyan">Learn · Explore</span>
+            <h2>Education</h2>
             <p className="mode-desc">
-              Diseñado para comprender visualmente cómo cambia la iluminación
-              solar en la Luna a lo largo de un día lunar completo (29,5 días),
-              con la compañía constante de <strong>ILARGI</strong>.
+              Follow a full lunar solar cycle, rotate the Moon, and discover how
+              location changes the view.
             </p>
             <ul className="mode-features">
+              <li>A moving day–night boundary over the lunar globe.</li>
               <li>
-                Película dinámica del ciclo solar completo sobre el globo lunar
-                3D (con rotación libre e independiente).
+                Landing sites, illuminated ridges and polar shadow regions.
               </li>
-              <li>
-                Landing spots, puntos de continua iluminación y sombra
-                permanente (<strong>NASA PGDA LOLA 69</strong>).
-              </li>
-              <li>
-                Capa global de{" "}
-                <strong>hidrógeno equivalente en agua (WEH)</strong>y
-                explicación interactiva del <strong>Espejo de la Luna</strong>.
-              </li>
-              <li>
-                Simulación simultánea y ampliable de las órbitas de los{" "}
-                <strong>3 cuerpos (Sol · Tierra · Luna)</strong>.
-              </li>
+              <li>Water-equivalent hydrogen and laser retroreflectors.</li>
+              <li>A three-body view and an educational landing game.</li>
             </ul>
             <button
-              type="button"
               className="btn-primary mode-cta"
+              type="button"
               onClick={() => onSelectMode("education")}
             >
-              <Compass size={16} />
-              Entrar en Modo Educación
-              <ArrowRight size={16} />
+              <Compass size={16} /> Explore with ILARGI <ArrowRight size={16} />
             </button>
           </article>
-
           <article className="mode-card mode-card-pro">
-            <div className="mode-card-top">
-              <span className="mode-icon-badge pro">
-                <Microscope size={24} />
-              </span>
-              <span className="pill pill-ok">Ingeniería · Ciencia</span>
+            <div className="mode-icon-badge pro">
+              <Microscope size={30} />
             </div>
-            <h2>Modo PRO</h2>
+            <span className="pill pill-ok">Science · Compare</span>
+            <h2>PRO explorer</h2>
             <p className="mode-desc">
-              Mesa de trabajo científica para planificar emplazamientos de
-              aterrizaje con perfiles topográficos LOLA, fracciones de disco y
-              eclipses reales.
+              Inspect the geometry behind each result and compare up to ten
+              lunar locations.
             </p>
             <ul className="mode-features">
+              <li>Select a catalog location or place a point on the globe.</li>
+              <li>Compare apparent Sun and Earth tracks with LOLA terrain.</li>
               <li>
-                Análisis multi-punto (hasta <strong>10 emplazamientos</strong>{" "}
-                simultáneos) o coordenadas manuales con pin 3D.
+                Inspect visibility intervals, disc fractions and eclipses.
               </li>
-              <li>
-                Horizonte topográfico LOLA (20 m / 80 m / ≈237 m) con curvatura
-                lunar y elevación del observador.
-              </li>
-              <li>
-                Gráficos Plotly de trayectoria celeste, evolución diaria,
-                eclipses tierra-sol y fracciones visibles.
-              </li>
-              <li>
-                Máscaras minerales regionales <strong>LP-GRS</strong>, tabla
-                comparativa y exportación CSV.
-              </li>
+              <li>Explore regional abundances and export CSV results.</li>
             </ul>
             <button
+              className="btn-primary mode-cta"
               type="button"
-              className="btn-secondary mode-cta pro-cta"
               onClick={() => onSelectMode("pro")}
             >
-              <Microscope size={16} />
-              Entrar en Modo PRO
+              <Microscope size={16} /> Open the explorer{" "}
               <ArrowRight size={16} />
             </button>
           </article>

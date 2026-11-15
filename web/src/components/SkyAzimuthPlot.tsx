@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import Plotly from "plotly.js-dist-min";
+import Plotly from "plotly.js-gl2d-dist-min";
 import type { SiteAnalysisResult, SkySample } from "../types";
 import { PlotFullscreenShell } from "./PlotFullscreenShell";
 
@@ -103,14 +103,14 @@ function SkyAzimuthPlotCanvas({
       x: sunTrack.x,
       y: sunTrack.y,
       customdata: sunTrack.customdata,
-      name: "Sol",
+      name: "Sun",
       legendrank: 2,
       type: "scatter",
       mode: "lines+markers",
       marker: { size: 3.5 },
       line: { color: "#F59E0B", width: 2 },
       hovertemplate:
-        "%{customdata}<br>Azimut rel.: %{x:.2f}°<br>Elevación: %{y:.2f}°<extra>Sol</extra>",
+        "%{customdata}<br>Relative azimuth: %{x:.2f}°<br>Elevation: %{y:.2f}°<extra>Sun</extra>",
     });
 
     const earthTrack = buildTrackWithBreaks(result.series.earth, centerDeg);
@@ -118,14 +118,14 @@ function SkyAzimuthPlotCanvas({
       x: earthTrack.x,
       y: earthTrack.y,
       customdata: earthTrack.customdata,
-      name: "Tierra",
+      name: "Earth",
       legendrank: 3,
       type: "scatter",
       mode: "lines+markers",
       marker: { size: 3.5 },
       line: { color: "#38BDF8", width: 2 },
       hovertemplate:
-        "%{customdata}<br>Azimut rel.: %{x:.2f}°<br>Elevación: %{y:.2f}°<extra>Tierra</extra>",
+        "%{customdata}<br>Relative azimuth: %{x:.2f}°<br>Elevation: %{y:.2f}°<extra>Earth</extra>",
     });
 
     if (!isIdeal) {
@@ -143,7 +143,7 @@ function SkyAzimuthPlotCanvas({
     traces.push({
       x: hOrder.map((p) => p.rel),
       y: hOrder.map((p) => p.el),
-      name: isIdeal ? "Horizonte ideal (0°)" : "Horizonte LOLA",
+      name: isIdeal ? "Ideal horizon (0°)" : "LOLA horizon",
       legendrank: 1,
       type: "scatter",
       mode: "lines",
@@ -151,7 +151,7 @@ function SkyAzimuthPlotCanvas({
       fill: isIdeal ? undefined : "tonexty",
       fillcolor: isIdeal ? undefined : "rgba(249, 115, 22, 0.28)",
       hovertemplate:
-        "Azimut rel.: %{x:.1f}°<br>Horizonte: %{y:.2f}°<extra></extra>",
+        "Relative azimuth: %{x:.1f}°<br>Horizon: %{y:.2f}°<extra></extra>",
     });
 
     const truncPts = hOrder.filter((p) => p.trunc && p.el !== null);
@@ -159,7 +159,7 @@ function SkyAzimuthPlotCanvas({
       traces.push({
         x: truncPts.map((p) => p.rel),
         y: truncPts.map((p) => p.el),
-        name: "Terreno interrumpido",
+        name: "Interrupted terrain",
         legendrank: 4,
         type: "scatter",
         mode: "markers",
@@ -197,14 +197,14 @@ function SkyAzimuthPlotCanvas({
         },
       ],
       xaxis: {
-        title: `Azimut relativo al centro (${centerDeg.toFixed(1)}°) (°)`,
+        title: `Azimuth relative to center (${centerDeg.toFixed(1)}°) (°)`,
         range: [-180, 180],
         gridcolor: "#26334D",
         zerolinecolor: "#26334D",
         tickfont: { color: "#94A3B8" },
       },
       yaxis: {
-        title: "Elevación local (°)",
+        title: "Local elevation (°)",
         range: [yMin, yMax],
         gridcolor: "#26334D",
         zerolinecolor: "#475569",
@@ -230,7 +230,7 @@ export function SkyAzimuthPlot({ result, height = 300 }: SkyAzimuthPlotProps) {
   const subtitle = `${result.label} · ${result.site_name} (λ=${result.latitude_deg.toFixed(3)}°, θ=${result.longitude_east_deg.toFixed(3)}°E · ${result.horizon_label})`;
   return (
     <PlotFullscreenShell
-      title="Diagrama Acimut vs Elevación (Horizonte · Sol · Tierra)"
+      title="Azimuth–elevation diagram (Horizon · Sun · Earth)"
       subtitle={subtitle}
       height={height}
     >

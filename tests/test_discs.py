@@ -19,7 +19,7 @@ def profile(height):
 
 
 def row(az, el, distance):
-    return pd.Series({"azimut_deg": az, "elevacion_deg": el, "distancia_km": distance})
+    return pd.Series({"azimuth_deg": az, "elevation_deg": el, "range_km": distance})
 
 
 def test_angular_radius_uses_center_distance():

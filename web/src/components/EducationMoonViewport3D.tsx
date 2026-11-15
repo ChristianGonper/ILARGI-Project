@@ -50,8 +50,8 @@ function moonMeToThree(
   vec: [number, number, number],
   scale = 1,
 ): THREE.Vector3 {
-  // MOON_ME: +X = 0° lon, +Y = 90° E, +Z = Polo Norte.
-  // Three.js esfera: +Z = 0° lon, +X = 90° E, +Y = Polo Norte.
+  // MOON_ME: +X = 0° lon, +Y = 90° E, +Z = North Pole.
+  // Three.js sphere: +Z = 0° lon, +X = 90° E, +Y = North Pole.
   return new THREE.Vector3(vec[1] * scale, vec[2] * scale, vec[0] * scale);
 }
 
@@ -160,8 +160,6 @@ export function EducationMoonViewport3D({
     controls.enablePan = false;
     controlsRef.current = controls;
 
-    // Luz ambiente tenue + luz terrestre sutil + luz solar dinámica de alto contraste
-    // para que el terminador día/noche recorra los cráteres como una película real.
     const ambient = new THREE.AmbientLight(0x93c5fd, 0.14);
     scene.add(ambient);
 
@@ -175,7 +173,6 @@ export function EducationMoonViewport3D({
     earthLightRef.current = earthLight;
     scene.add(earthLight);
 
-    // Estrellas de fondo
     const starPositions = new Float32Array(500 * 3);
     for (let i = 0; i < 500; i++) {
       const r = 14 + Math.random() * 14;
@@ -243,7 +240,6 @@ export function EducationMoonViewport3D({
       sphereMat.needsUpdate = true;
     });
 
-    // Anillos sutiles de referencia (Ecuador y círculos polares 80°)
     const addRing = (latDeg: number, color: number, opacity: number) => {
       const pts: THREE.Vector3[] = [];
       for (let lon = -180; lon <= 180; lon += 3) {
@@ -261,7 +257,6 @@ export function EducationMoonViewport3D({
     addRing(-80, 0x38bdf8, 0.55);
     addRing(80, 0x38bdf8, 0.45);
 
-    // Indicador orbital de dirección del Sol (faro ámbar alrededor de la Luna)
     const sunBeacon = new THREE.Mesh(
       new THREE.SphereGeometry(0.065, 20, 20),
       new THREE.MeshBasicMaterial({ color: 0xfbbf24 }),
@@ -285,7 +280,6 @@ export function EducationMoonViewport3D({
     sunRayRef.current = sunRay;
     scene.add(sunRay);
 
-    // Línea de pulso láser Tierra ↔ Espejo de la Luna
     const laserGeo = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(0, 0, 1.02),
       new THREE.Vector3(0, 0, 2.8),
@@ -310,7 +304,6 @@ export function EducationMoonViewport3D({
     scene.add(sitesGroup);
     scene.add(focusGroup);
 
-    // La misma estimación global de WEH que se muestra en el modo científico.
     const wehGeometry = new THREE.SphereGeometry(1.0025, 128, 96);
     wehGeometry.rotateY(-Math.PI / 2);
     const wehTexture = loader.load(
@@ -458,7 +451,6 @@ export function EducationMoonViewport3D({
     };
   }, []);
 
-  // Sincronizar luz solar dinámica y dirección terrestre con el frame actual del ciclo lunar.
   useEffect(() => {
     if (!currentFrame) return;
     const sunDir = moonMeToThree(currentFrame.sun_me_unit, 1).normalize();
@@ -503,14 +495,13 @@ export function EducationMoonViewport3D({
     }
   }, [currentFrame, selectedSite, manualCoords, showMirrorLaser]);
 
-  // Mostrar/ocultar capa global WEH
+  // Toggle the global WEH overlay
   useEffect(() => {
     if (waterGroupRef.current) {
       waterGroupRef.current.visible = showWaterLayer;
     }
   }, [showWaterLayer]);
 
-  // Dibujar marcadores de los sitios educativos
   useEffect(() => {
     const group = sitesGroupRef.current;
     if (!group) return;
@@ -551,7 +542,6 @@ export function EducationMoonViewport3D({
     }
   }, [sites]);
 
-  // Dibujar anillo de foco sobre el sitio o coordenada manual activa
   useEffect(() => {
     const group = focusGroupRef.current;
     if (!group) return;
@@ -585,8 +575,8 @@ export function EducationMoonViewport3D({
     group.add(pulseRing);
 
     const labelText = manualCoords
-      ? "Punto manual"
-      : (selectedSite?.name.split("·")[0].trim() ?? "Punto");
+      ? "Manual location"
+      : (selectedSite?.name.split("·")[0].trim() ?? "Location");
     const sprite = makeMarkerLabel(labelText, hex);
     sprite.position.copy(pos.clone().multiplyScalar(1.11));
     group.add(sprite);
@@ -625,15 +615,15 @@ export function EducationMoonViewport3D({
       <div className="moon-hud-top">
         <div className="moon-hud-pills">
           <span className="pill pill-muted">
-            GLOBO LUNAR 3D · R={LUNAR_RADIUS_KM.toFixed(1)} km · Rotación libre
+            3D LUNAR GLOBE · R={LUNAR_RADIUS_KM.toFixed(1)} km · Free rotation
           </span>
           {showWaterLayer && (
             <span className="pill pill-cyan">
-              WEH global · más intensidad = mayor abundancia
+              Global WEH · stronger intensity = higher abundance
             </span>
           )}
           {(showMirrorLaser || selectedSite?.category === "mirror") && (
-            <span className="pill pill-ok">Láser Tierra ↔ Espejo LRRR</span>
+            <span className="pill pill-ok">Earth ↔ LRRR laser</span>
           )}
         </div>
         <div className="moon-camera-btns">
@@ -642,35 +632,35 @@ export function EducationMoonViewport3D({
             className={`btn-mini ${cameraPreset === "focus" ? "active" : ""}`}
             onClick={() => moveCamera("focus")}
           >
-            Ir al punto
+            Focus on location
           </button>
           <button
             type="button"
             className={`btn-mini ${cameraPreset === "south" ? "active" : ""}`}
             onClick={() => moveCamera("south")}
           >
-            Polo Sur
+            South Pole
           </button>
           <button
             type="button"
             className={`btn-mini ${cameraPreset === "north" ? "active" : ""}`}
             onClick={() => moveCamera("north")}
           >
-            Polo Norte
+            North Pole
           </button>
           <button
             type="button"
             className={`btn-mini ${cameraPreset === "nearside" ? "active" : ""}`}
             onClick={() => moveCamera("nearside")}
           >
-            Cara visible
+            Near side
           </button>
           <button
             type="button"
             className={`btn-mini ${cameraPreset === "farside" ? "active" : ""}`}
             onClick={() => moveCamera("farside")}
           >
-            Cara oculta
+            Far side
           </button>
         </div>
       </div>
@@ -694,22 +684,23 @@ export function EducationMoonViewport3D({
       <div className="moon-hud-bottom edu-legend-bar">
         <div className="edu-legend-items">
           <span className="legend-dot-item">
-            <i style={{ background: "#F59E0B" }} /> Luz continua (PGDA 69)
+            <i style={{ background: "#F59E0B" }} /> Illuminated terrain (PGDA
+            69)
           </span>
           <span className="legend-dot-item">
-            <i style={{ background: "#22D3EE" }} /> Oscuridad continua (PSR)
+            <i style={{ background: "#22D3EE" }} /> Permanent shadow (PSR)
           </span>
           <span className="legend-dot-item">
             <i style={{ background: "#C4B5FD" }} /> Landing spots
           </span>
           <span className="legend-dot-item">
-            <i style={{ background: "#10B981" }} /> Espejos LRRR
+            <i style={{ background: "#10B981" }} /> LRRR reflectors
           </span>
         </div>
         <span className="pill pill-muted">
           {pinMode
-            ? "Pin activo: clic en superficie"
-            : "Arrastra para girar · Luz solar en vivo"}
+            ? "Pin active: click the surface"
+            : "Drag to rotate · Live sunlight"}
         </span>
       </div>
     </div>

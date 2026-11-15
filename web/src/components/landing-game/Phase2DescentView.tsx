@@ -36,7 +36,6 @@ export function Phase2DescentView({
     setBurnDone(false);
   }, [site.id]);
 
-  // Animación fluida del descenso orbital al pulsar el botón rojo con el cohete
   useEffect(() => {
     if (!burning) return;
     const durationMs = 3600;
@@ -51,8 +50,8 @@ export function Phase2DescentView({
         setBurning(false);
         setBurnDone(true);
         onIlargiSpeak(
-          "¡Transición a Fase 3!",
-          "¡Maniobra de descenso completada! Hemos llegado a la altura de aterrizaje final. Encendiendo la cámara ventral en las patas del aterrizador...",
+          "Entering Phase 3",
+          "Descent maneuver complete. Final landing altitude reached; activating the downward camera.",
         );
         window.setTimeout(() => {
           onCompletePhase2();
@@ -83,24 +82,24 @@ export function Phase2DescentView({
     const val = Number.parseFloat(answerInput);
     if (!Number.isFinite(val)) {
       const msg =
-        "Introduce cuántos kilómetros tienes que bajar antes de encender el cohete.";
+        "Enter the required descent distance in kilometers before starting the maneuver.";
       setErrorNote(msg);
-      onIlargiSpeak("Revisa el cálculo", msg);
+      onIlargiSpeak("Check the calculation", msg);
       return;
     }
 
     if (Math.abs(val - mechanics.descentDeltaKm) > 0.25) {
-      const msg = `Ese valor (${val} km) no cuadra. Resta: Altura de órbita (${mechanics.orbitAltitudeKm} km) − Altura de transición (${mechanics.landingGateKm} km).`;
+      const msg = `That value (${val} km) does not match. Subtract orbital altitude (${mechanics.orbitAltitudeKm} km) − transition altitude (${mechanics.landingGateKm} km).`;
       setErrorNote(msg);
-      onIlargiSpeak("¡Casi!", msg);
+      onIlargiSpeak("Almost there", msg);
       return;
     }
 
     setValidated(true);
     setErrorNote(null);
     onIlargiSpeak(
-      "¡Cálculo correcto!",
-      `¡Exacto, ${mechanics.descentDeltaKm} km de descenso! El ΔV necesario es de ${mechanics.totalDescentDeltaVMs.toLocaleString("es-ES")} m/s. Ahora pulsa el botón rojo del cohete para iniciar la maniobra.`,
+      "Correct calculation",
+      `Correct: ${mechanics.descentDeltaKm} km descent. Required ΔV is ${mechanics.totalDescentDeltaVMs.toLocaleString("en-GB")} m/s. Press the launch button to start the maneuver.`,
     );
   };
 
@@ -108,12 +107,11 @@ export function Phase2DescentView({
     if (!validated || burning || burnDone) return;
     setBurning(true);
     onIlargiSpeak(
-      "¡Retropropulsión en marcha!",
-      "Observa cómo cae la altitud y cambia nuestra velocidad en m/s mientras consumimos el ΔV necesario hasta alcanzar la puerta de Modo Aterrizar.",
+      "Retropropulsion active",
+      "Watch altitude and velocity change during the maneuver to the final landing gate.",
     );
   };
 
-  // Telemetría en vivo durante el descenso
   const liveTelemetry = useMemo(() => {
     if (!burning && !burnDone) {
       return {
@@ -122,15 +120,14 @@ export function Phase2DescentView({
         deltaVRemainingMs: mechanics.totalDescentDeltaVMs,
         deltaVUsedMs: 0,
         phaseLabel: validated
-          ? "LISTO PARA IGNICIÓN RETRO"
-          : "ESPERANDO CÁLCULO DE DESCENSO",
+          ? "READY FOR RETRO BURN"
+          : "WAITING FOR DESCENT CALCULATION",
       };
     }
 
     const p = burnDone ? 1 : burnProgress;
     // Dos sub-tramos:
-    // 0.00 -> 0.55: Transferencia elíptica desde h_orb hasta h_gate (la velocidad sube ligeramente al caer)
-    // 0.55 -> 1.00: Frenado propulsivo intenso hasta la altura de Fase 3 (~0.32 km) y velocidad lenta (~6 m/s)
+
     if (p < 0.55) {
       const k = p / 0.55;
       const eased = 1 - Math.pow(1 - k, 1.8);
@@ -146,7 +143,7 @@ export function Phase2DescentView({
         speedMs: Math.round(spd),
         deltaVRemainingMs: Math.max(0, mechanics.totalDescentDeltaVMs - used),
         deltaVUsedMs: used,
-        phaseLabel: "TRAMO 1 · DESCENSO ELÍPTICO HOHMANN",
+        phaseLabel: "STAGE 1 · ELLIPTICAL TRANSFER",
       };
     } else {
       const k = (p - 0.55) / 0.45;
@@ -168,28 +165,25 @@ export function Phase2DescentView({
         speedMs: spd,
         deltaVRemainingMs: Math.max(0, mechanics.totalDescentDeltaVMs - used),
         deltaVUsedMs: used,
-        phaseLabel: "TRAMO 2 · FRENADO RETROPROPULSIVO",
+        phaseLabel: "STAGE 2 · RETROPROPULSIVE BRAKING",
       };
     }
   }, [burning, burnDone, burnProgress, mechanics, validated]);
 
-  // Posición visual del aterrizador en el diagrama de descenso SVG
   const landerProgress = burnDone ? 1 : burning ? burnProgress : 0;
   const landerSvgX = 90 + landerProgress * 460;
   const landerSvgY = 65 + Math.pow(landerProgress, 1.35) * 195;
 
   return (
     <div className="phase2-grid">
-      {/* COLUMNA IZQUIERDA: Cálculo de resta + teclado + Botón Rojo con Cohete */}
       <div className="panel phase2-control-card">
         <div className="panel-header">
           <div>
             <div className="eyebrow eyebrow-accent">
-              FASE 2 · CÁLCULO DE DESCENSO Y ΔV
+              PHASE 2 · DESCENT AND ΔV
             </div>
             <div className="panel-sub">
-              Resta la altura final a la altura de tu órbita para programar la
-              bajada
+              Subtract final altitude from orbital altitude to plan the descent.
             </div>
           </div>
           <span className="pill pill-cyan">
@@ -199,41 +193,38 @@ export function Phase2DescentView({
 
         <div className="phase2-alt-cards">
           <div className="phase2-alt-box">
-            <span className="kpi-label">Altura de órbita actual</span>
+            <span className="kpi-label">Current orbital altitude</span>
             <span className="kpi-value kpi-earth">
               {mechanics.orbitAltitudeKm} km
             </span>
             <span className="kpi-sub">
-              {(mechanics.orbitAltitudeKm * 1000).toLocaleString("es-ES")} m
+              {(mechanics.orbitAltitudeKm * 1000).toLocaleString("en-GB")} m
             </span>
           </div>
 
           <div className="phase2-minus-sign">−</div>
 
           <div className="phase2-alt-box">
-            <span className="kpi-label">Altura inicio Fase 3 (Aterrizar)</span>
+            <span className="kpi-label">Phase 3 entry altitude (Landing)</span>
             <span className="kpi-value kpi-sun">
               {mechanics.landingGateKm} km
             </span>
             <span className="kpi-sub">
-              {(mechanics.landingGateKm * 1000).toLocaleString("es-ES")} m
+              {(mechanics.landingGateKm * 1000).toLocaleString("en-GB")} m
             </span>
           </div>
         </div>
 
         <div className="phase2-calc-prompt">
           <label className="field">
-            <span>
-              ¿Cuántos kilómetros tiene que bajar el aterrizador? (Órbita −
-              Puerta Fase 3)
-            </span>
+            <span>How far must the lander descend? (Orbit − Phase 3 gate)</span>
             <div className="phase2-input-row">
               <input
                 type="text"
                 inputMode="decimal"
                 value={answerInput}
                 disabled={validated || burning || burnDone}
-                placeholder="Ej: 100"
+                placeholder="e.g. 100"
                 onChange={(e) => {
                   setErrorNote(null);
                   setAnswerInput(e.target.value.replace(/[^0-9.]/g, ""));
@@ -251,10 +242,10 @@ export function Phase2DescentView({
               >
                 {validated ? (
                   <>
-                    <CheckCircle2 size={15} /> Correcto
+                    <CheckCircle2 size={15} /> Correct
                   </>
                 ) : (
-                  "Validar resta"
+                  "Check subtraction"
                 )}
               </button>
             </div>
@@ -278,7 +269,7 @@ export function Phase2DescentView({
                 type="button"
                 className="calc-key calc-key-fn"
                 onClick={handleBackspace}
-                aria-label="Borrar dígito"
+                aria-label="Delete digit"
               >
                 <Delete size={14} />
               </button>
@@ -292,25 +283,25 @@ export function Phase2DescentView({
         <div className="phase2-telemetry-strip">
           <div className="phase2-telem-item">
             <span className="kpi-label">
-              <Gauge size={12} /> Velocidad actual
+              <Gauge size={12} /> Current speed
             </span>
             <span className="kpi-value mono">
-              {liveTelemetry.speedMs.toLocaleString("es-ES")} <small>m/s</small>
+              {liveTelemetry.speedMs.toLocaleString("en-GB")} <small>m/s</small>
             </span>
           </div>
           <div className="phase2-telem-item">
             <span className="kpi-label">
-              <Flame size={12} /> ΔV necesario total
+              <Flame size={12} /> Total required ΔV
             </span>
             <span className="kpi-value kpi-sun mono">
-              {mechanics.totalDescentDeltaVMs.toLocaleString("es-ES")}{" "}
+              {mechanics.totalDescentDeltaVMs.toLocaleString("en-GB")}{" "}
               <small>m/s</small>
             </span>
           </div>
           <div className="phase2-telem-item">
-            <span className="kpi-label">ΔV restante</span>
+            <span className="kpi-label">Remaining ΔV</span>
             <span className="kpi-value kpi-ok mono">
-              {liveTelemetry.deltaVRemainingMs.toLocaleString("es-ES")}{" "}
+              {liveTelemetry.deltaVRemainingMs.toLocaleString("en-GB")}{" "}
               <small>m/s</small>
             </span>
           </div>
@@ -329,34 +320,33 @@ export function Phase2DescentView({
           <span className="red-rocket-label">
             <strong>
               {burnDone
-                ? "TRANSICIONANDO A FASE 3…"
+                ? "ENTERING PHASE 3…"
                 : burning
-                  ? "MANIOBRA DE DESCENSO EN CURSO…"
-                  : "INICIAR DESCENSO CON COHETES"}
+                  ? "DESCENT MANEUVER IN PROGRESS…"
+                  : "START POWERED DESCENT"}
             </strong>
             <small>
               {validated
-                ? `Bajar ${mechanics.descentDeltaKm} km · ΔV ${mechanics.totalDescentDeltaVMs} m/s`
-                : "Primero valida la resta de altura arriba"}
+                ? `Descend ${mechanics.descentDeltaKm} km · ΔV ${mechanics.totalDescentDeltaVMs} m/s`
+                : "First check the altitude subtraction above"}
             </small>
           </span>
         </button>
       </div>
 
-      {/* COLUMNA DERECHA: Visualizador en vivo de la maniobra de descenso */}
       <div className="panel phase2-visual-card">
         <div className="moon-hud-top">
           <div className="moon-hud-pills">
             <span className="pill pill-cyan">{liveTelemetry.phaseLabel}</span>
             <span className="pill pill-muted">
-              Altitud:{" "}
+              Altitude:{" "}
               {liveTelemetry.altitudeKm >= 1
                 ? `${liveTelemetry.altitudeKm.toFixed(1)} km`
                 : `${Math.round(liveTelemetry.altitudeKm * 1000)} m`}
             </span>
           </div>
           <span className="pill pill-amber mono">
-            v = {liveTelemetry.speedMs.toLocaleString("es-ES")} m/s
+            v = {liveTelemetry.speedMs.toLocaleString("en-GB")} m/s
           </span>
         </div>
 
@@ -365,7 +355,7 @@ export function Phase2DescentView({
             viewBox="0 0 640 330"
             className="phase2-descent-svg"
             role="img"
-            aria-label="Simulación de descenso orbital hacia la superficie lunar"
+            aria-label="Orbital descent illustration toward the lunar surface"
           >
             <defs>
               <radialGradient id="moonHorizonGrad" cx="50%" cy="130%" r="90%">
@@ -403,7 +393,6 @@ export function Phase2DescentView({
               />
             ))}
 
-            {/* Línea de Parking Orbit */}
             <path
               d="M 40 65 Q 320 48 600 72"
               fill="none"
@@ -430,7 +419,6 @@ export function Phase2DescentView({
               strokeWidth="1.5"
             />
 
-            {/* Cráteres sutiles */}
             <ellipse
               cx="190"
               cy="296"
@@ -450,7 +438,7 @@ export function Phase2DescentView({
               strokeWidth="1"
             />
 
-            {/* Punto objetivo en la superficie */}
+            {/* Surface target */}
             <circle
               cx="550"
               cy="282"
@@ -468,10 +456,9 @@ export function Phase2DescentView({
               fontSize="11"
               fontFamily="JetBrains Mono, monospace"
             >
-              PUERTA FASE 3 ({mechanics.landingGateKm} km)
+              PHASE 3 GATE ({mechanics.landingGateKm} km)
             </text>
 
-            {/* Trayectoria de descenso */}
             <path
               d="M 90 65 C 260 68, 430 140, 550 260"
               fill="none"
@@ -482,7 +469,6 @@ export function Phase2DescentView({
 
             {/* Nave aterrizador animada */}
             <g transform={`translate(${landerSvgX}, ${landerSvgY})`}>
-              {/* Llama retropropulsora cuando está quemando */}
               {burning && (
                 <path
                   d="M 8 -4 L 30 -10 L 18 0 L 28 8 L 8 4 Z"
@@ -519,7 +505,7 @@ export function Phase2DescentView({
 
         <div className="phase2-progress-bar-wrap">
           <div className="phase2-progress-meta mono">
-            <span>Progreso de descenso orbital</span>
+            <span>Orbital descent progress</span>
             <span>{Math.round(landerProgress * 100)}%</span>
           </div>
           <div className="phase2-progress-track">

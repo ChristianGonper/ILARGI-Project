@@ -63,7 +63,7 @@ export function InputPanel({
         <div>
           <div className="eyebrow">INPUT</div>
           <div className="panel-sub">
-            P<sub>i</sub>(λ, θ, t) · históricos o manuales
+            P<sub>i</sub>(λ, θ, t) · catalog or manual
           </div>
         </div>
         <span className="pill pill-muted">
@@ -76,18 +76,18 @@ export function InputPanel({
           type="button"
           className={`btn-secondary btn-compact ${pinMode ? "active" : ""}`}
           onClick={onTogglePinMode}
-          title="Permite hacer clic directamente sobre la esfera lunar para fijar coordenadas"
+          title="Click the lunar globe to set coordinates"
         >
           <Crosshair size={14} />
-          {pinMode ? "Pin en globo: ACTIVO" : "Pin en globo 3D"}
+          {pinMode ? "Globe pin: ACTIVE" : "Place a globe pin"}
         </button>
       </div>
 
       <div className="points-list">
         {points.length === 0 && (
           <div className="empty-hint">
-            Haz clic en cualquier punto histórico del globo 3D o pulsa{" "}
-            <strong>+</strong> para definir P<sub>1</sub>(λ, θ, t).
+            Click a catalog site on the globe or press <strong>+</strong> to
+            define P<sub>1</sub>(λ, θ, t).
           </div>
         )}
 
@@ -103,7 +103,7 @@ export function InputPanel({
                 className="input-select"
                 value={pt.presetId}
                 onChange={(e) => onSelectPreset(idx, e.target.value)}
-                aria-label={`Emplazamiento P${idx + 1}`}
+                aria-label={`Site P${idx + 1}`}
               >
                 {historicalSites.map((s) => (
                   <option key={s.id} value={s.id}>
@@ -112,7 +112,7 @@ export function InputPanel({
                   </option>
                 ))}
                 <option value="manual">
-                  Manual · Coordenadas propias (λ, θ)
+                  Manual · Custom coordinates (λ, θ)
                 </option>
               </select>
               {points.length > 1 && (
@@ -123,8 +123,8 @@ export function InputPanel({
                     e.stopPropagation();
                     onRemovePoint(idx);
                   }}
-                  title={`Eliminar P${idx + 1}`}
-                  aria-label={`Eliminar P${idx + 1}`}
+                  title={`Remove P${idx + 1}`}
+                  aria-label={`Remove P${idx + 1}`}
                 >
                   <X size={14} />
                 </button>
@@ -133,7 +133,7 @@ export function InputPanel({
 
             <div className="field-grid-2">
               <label className="field">
-                <span>λ Latitud (°)</span>
+                <span>λ Latitude (°)</span>
                 <input
                   type="number"
                   step="0.001"
@@ -146,7 +146,7 @@ export function InputPanel({
                       onChangePoint(idx, {
                         latitudeDeg: Math.max(-89.999, Math.min(89.999, v)),
                         presetId: "manual",
-                        siteName: "Coordenada manual",
+                        siteName: "Manual coordinates",
                       });
                     }
                   }}
@@ -154,7 +154,7 @@ export function InputPanel({
               </label>
 
               <label className="field">
-                <span>θ Longitud (°E)</span>
+                <span>θ East longitude (°)</span>
                 <input
                   type="number"
                   step="0.001"
@@ -167,7 +167,7 @@ export function InputPanel({
                       onChangePoint(idx, {
                         longitudeEastDeg: Math.max(-180, Math.min(180, v)),
                         presetId: "manual",
-                        siteName: "Coordenada manual",
+                        siteName: "Manual coordinates",
                       });
                     }
                   }}
@@ -177,7 +177,7 @@ export function InputPanel({
 
             <div className="field-grid-2">
               <label className="field">
-                <span>t Fecha UTC</span>
+                <span>t UTC date</span>
                 <input
                   type="date"
                   min="1972-01-01"
@@ -190,7 +190,7 @@ export function InputPanel({
               </label>
 
               <label className="field">
-                <span>Hora UTC</span>
+                <span>UTC time</span>
                 <input
                   type="time"
                   value={pt.startTime}
@@ -212,7 +212,7 @@ export function InputPanel({
           onClick={onAddPoint}
         >
           <Plus size={15} />
-          Añadir punto
+          Add point
         </button>
         <span className="muted-note">max {MAX_POINTS}</span>
       </div>
@@ -225,15 +225,15 @@ export function InputPanel({
         >
           <SlidersHorizontal size={14} />
           {showParams
-            ? "Ocultar parámetros LOLA / ventana"
-            : "Parámetros LOLA / ventana"}
+            ? "Hide LOLA / interval settings"
+            : "LOLA / interval settings"}
         </button>
 
         {showParams && (
           <div className="params-box">
             <div className="field-grid-2">
               <label className="field">
-                <span>Duración (h)</span>
+                <span>Duration (h)</span>
                 <input
                   type="number"
                   min={1}
@@ -252,7 +252,7 @@ export function InputPanel({
               </label>
 
               <label className="field">
-                <span>Paso temporal</span>
+                <span>Time step</span>
                 <select
                   value={params.stepMinutes}
                   onChange={(e) =>
@@ -262,18 +262,18 @@ export function InputPanel({
                   <option value={10}>10 min</option>
                   <option value={20}>20 min</option>
                   <option value={30}>30 min</option>
-                  <option value={60}>1 hora</option>
-                  <option value={120}>2 horas</option>
-                  <option value={180}>3 horas</option>
-                  <option value={360}>6 horas</option>
-                  <option value={720}>12 horas</option>
-                  <option value={1440}>24 horas</option>
+                  <option value={60}>1 hour</option>
+                  <option value={120}>2 hours</option>
+                  <option value={180}>3 hours</option>
+                  <option value={360}>6 hours</option>
+                  <option value={720}>12 hours</option>
+                  <option value={1440}>24 hours</option>
                 </select>
               </label>
             </div>
 
             <label className="field">
-              <span>Cobertura DEM LOLA</span>
+              <span>LOLA DEM coverage</span>
               <select
                 value={params.demMode}
                 onChange={(e) =>
@@ -283,20 +283,20 @@ export function InputPanel({
                 }
               >
                 <option value="auto">
-                  Automático (80m Polo Sur / ≈237m Global)
+                  Automatic (80m South Pole / ≈237m global)
                 </option>
-                <option value="polar">Polo Sur completo (80 m/px)</option>
-                <option value="global">Luna completa (≈237 m/px)</option>
+                <option value="polar">South Pole completo (80 m/px)</option>
+                <option value="global">Whole Moon (≈237 m/px)</option>
                 <option value="sample20">
-                  Muestra local Polo Sur (20 m/px)
+                  Muestra local South Pole (20 m/px)
                 </option>
-                <option value="ideal">Esfera ideal (0° sin relieve)</option>
+                <option value="ideal">Ideal sphere (0°, no terrain)</option>
               </select>
             </label>
 
             <div className="field-grid-2">
               <label className="field">
-                <span>Altura (m)</span>
+                <span>Height (m)</span>
                 <input
                   type="number"
                   min={0}
@@ -315,7 +315,7 @@ export function InputPanel({
               </label>
 
               <label className="field">
-                <span>Rayos (°)</span>
+                <span>Ray spacing (°)</span>
                 <select
                   value={params.azimuthStepDeg}
                   onChange={(e) =>
@@ -334,7 +334,7 @@ export function InputPanel({
       </div>
 
       <div className="minerals-section">
-        <div className="eyebrow">Materiales y WEH (máscara 3D)</div>
+        <div className="eyebrow">Materials and WEH (3D overlay)</div>
         <div className="mineral-list">
           {mineralElements.map((el) => {
             const checked = selectedMinerals.includes(el.id);
@@ -345,9 +345,9 @@ export function InputPanel({
                 title={
                   el.available
                     ? el.id === "WEH"
-                      ? "WEH global estimado: más intensidad indica mayor abundancia"
-                      : `Mostrar regiones LP-GRS de ${el.label}`
-                    : (el.status ?? "Sin datos validados aún")
+                      ? "Estimated global WEH: stronger intensity means higher abundance"
+                      : `Show LP-GRS regions for ${el.label}`
+                    : (el.status ?? "No validated data yet")
                 }
               >
                 <input
@@ -373,7 +373,7 @@ export function InputPanel({
                 </span>
                 <span className="mineral-label">{el.label}</span>
                 {!el.available && (
-                  <span className="mineral-future-tag">sin datos</span>
+                  <span className="mineral-future-tag">no data</span>
                 )}
               </label>
             );
@@ -381,8 +381,8 @@ export function InputPanel({
         </div>
         {selectedMinerals.includes("WEH") && (
           <p>
-            WEH: más intensidad indica mayor abundancia; no confirma hielo.
-            Lawrence et al. (2022).
+            WEH: stronger intensity means higher abundance; it does not confirm
+            ice. Lawrence et al. (2022).
           </p>
         )}
       </div>
@@ -394,7 +394,7 @@ export function InputPanel({
         onClick={onLaunch}
       >
         <Rocket size={16} />
-        {loading ? "CALCULANDO..." : "LAUNCH"}
+        {loading ? "CALCULATING..." : "LAUNCH"}
       </button>
     </aside>
   );

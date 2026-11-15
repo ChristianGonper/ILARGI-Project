@@ -61,7 +61,6 @@ function makeSurfaceCoordSprite(
 function makeSpacecraftMesh(): THREE.Group {
   const group = new THREE.Group();
 
-  // Módulo de descenso dorado
   const body = new THREE.Mesh(
     new THREE.OctahedronGeometry(0.032, 0),
     new THREE.MeshStandardMaterial({
@@ -74,13 +73,12 @@ function makeSpacecraftMesh(): THREE.Group {
   );
   group.add(body);
 
-  // Paneles solares
+  // Solar panels
   const wingGeo = new THREE.BoxGeometry(0.11, 0.008, 0.025);
   const wingMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
   const wings = new THREE.Mesh(wingGeo, wingMat);
   group.add(wings);
 
-  // Anillo localizador alrededor de la nave
   const halo = new THREE.Mesh(
     new THREE.RingGeometry(0.048, 0.058, 24),
     new THREE.MeshBasicMaterial({
@@ -237,7 +235,6 @@ export function Phase1OrbitViewport3D({
       sphereMat.needsUpdate = true;
     });
 
-    // Rejilla sutil de paralelos y meridianos
     const addLatRing = (lat: number, color: number, opacity: number) => {
       const pts: THREE.Vector3[] = [];
       for (let lon = -180; lon <= 180; lon += 4) {
@@ -276,7 +273,7 @@ export function Phase1OrbitViewport3D({
       );
     }
 
-    // Órbita espacial (anillo elevado) y Ground Track sobre la superficie
+    // Elevated orbit ring and projected surface ground track
     const orbitLine = new THREE.Line(
       new THREE.BufferGeometry(),
       new THREE.LineBasicMaterial({
@@ -310,7 +307,6 @@ export function Phase1OrbitViewport3D({
     scene.add(sitesGroup);
     scene.add(focusGroup);
 
-    // Interacción click sobre sitios o superficie
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
     let downPos = { x: 0, y: 0 };
@@ -375,7 +371,7 @@ export function Phase1OrbitViewport3D({
       const t = clock.getElapsedTime();
 
       const { inc, node } = orbitParamsRef.current;
-      const u = t * 0.72; // velocidad angular agradable en parking orbit
+      const u = t * 0.72; // Illustrative parking-orbit animation speed
       const { latitudeDeg, longitudeEastDeg } = orbitPointLatLon(inc, node, u);
       if (spacecraftRef.current) {
         const pos = latLonToThreeVector(latitudeDeg, longitudeEastDeg, 1.18);
@@ -415,7 +411,6 @@ export function Phase1OrbitViewport3D({
     };
   }, []);
 
-  // Reconstruir órbita y ground track cuando cambia inclinación o nodo
   useEffect(() => {
     const orbitLine = orbitLineRef.current;
     const groundTrackLine = groundTrackLineRef.current;
@@ -454,7 +449,6 @@ export function Phase1OrbitViewport3D({
     }
   }, [currentInclinationDeg, targetNodeDeg, groundTrackAligned]);
 
-  // Dibujar pines de sitios disponibles
   useEffect(() => {
     const group = sitesGroupRef.current;
     if (!group) return;
@@ -476,7 +470,6 @@ export function Phase1OrbitViewport3D({
     }
   }, [sites, selectedSite]);
 
-  // Marcador destacado del objetivo + cartel en superficie con Latitud y Longitud
   useEffect(() => {
     const group = focusGroupRef.current;
     if (!group) return;
@@ -514,7 +507,6 @@ export function Phase1OrbitViewport3D({
     group.add(sprite);
   }, [selectedSite, groundTrackAligned]);
 
-  // Enfocar cámara hacia el objetivo solo cuando cambia el sitio seleccionado
   useEffect(() => {
     if (cameraRef.current && controlsRef.current && cameraPreset === "target") {
       const normal = latLonToThreeVector(
@@ -560,14 +552,14 @@ export function Phase1OrbitViewport3D({
       <div className="moon-hud-top">
         <div className="moon-hud-pills">
           <span className="pill pill-cyan">
-            Inclinación actual: {currentInclinationDeg.toFixed(1)}°
+            Current inclination: {currentInclinationDeg.toFixed(1)}°
           </span>
           <span
             className={`pill ${groundTrackAligned ? "pill-ok" : "pill-amber"}`}
           >
             {groundTrackAligned
-              ? "Ground Track ALINEADO con el objetivo"
-              : "Ground Track NO corta el punto"}
+              ? "Ground track aligned with target"
+              : "Ground track misses the target"}
           </span>
         </div>
         <div className="moon-camera-btns">
@@ -576,21 +568,21 @@ export function Phase1OrbitViewport3D({
             className={`btn-mini ${cameraPreset === "target" ? "active" : ""}`}
             onClick={() => moveCamera("target")}
           >
-            Ver objetivo
+            View target
           </button>
           <button
             type="button"
             className={`btn-mini ${cameraPreset === "south" ? "active" : ""}`}
             onClick={() => moveCamera("south")}
           >
-            Polo Sur
+            South Pole
           </button>
           <button
             type="button"
             className={`btn-mini ${cameraPreset === "global" ? "active" : ""}`}
             onClick={() => moveCamera("global")}
           >
-            Vista global
+            Global view
           </button>
         </div>
       </div>
@@ -603,7 +595,7 @@ export function Phase1OrbitViewport3D({
       <div className="moon-hud-bottom edu-legend-bar">
         <div className="edu-legend-items">
           <span className="legend-dot-item">
-            <i style={{ background: "#38BDF8" }} /> Órbita del aterrizador
+            <i style={{ background: "#38BDF8" }} /> Lander orbit
           </span>
           <span className="legend-dot-item">
             <i
@@ -611,16 +603,16 @@ export function Phase1OrbitViewport3D({
                 background: groundTrackAligned ? "#10B981" : "#F59E0B",
               }}
             />{" "}
-            Ground Track en superficie
+            Surface ground track
           </span>
           <span className="legend-dot-item">
-            <i style={{ background: "#F43F5E" }} /> Punto de aterrizaje
+            <i style={{ background: "#F43F5E" }} /> Landing site
           </span>
         </div>
         <span className="pill pill-muted">
           {pinMode
-            ? "Modo Pin activo: haz clic en la Luna"
-            : "Arrastra para girar · Shift+Clic para elegir punto libre"}
+            ? "Pin mode active: click the Moon"
+            : "Drag to rotate · Shift+click to choose a location"}
         </span>
       </div>
     </div>

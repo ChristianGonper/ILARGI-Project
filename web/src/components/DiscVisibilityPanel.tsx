@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import Plotly from "plotly.js-dist-min";
+import Plotly from "plotly.js-gl2d-dist-min";
 import { formatUtcShort } from "../api";
 import type { SiteAnalysisResult, SkySample } from "../types";
 import { PlotFullscreenShell } from "./PlotFullscreenShell";
@@ -8,7 +8,7 @@ interface DiscVisibilityPanelProps {
   result: SiteAnalysisResult;
 }
 
-type DiscState = "Visible" | "Relieve" | "Tierra" | "Sin datos";
+type DiscState = "Visible" | "Terrain" | "Earth" | "No data";
 
 function horizonAt(
   profile: SiteAnalysisResult["horizon_profile"],
@@ -55,9 +55,9 @@ function buildDiscScatterPoints(
 ): Record<DiscState, { x: number[]; y: number[] }> {
   const buckets: Record<DiscState, { x: number[]; y: number[] }> = {
     Visible: { x: [], y: [] },
-    Relieve: { x: [], y: [] },
-    Tierra: { x: [], y: [] },
-    "Sin datos": { x: [], y: [] },
+    Terrain: { x: [], y: [] },
+    Earth: { x: [], y: [] },
+    "No data": { x: [], y: [] },
   };
 
   const deg2rad = Math.PI / 180;
@@ -119,10 +119,10 @@ function buildDiscScatterPoints(
         earthSample &&
         nx * earthCx + ny * earthCy + nz * earthCz >= cosEarthR
       ) {
-        state = "Tierra";
+        state = "Earth";
       } else {
         const h = horizonAt(profile, az);
-        state = h === null ? "Sin datos" : el > h ? "Visible" : "Relieve";
+        state = h === null ? "No data" : el > h ? "Visible" : "Terrain";
       }
       buckets[state].x.push(dx);
       buckets[state].y.push(dy);
@@ -149,7 +149,7 @@ function DiscFractionTrendCanvas({
       {
         x: result.series.sun.map((s) => s.utc),
         y: result.series.sun.map((s) => s.direct_visible_fraction),
-        name: "Sol directo",
+        name: "Direct Sun",
         type: "scatter",
         mode: "lines",
         line: { color: "#F59E0B", width: 2 },
@@ -157,7 +157,7 @@ function DiscFractionTrendCanvas({
       {
         x: result.series.earth.map((s) => s.utc),
         y: result.series.earth.map((s) => s.direct_visible_fraction),
-        name: "Tierra visible",
+        name: "Visible Earth",
         type: "scatter",
         mode: "lines",
         line: { color: "#38BDF8", width: 2 },
@@ -165,7 +165,7 @@ function DiscFractionTrendCanvas({
       {
         x: result.series.sun.map((s) => s.utc),
         y: result.series.sun.map((s) => s.eclipsed_fraction),
-        name: "Fracción eclipsada",
+        name: "Eclipsed fraction",
         type: "scatter",
         mode: "lines",
         line: { color: "#A78BFA", width: 1.5, dash: "dot" },
@@ -190,12 +190,12 @@ function DiscFractionTrendCanvas({
         font: { size: 11, color: "#CBD5E1" },
       },
       xaxis: {
-        title: "Instante (UTC)",
+        title: "Time (UTC)",
         gridcolor: "#26334D",
         tickfont: { color: "#94A3B8" },
       },
       yaxis: {
-        title: "Fracción de disco",
+        title: "Disc fraction",
         range: [-0.04, 1.06],
         gridcolor: "#26334D",
         tickfont: { color: "#94A3B8" },
@@ -242,9 +242,9 @@ function SingleDiscCanvas({
 
     const palette: Array<[DiscState, string]> = [
       ["Visible", body === "SUN" ? "#f4bb43" : "#478dec"],
-      ["Relieve", "#515968"],
-      ["Tierra", "#2464ae"],
-      ["Sin datos", "#c65353"],
+      ["Terrain", "#515968"],
+      ["Earth", "#2464ae"],
+      ["No data", "#c65353"],
     ];
 
     const traces: Record<string, unknown>[] = [];
@@ -264,7 +264,7 @@ function SingleDiscCanvas({
     const layout: Record<string, unknown> = {
       height,
       title: {
-        text: body === "SUN" ? "Sol" : "Tierra",
+        text: body === "SUN" ? "Sun" : "Earth",
         font: { size: 12, color: "#F1F5F9" },
       },
       paper_bgcolor: "#131B2E",
@@ -282,13 +282,13 @@ function SingleDiscCanvas({
         font: { size: 10, color: "#CBD5E1" },
       },
       xaxis: {
-        title: "Despl. angular (°)",
+        title: "Angular offset (°)",
         gridcolor: "#26334D",
         zerolinecolor: "#334155",
         tickfont: { color: "#94A3B8" },
       },
       yaxis: {
-        title: "Elev. rel. (°)",
+        title: "Relative elevation (°)",
         scaleanchor: "x",
         scaleratio: 1,
         gridcolor: "#26334D",
@@ -311,7 +311,7 @@ function SingleDiscCanvas({
 }
 
 function formatFrac(val: number | null): string {
-  if (val === null || !Number.isFinite(val)) return "Sin datos";
+  if (val === null || !Number.isFinite(val)) return "No data";
   return `${(val * 100).toFixed(1)}%`;
 }
 
@@ -347,7 +347,7 @@ export function DiscVisibilityPanel({ result }: DiscVisibilityPanelProps) {
     <div className="disc-section">
       <div className="chart-card">
         <PlotFullscreenShell
-          title="Discos visibles y eclipse (Fracción directa)"
+          title="Visible discs and eclipse (Direct fraction)"
           subtitle={subtitle}
           height={200}
         >
@@ -361,12 +361,12 @@ export function DiscVisibilityPanel({ result }: DiscVisibilityPanelProps) {
         <div className="disc-controls">
           <div className="disc-controls-head">
             <span className="chart-title" style={{ marginBottom: 0 }}>
-              Instante de los discos (UTC)
+              Disc sample time (UTC)
             </span>
             <span className="mono-sub">
               {formatUtcShort(sunSample.utc)}
               {result.visibility.eclipse_samples > 0
-                ? ` · Eclipse máx. ${result.visibility.max_eclipse_pct.toFixed(1)}%`
+                ? ` · Max eclipse ${result.visibility.max_eclipse_pct.toFixed(1)}%`
                 : ""}
             </span>
           </div>
@@ -376,19 +376,19 @@ export function DiscVisibilityPanel({ result }: DiscVisibilityPanelProps) {
             max={Math.max(0, sunSeries.length - 1)}
             value={clampedIdx}
             onChange={(ev) => setSampleIdx(Number(ev.target.value))}
-            aria-label="Instante de los discos (UTC)"
+            aria-label="Disc sample time (UTC)"
             className="disc-slider"
           />
           <div className="disc-metrics-row mono-sub">
             <span>
-              <strong className="tag-sun">Sol:</strong> visible{" "}
+              <strong className="tag-sun">Sun:</strong> visible{" "}
               {formatFrac(sunSample.direct_visible_fraction)} · eclipse{" "}
               {formatFrac(sunSample.eclipsed_fraction)} (r=
               {sunSample.angular_radius_deg.toFixed(3)}°)
             </span>
             {earthSample && (
               <span>
-                <strong className="tag-earth">Tierra:</strong> visible{" "}
+                <strong className="tag-earth">Earth:</strong> visible{" "}
                 {formatFrac(earthSample.direct_visible_fraction)} (r=
                 {earthSample.angular_radius_deg.toFixed(3)}°)
               </span>
@@ -415,9 +415,8 @@ export function DiscVisibilityPanel({ result }: DiscVisibilityPanelProps) {
           )}
         </div>
         <div className="disc-caption">
-          Fracción geométrica del disco sobre el horizonte y fracción solar
-          directa tras ocultación por la Tierra. La atmósfera terrestre no se
-          modela; el horizonte parcial puede sobrestimar la visibilidad.
+          Disc fraction above the horizon and direct solar fraction after
+          occultation by Earth.
         </div>
       </div>
     </div>

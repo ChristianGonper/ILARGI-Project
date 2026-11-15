@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import Plotly from "plotly.js-dist-min";
+import Plotly from "plotly.js-gl2d-dist-min";
 import type { SiteAnalysisResult } from "../types";
 import { PlotFullscreenShell } from "./PlotFullscreenShell";
 
@@ -26,7 +26,7 @@ function DailyEvolutionPlotCanvas({
       {
         x: result.series.sun.map((s) => s.utc),
         y: result.series.sun.map((s) => s.elevation_deg),
-        name: "Sol",
+        name: "Sun",
         type: "scatter",
         mode: "lines",
         line: { color: "#F59E0B", width: 2 },
@@ -34,7 +34,7 @@ function DailyEvolutionPlotCanvas({
       {
         x: result.series.earth.map((s) => s.utc),
         y: result.series.earth.map((s) => s.elevation_deg),
-        name: "Tierra",
+        name: "Earth",
         type: "scatter",
         mode: "lines",
         line: { color: "#38BDF8", width: 2 },
@@ -46,7 +46,7 @@ function DailyEvolutionPlotCanvas({
         {
           x: result.series.sun.map((s) => s.utc),
           y: result.series.sun.map((s) => s.horizon_deg),
-          name: "Horizonte → Sol",
+          name: "Horizon → Sun",
           type: "scatter",
           mode: "lines",
           line: { color: "#FB7185", width: 1.4, dash: "dot" },
@@ -54,7 +54,7 @@ function DailyEvolutionPlotCanvas({
         {
           x: result.series.earth.map((s) => s.utc),
           y: result.series.earth.map((s) => s.horizon_deg),
-          name: "Horizonte → Tierra",
+          name: "Horizon → Earth",
           type: "scatter",
           mode: "lines",
           line: { color: "#10B981", width: 1.4, dash: "dot" },
@@ -80,12 +80,12 @@ function DailyEvolutionPlotCanvas({
         font: { size: 11, color: "#CBD5E1" },
       },
       xaxis: {
-        title: "Evolución temporal (UTC)",
+        title: "Time (UTC)",
         gridcolor: "#26334D",
         tickfont: { color: "#94A3B8" },
       },
       yaxis: {
-        title: "Elevación (°)",
+        title: "Elevation (°)",
         gridcolor: "#26334D",
         zerolinecolor: "#475569",
         tickfont: { color: "#94A3B8" },
@@ -113,7 +113,7 @@ export function DailyEvolutionPlot({
   const subtitle = `${result.label} · ${result.site_name} (λ=${result.latitude_deg.toFixed(3)}°, θ=${result.longitude_east_deg.toFixed(3)}°E · ${result.horizon_label})`;
   return (
     <PlotFullscreenShell
-      title="Evolución de los días (Elevación UTC)"
+      title="Elevation over time (UTC)"
       subtitle={subtitle}
       height={height}
     >

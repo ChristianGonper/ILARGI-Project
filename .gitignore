@@ -12,14 +12,13 @@ data/kernels/
 .pytest_cache/
 .ruff_cache/
 node_modules/
-salidas/
+outputs/
 
-# Productos topográficos descargados de NASA/PDS
+# Topographic products downloaded from NASA/PDS
 data/terrain/LDEM_80S_80MPP_ADJ.TIF
 data/terrain/ldem_128.img
 data/terrain/*.part
 
 # Frontend build
 web/dist/
-web/package-lock.json
 *.tsbuildinfo

@@ -15,7 +15,7 @@ import type {
 export async function fetchHealth(): Promise<HealthResponse> {
   const res = await fetch("/api/health");
   if (!res.ok) {
-    throw new Error(`Error al consultar /api/health (${res.status})`);
+    throw new Error(`Request failed for /api/health (${res.status})`);
   }
   return res.json() as Promise<HealthResponse>;
 }
@@ -23,7 +23,7 @@ export async function fetchHealth(): Promise<HealthResponse> {
 export async function fetchHistoricalSites(): Promise<HistoricalSite[]> {
   const res = await fetch("/api/sites");
   if (!res.ok) {
-    throw new Error(`Error al consultar /api/sites (${res.status})`);
+    throw new Error(`Request failed for /api/sites (${res.status})`);
   }
   return res.json() as Promise<HistoricalSite[]>;
 }
@@ -31,7 +31,7 @@ export async function fetchHistoricalSites(): Promise<HistoricalSite[]> {
 export async function fetchEducationSites(): Promise<EducationSite[]> {
   const res = await fetch("/api/education/sites");
   if (!res.ok) {
-    throw new Error(`Error al consultar /api/education/sites (${res.status})`);
+    throw new Error(`Request failed for /api/education/sites (${res.status})`);
   }
   return res.json() as Promise<EducationSite[]>;
 }
@@ -58,7 +58,7 @@ export async function fetchEducationCycle(params: {
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { detail?: string };
     throw new Error(
-      body.detail ?? `Error en /api/education/cycle (${res.status})`,
+      body.detail ?? `Request failed for /api/education/cycle (${res.status})`,
     );
   }
   return res.json() as Promise<EducationCycleResponse>;
@@ -149,7 +149,7 @@ export async function fetchMaterialsOverlay(): Promise<MaterialsOverlayResponse>
   const res = await fetch("/api/materials-overlay");
   if (!res.ok) {
     throw new Error(
-      `Error al consultar /api/materials-overlay (${res.status})`,
+      `Request failed for /api/materials-overlay (${res.status})`,
     );
   }
   return res.json() as Promise<MaterialsOverlayResponse>;
@@ -180,7 +180,9 @@ export async function analyzePoints(
   });
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { detail?: string };
-    throw new Error(body.detail ?? `Error en /api/analyze (${res.status})`);
+    throw new Error(
+      body.detail ?? `Request failed for /api/analyze (${res.status})`,
+    );
   }
   const data = (await res.json()) as { results: SiteAnalysisResult[] };
   return data.results;
@@ -192,7 +194,7 @@ export function formatUtcShort(iso: string): string {
 }
 
 export function formatEventsList(events: VisibilityEvent[]): string {
-  if (events.length === 0) return "Sin evento en el periodo evaluado";
+  if (events.length === 0) return "No event in the evaluated interval";
   return events
     .map((ev) => `${formatUtcShort(ev.utc)} (${ev.azimuth_deg.toFixed(1)}°)`)
     .join(" · ");
@@ -202,8 +204,8 @@ export function formatShadowSpan(span: ShadowSpan): string {
   const s = span.start_utc.slice(5, 16).replace("T", " ");
   const e = span.end_utc.slice(5, 16).replace("T", " ");
   const flags: string[] = [];
-  if (!span.bounded_start) flags.push("inicio ventana");
-  if (!span.bounded_end) flags.push("fin ventana");
+  if (!span.bounded_start) flags.push("window start");
+  if (!span.bounded_end) flags.push("window end");
   const suffix = flags.length ? ` [${flags.join(", ")}]` : "";
   return `${span.duration_hours.toFixed(1)} h (${s} → ${e} UTC)${suffix}`;
 }
@@ -211,19 +213,19 @@ export function formatShadowSpan(span: ShadowSpan): string {
 export function formatIncidenceSummary(r: SiteAnalysisResult): string {
   const inc = r.incidence;
   if (inc.min_deg === null || inc.max_deg === null || inc.mean_deg === null) {
-    return `Sombra permanente · Elev. Sol máx ${inc.max_sun_elevation_deg.toFixed(2)}°`;
+    return `No visible Sun samples · Max Sun elevation ${inc.max_sun_elevation_deg.toFixed(2)}°`;
   }
-  return `Mín ${inc.min_deg.toFixed(2)}° · Máx ${inc.max_deg.toFixed(2)}° · Media ${inc.mean_deg.toFixed(2)}° (mediana ${inc.median_deg?.toFixed(2)}°, σ ${inc.std_deg?.toFixed(2)}°)`;
+  return `Min ${inc.min_deg.toFixed(2)}° · Max ${inc.max_deg.toFixed(2)}° · Mean ${inc.mean_deg.toFixed(2)}° (median ${inc.median_deg?.toFixed(2)}°, σ ${inc.std_deg?.toFixed(2)}°)`;
 }
 
 export function formatMaterialsSummary(r: SiteAnalysisResult): string {
   const mat = r.materials;
   if (!mat.in_coverage) {
-    return `Sin datos LP-GRS para esta ubicación · WEH: ${mat.water_status}`;
+    return `No LP-GRS data at this location · WEH: ${mat.water_status}`;
   }
   const parts = Object.entries(mat.elements).map(([sym, el]) => {
     if (el.value === null) return `${sym}: s/d`;
-    const unit = el.unit.replace(" en masa", "");
+    const unit = el.unit.replace(" by mass", "");
     return `${sym}: ${el.value.toFixed(2)} ${unit} (${el.category})`;
   });
   parts.push(`WEH: ${mat.water_status}`);

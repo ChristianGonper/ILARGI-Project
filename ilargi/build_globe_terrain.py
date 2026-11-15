@@ -1,4 +1,4 @@
-"""Prepara el DEM global del globo; no se usa para cálculos científicos."""
+"""Build a display DEM; scientific calculations use separate terrain products."""
 
 import argparse
 import gzip
@@ -15,16 +15,16 @@ OUTPUT = Path(__file__).resolve().parent.parent / "web/public/textures"
 
 
 def build(source: Path, output: Path = OUTPUT) -> None:
-    """Reduce 16 a 8 muestras/grado y conserva unidades de medio metro."""
+    """Reduce 16 to 8 samples per degree, retaining half-meter height units."""
     source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
     if (
         source_hash
         != "45a2b32d56e81ed30db07fead8abc842b249b6511219d9ca2c53f81bc2dc5d62"
     ):
-        raise ValueError("El SHA-256 no corresponde al producto NASA verificado")
+        raise ValueError("SHA-256 does not match the verified NASA product")
     with rasterio.open(source) as dataset:
         if dataset.shape != (2880, 5760) or dataset.dtypes != ("uint16",):
-            raise ValueError("Se esperaba ldem_16_uint.tif (5760 × 2880, uint16)")
+            raise ValueError("Expected ldem_16_uint.tif (5760 × 2880, uint16)")
         values = dataset.read(1, out_shape=(1440, 2880), resampling=Resampling.average)
     # NASA uint16: 0.5 m relative to 1,727,400 m, i.e. -10 km offset.
     heights = (values.astype(np.int32) - 20_000).astype("<i2")

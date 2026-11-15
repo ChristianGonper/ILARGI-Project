@@ -1,14 +1,9 @@
 import * as THREE from "three";
 
-/** Radio lunar de referencia en MOON_ME (metros y kilómetros). */
 export const LUNAR_RADIUS_M = 1_737_400;
 export const LUNAR_RADIUS_KM = 1_737.4;
 
-/**
- * Convierte latitud planetocéntrica (°) y longitud este (°) al sistema cartesiano
- * de Three.js con el Polo Norte en +Y, el meridiano 0° (cara visible) en +Z
- * y 90° E en +X.
- */
+/** Display axes: +Y north, +Z longitude 0°, +X longitude 90° east. */
 export function latLonToThreeVector(
   latitudeDeg: number,
   longitudeEastDeg: number,
@@ -23,9 +18,6 @@ export function latLonToThreeVector(
   return new THREE.Vector3(x, y, z);
 }
 
-/**
- * Convierte un punto sobre la esfera unitaria de Three.js a latitud y longitud este (°).
- */
 export function threeVectorToLatLon(vec: THREE.Vector3): {
   latitudeDeg: number;
   longitudeEastDeg: number;
@@ -38,10 +30,7 @@ export function threeVectorToLatLon(vec: THREE.Vector3): {
   return { latitudeDeg, longitudeEastDeg };
 }
 
-/**
- * Coordenadas cartesianas estándar MOON_ME (km) con +Z hacia el Polo Norte y +X en 0° E.
- * Útil para interoperar con CesiumJS / SPICE.
- */
+/** Scientific MOON_ME axes: +Z north, +X longitude 0°, +Y longitude 90° east. */
 export function latLonToMoonMeKm(
   latitudeDeg: number,
   longitudeEastDeg: number,

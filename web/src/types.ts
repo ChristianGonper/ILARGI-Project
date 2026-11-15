@@ -31,6 +31,7 @@ export interface SkySample {
   azimuth_deg: number;
   elevation_deg: number;
   horizon_deg: number;
+  horizon_source: "terrain" | "ideal" | "ideal_fallback";
   margin_deg: number;
   visible: boolean;
   range_km: number;
@@ -163,10 +164,6 @@ export interface MaterialsOverlayResponse {
   regions: MaterialRegionOverlay[];
 }
 
-/**
- * Contrato de adaptador para el visor lunar 3D.
- * Permite intercambiar Three.js por CesiumJS (o combinarlos) sin cambiar el resto de la app.
- */
 export interface MoonViewport3DProps {
   historicalSites: HistoricalSite[];
   activePoints: PointDraft[];

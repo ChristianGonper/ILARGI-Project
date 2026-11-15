@@ -11,7 +11,7 @@ interface IlargiMascotProps {
 
 export function IlargiMascot({
   message,
-  speakerMood = "Guía lunar",
+  speakerMood = "Lunar guide",
   compact = false,
   showFunFacts = true,
 }: IlargiMascotProps) {
@@ -19,7 +19,6 @@ export function IlargiMascot({
   const [speaking, setSpeaking] = useState(true);
   const [bubbleMode, setBubbleMode] = useState<"guide" | "fact">("guide");
 
-  // Cuando cambia el mensaje contextual, volvemos a la voz guía y activamos animación de habla.
   useEffect(() => {
     setBubbleMode("guide");
     setSpeaking(true);
@@ -49,13 +48,13 @@ export function IlargiMascot({
           setSpeaking(true);
           window.setTimeout(() => setSpeaking(false), 1800);
         }}
-        title="Pulsa para saludar a ILARGI"
+        title="Click to greet ILARGI"
       >
         <span className="ilargi-pulse-ring" aria-hidden="true" />
         <span className="ilargi-pulse-ring delay" aria-hidden="true" />
         <img
           src="/ilargi-mascot.png"
-          alt="Mascota ILARGI"
+          alt="ILARGI mascot"
           className="ilargi-avatar-img"
         />
         <span className="ilargi-nameplate">
@@ -77,7 +76,7 @@ export function IlargiMascot({
             <span className="pill pill-cyan">
               <Volume2 size={11} />{" "}
               {bubbleMode === "fact"
-                ? `¿Y sabías qué…? · ${activeFact.tag}`
+                ? `Did you know…? · ${activeFact.tag}`
                 : speakerMood}
             </span>
           </div>
@@ -89,15 +88,15 @@ export function IlargiMascot({
                   className="btn-mini"
                   onClick={() => setBubbleMode("guide")}
                 >
-                  Volver al punto
+                  Return to location
                 </button>
               )}
               <button
                 type="button"
                 className="btn-mini"
                 onClick={() => handleTriggerFact(-1)}
-                title="Dato anterior"
-                aria-label="Dato curioso anterior"
+                title="Previous fact"
+                aria-label="Previous fact"
               >
                 <ChevronLeft size={13} />
               </button>
@@ -107,7 +106,7 @@ export function IlargiMascot({
                 onClick={() => handleTriggerFact(1)}
               >
                 <Sparkles size={12} />
-                ¿Y sabías qué…? ({factIdx + 1}/{ILARGI_FUN_FACTS.length})
+                Did you know…? ({factIdx + 1}/{ILARGI_FUN_FACTS.length})
                 <ChevronRight size={13} />
               </button>
             </div>

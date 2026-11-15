@@ -1,4 +1,4 @@
-"""Horizonte experimental de un DEM esférico lunar, con cobertura explícita."""
+"""Sample spherical lunar terrain horizons with explicit coverage."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -11,13 +11,14 @@ from rasterio.windows import Window
 from ilargi.terrain import (
     RADIUS_M,
     SAMPLE,
+    TerrainCoverageError,
     dem_metadata,
     raster_indices,
     sample_elevation,
 )
 
-# Extremos globales LOLA respecto a la esfera de referencia de 1 737 400 m:
-# cumbre selene (+10 792 m, borde de Engel'gardt) y suelo de Antoniadi (-9 129 m).
+# Global LOLA extrema relative to the 1,737,400 m reference sphere:
+# Selene summit (+10,792 m, Engel'gardt rim) and Antoniadi floor (-9,129 m).
 LUNAR_MAX_ELEVATION_M = 10_792.0
 LUNAR_MIN_ELEVATION_M = -9_129.0
 
@@ -52,14 +53,7 @@ def max_search_distance_m(
     min_terrain_m: float = LUNAR_MIN_ELEVATION_M,
     radius_m: float = RADIUS_M,
 ) -> float | np.ndarray:
-    """Distancia máxima de arco sobre la esfera más allá de la cual ningún obstáculo <= max_terrain_m ocluye.
-
-    Sin ``min_elevation_deg`` devuelve la cota física absoluta: el rayo rasante
-    a ``min_terrain_m`` hasta cortar ``max_terrain_m``. Con ``min_elevation_deg``
-    resuelve exactamente la intersección esférica ``r * cos(alpha + theta) = r_obs * cos(alpha)``
-    (que a 0° coincide con el plano tangente) y, si ``alpha`` queda por debajo
-    del ángulo rasante a ``min_terrain_m``, satura monótonamente en la cota física absoluta.
-    """
+    """Bound the spherical arc beyond which terrain at or below max_terrain_m cannot occult. With an elevation, solve r*cos(alpha+theta)=r_obs*cos(alpha); below the grazing angle at min_terrain_m, saturate at the absolute physical bound."""
     if not (
         np.isfinite(radius_m)
         and radius_m > 0
@@ -67,20 +61,18 @@ def max_search_distance_m(
         and np.isfinite(max_terrain_m)
         and np.isfinite(min_terrain_m)
     ):
-        raise ValueError("Parámetros geométricos no finitos o radio no positivo")
+        raise ValueError("Nonfinite geometry parameters or nonpositive radius")
     r_obs = float(radius_m + observer_m)
     r_max = float(radius_m + max_terrain_m)
     r_min = float(radius_m + min_terrain_m)
     if r_obs <= 0 or r_max <= 0 or r_min <= 0:
-        raise ValueError("Los radios del observador y del relieve deben ser positivos")
+        raise ValueError("Observer and terrain radii must be positive")
     if r_min > r_max:
-        raise ValueError("min_terrain_m no puede superar a max_terrain_m")
+        raise ValueError("min_terrain_m cannot exceed max_terrain_m")
 
     def _worst_case_theta() -> float:
         if r_obs < r_min:
-            raise ValueError(
-                "La altura del observador no puede ser inferior a min_terrain_m"
-            )
+            raise ValueError("Observer height cannot be below min_terrain_m")
         theta_1 = float(np.arccos(np.clip(r_min / r_obs, -1.0, 1.0)))
         theta_2 = float(np.arccos(np.clip(r_min / r_max, -1.0, 1.0)))
         return min(theta_1 + theta_2, float(np.pi))
@@ -95,7 +87,7 @@ def max_search_distance_m(
         non_nan
         & ((~np.isfinite(angles_deg)) | (angles_deg <= -90.0) | (angles_deg >= 90.0))
     ):
-        raise ValueError("min_elevation_deg debe estar en (-90, 90)")
+        raise ValueError("min_elevation_deg must be in (-90, 90)")
 
     alpha = np.deg2rad(angles_deg)
     r_peri = r_obs * np.cos(alpha)
@@ -131,7 +123,7 @@ def estimate_search_radius(
     min_terrain_m: float = LUNAR_MIN_ELEVATION_M,
     radius_m: float = RADIUS_M,
 ) -> SearchRadiusEstimate:
-    """Resume la cota del plano tangente (0°), la cota esférica completa y la requerida."""
+    """Summarize tangent-plane, full-sphere and requested search bounds."""
     tangent_plane = float(
         max_search_distance_m(
             observer_m,
@@ -181,19 +173,19 @@ def _sample_dem_rays(
     min_distance_by_az: np.ndarray | None = None,
     max_distance_by_az: np.ndarray | None = None,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, float, float]:
-    """Evalúa rayos radiales sobre un único DEM para una posición observadora dada."""
+    """Sample radial rays in a single DEM for a fixed observer position."""
     with rasterio.open(path) as ds:
         crs, scale, offset = dem_metadata(ds)
         pixel = abs(ds.transform.a)
         if not np.isclose(pixel, abs(ds.transform.e)) or pixel <= 0:
-            raise ValueError("El DEM debe tener píxeles cuadrados")
+            raise ValueError("DEM pixels must be square")
         n_az = int(np.ceil(360 / azimuth_step_deg))
         n_distance = int(np.floor((max_distance_m + 0.001) / pixel))
         if n_distance == 0:
-            raise ValueError("La distancia debe superar la resolución del DEM")
+            raise ValueError("Distance must exceed DEM resolution")
         if n_az * n_distance > 4_000_000:
             raise ValueError(
-                "Demasiadas muestras de horizonte; aumenta el paso angular o reduce la distancia"
+                "Too many horizon samples; increase angular step or reduce distance"
             )
         az = np.arange(n_az) * 360 / n_az
         distance = np.arange(1, n_distance + 1) * pixel
@@ -228,10 +220,10 @@ def _sample_dem_rays(
         if not np.any(in_bounds):
             empty = np.full(n_az, np.nan)
             return az, empty, np.zeros(n_az), pixel, np.nan
-        # Leer bloques visitados evita una ventana global al cruzar 0°/360°.
+        # Read visited blocks to avoid global windows across the longitude seam.
         heights = np.full(rows.shape, np.nan)
         block_h, block_w = ds.block_shapes[0]
-        # Limitar bloques de imágenes sin teselas (como VRT de datos PDS).
+        # Limit block sizes for untiled rasters such as PDS VRTs.
         block_h, block_w = min(block_h, 256), min(block_w, 256)
         rr, cc = rows[in_bounds], cols[in_bounds]
         block_ids = (rr // block_h) * (
@@ -263,8 +255,8 @@ def _sample_dem_rays(
         obs_x, obs_y = transformer.transform(longitude, latitude)
         observer_row, observer_col = raster_indices(ds, obs_x, obs_y)
 
-    # Un hueco de datos interrumpe el rayo: no tratar terreno posterior como continuo.
-    # Las celdas fuera del anillo solicitado (antes de min_distance) no interrumpen el rayo.
+    # A data gap ends a ray; subsequent terrain is not continuous coverage.
+    # Cells before the requested inner radius do not interrupt the ray.
     if min_distance_by_az is not None:
         active_or_past = distance[None, :] > min_distance_by_az[:, None]
         if max_distance_by_az is not None:
@@ -295,20 +287,13 @@ def calculate_horizon(
     max_terrain_m: float = LUNAR_MAX_ELEVATION_M,
     min_terrain_m: float = LUNAR_MIN_ELEVATION_M,
 ) -> Horizon:
-    """Muestrea rayos radiales sobre la esfera; no extrapola más allá del DEM.
-
-    Las coordenadas se tratan en DE421 ME como aproximación de DE440 ME421.
-    Las cotas son m sobre la esfera de 1737400 m; no interpolamos el DEM.
-    Si ``max_distance_m`` es ``None`` o supera el radio físico máximo de oclusión
-    para ``[min_terrain_m, max_terrain_m]``, la búsqueda se acota automáticamente
-    a ese radio físico.
-    """
+    """Sample spherical radial rays without extrapolating beyond the DEM. DE421 ME coordinates approximate DE440 ME421. Heights are meters above the reference sphere. Search distance is capped at the physical occultation bound."""
     if not 0 <= instrument_height_m <= 1000:
-        raise ValueError("Altura o distancia de búsqueda fuera de rango")
+        raise ValueError("Height or search distance out of range")
     if max_distance_m is not None and not 500 <= max_distance_m <= 1_000_000:
-        raise ValueError("Altura o distancia de búsqueda fuera de rango")
+        raise ValueError("Height or search distance out of range")
     if not 0 < azimuth_step_deg <= 10 or abs(latitude) >= 90:
-        raise ValueError("Paso angular o latitud fuera de rango")
+        raise ValueError("Angular step or latitude out of range")
     ground = sample_elevation(latitude, longitude, path)
     observer = ground.elevation_m + instrument_height_m
     eff_min = min(float(min_terrain_m), observer)
@@ -329,7 +314,7 @@ def calculate_horizon(
         latitude, longitude, observer, effective_requested, azimuth_step_deg, path
     )
     if np.all(np.isnan(horizon)):
-        raise ValueError("El DEM no cubre los rayos alrededor del lugar")
+        raise TerrainCoverageError("DEM does not cover rays around the site")
     required = np.asarray(
         max_search_distance_m(
             observer,
@@ -364,22 +349,15 @@ def calculate_multiresolution_horizon(
     max_terrain_m: float = LUNAR_MAX_ELEVATION_M,
     min_terrain_m: float = LUNAR_MIN_ELEVATION_M,
 ) -> Horizon:
-    """Combina un DEM fino cercano con uno más grueso hasta el radio físico por acimut.
-
-    Primero evalúa el DEM fino para obtener la cota del observador y una cota
-    inferior garantizada de elevación por acimut. Con esa cota calcula el radio
-    restante ``max_search_distance_m`` más allá del cual ningún relieve <= ``max_terrain_m``
-    puede superar el obstáculo ya hallado, y prolonga en el DEM grueso solo las
-    direcciones aún abiertas.
-    """
+    """Combine near fine terrain with distant coarse terrain. The near horizon supplies a lower elevation bound used to limit the remaining search in each azimuth."""
     if not 0 <= instrument_height_m <= 1000:
-        raise ValueError("Altura o distancia de búsqueda fuera de rango")
+        raise ValueError("Height or search distance out of range")
     if fine_distance_m is not None and not 500 <= fine_distance_m <= 1_000_000:
-        raise ValueError("Altura o distancia de búsqueda fuera de rango")
+        raise ValueError("Height or search distance out of range")
     if max_distance_m is not None and not 500 <= max_distance_m <= 1_000_000:
-        raise ValueError("Altura o distancia de búsqueda fuera de rango")
+        raise ValueError("Height or search distance out of range")
     if not 0 < azimuth_step_deg <= 10 or abs(latitude) >= 90:
-        raise ValueError("Paso angular o latitud fuera de rango")
+        raise ValueError("Angular step or latitude out of range")
 
     ground = sample_elevation(latitude, longitude, fine_path)
     observer = ground.elevation_m + instrument_height_m
@@ -407,7 +385,7 @@ def calculate_multiresolution_horizon(
         latitude, longitude, observer, fine_requested, azimuth_step_deg, fine_path
     )
     if np.all(np.isnan(fine_elev)):
-        raise ValueError("El DEM fino no cubre los rayos alrededor del lugar")
+        raise TerrainCoverageError("Fine DEM does not cover rays around the site")
 
     az_cutoff = np.asarray(
         max_search_distance_m(
@@ -462,7 +440,7 @@ def calculate_multiresolution_horizon(
 
 
 def horizon_at(profile: Horizon, azimuth_deg: np.ndarray) -> np.ndarray:
-    """Interpolación circular, únicamente donde ambos rayos vecinos tienen datos."""
+    """Interpolate circularly only where both neighboring rays have finite elevations."""
     az = np.append(profile.azimuth_deg, 360.0)
     elev = np.append(profile.elevation_deg, profile.elevation_deg[0])
     values = np.asarray(azimuth_deg) % 360
@@ -473,14 +451,3 @@ def horizon_at(profile: Horizon, azimuth_deg: np.ndarray) -> np.ndarray:
     return np.where(
         np.isfinite(elev[left]) & np.isfinite(elev[left + 1]), interpolated, np.nan
     )
-
-
-def coverage_at(profile: Horizon, azimuth_deg: np.ndarray) -> np.ndarray:
-    """Alcance común conservador de los rayos que rodean cada dirección."""
-    az = np.append(profile.azimuth_deg, 360.0)
-    coverage = np.append(profile.coverage_m, profile.coverage_m[0])
-    left = np.minimum(
-        np.searchsorted(az, np.asarray(azimuth_deg) % 360, side="right") - 1,
-        len(profile.azimuth_deg) - 1,
-    )
-    return np.minimum(coverage[left], coverage[left + 1])

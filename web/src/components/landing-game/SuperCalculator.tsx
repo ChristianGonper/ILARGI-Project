@@ -30,7 +30,6 @@ export function SuperCalculator({
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [statusType, setStatusType] = useState<"idle" | "error" | "ok">("idle");
 
-  // Si cambia el punto seleccionado, reiniciamos los registros de la calculadora
   useEffect(() => {
     setLatInput("");
     setLonInput("");
@@ -90,7 +89,7 @@ export function SuperCalculator({
 
     if (!Number.isFinite(parsedLat) || !Number.isFinite(parsedLon)) {
       const msg =
-        "Introduce tanto la latitud como la longitud con el teclado de la supercalculadora.";
+        "Enter both latitude and longitude using the calculator keypad.";
       setStatusType("error");
       setStatusMsg(msg);
       onErrorFeedback(msg);
@@ -102,14 +101,14 @@ export function SuperCalculator({
     const lonDiff = Math.min(lonDiffRaw, Math.abs(lonDiffRaw - 360));
 
     if (latDiff > 0.6 || lonDiff > 0.6) {
-      const msg = `Las coordenadas introducidas (${parsedLat.toFixed(2)}°, ${parsedLon.toFixed(2)}°E) no coinciden con el punto marcado en la superficie (${targetLatitudeDeg.toFixed(2)}°, ${targetLongitudeDeg.toFixed(2)}°E). ¡Revísalo y vuelve a calcular!`;
+      const msg = `The entered coordinates (${parsedLat.toFixed(2)}°, ${parsedLon.toFixed(2)}°E) do not match the marked surface location (${targetLatitudeDeg.toFixed(2)}°, ${targetLongitudeDeg.toFixed(2)}°E). Check them and calculate again.`;
       setStatusType("error");
       setStatusMsg(msg);
       onErrorFeedback(msg);
       return;
     }
 
-    const sol = solveInclinationForSite(
+    const solution = solveInclinationForSite(
       targetLatitudeDeg,
       targetLongitudeDeg,
       orbitAltitudeKm,
@@ -117,9 +116,9 @@ export function SuperCalculator({
     );
     setStatusType("ok");
     setStatusMsg(
-      `Inclinación calculada: i = ${sol.requiredInclinationDeg.toFixed(2)}°`,
+      `Calculated inclination: i = ${solution.requiredInclinationDeg.toFixed(2)}°`,
     );
-    onCalculated(sol);
+    onCalculated(solution);
   };
 
   const handleKeyDown = (ev: React.KeyboardEvent<HTMLDivElement>) => {
@@ -149,16 +148,16 @@ export function SuperCalculator({
       className="supercalc-shell"
       tabIndex={0}
       onKeyDown={handleKeyDown}
-      aria-label="Supercalculadora Orbital"
+      aria-label="Orbital calculator"
     >
       <div className="supercalc-header">
         <div className="supercalc-title-row">
           <Calculator size={15} className="tag-earth" />
           <span className="eyebrow eyebrow-accent">
-            SUPERCALCULADORA ORBITAL · ILARGI-CALC MK-I
+            ORBITAL CALCULATOR · ILARGI-CALC MK-I
           </span>
         </div>
-        <span className="pill pill-cyan">Teclado activo</span>
+        <span className="pill pill-cyan">Keyboard active</span>
       </div>
 
       <div className="supercalc-screen">
@@ -168,7 +167,7 @@ export function SuperCalculator({
             className={`supercalc-reg ${activeField === "lat" ? "active" : ""}`}
             onClick={() => setActiveField("lat")}
           >
-            <span className="supercalc-reg-label">LATITUD (φ) [°]</span>
+            <span className="supercalc-reg-label">LATITUDE (φ) [°]</span>
             <span className="supercalc-reg-val mono">
               {latInput === "" ? "___.__" : latInput}
               {activeField === "lat" && <span className="calc-cursor">▌</span>}
@@ -180,7 +179,7 @@ export function SuperCalculator({
             className={`supercalc-reg ${activeField === "lon" ? "active" : ""}`}
             onClick={() => setActiveField("lon")}
           >
-            <span className="supercalc-reg-label">LONGITUD (λ) [°E]</span>
+            <span className="supercalc-reg-label">LONGITUDE (λ) [°E]</span>
             <span className="supercalc-reg-val mono">
               {lonInput === "" ? "___.__" : lonInput}
               {activeField === "lon" && <span className="calc-cursor">▌</span>}
@@ -194,14 +193,14 @@ export function SuperCalculator({
               <div className="supercalc-result-main">
                 <CheckCircle2 size={16} className="tag-ok" />
                 <span>
-                  INCLINACIÓN ÓPTIMA:{" "}
+                  REQUIRED INCLINATION:{" "}
                   <strong className="mono">
                     {solvedInclination.requiredInclinationDeg.toFixed(2)}°
                   </strong>
                 </span>
               </div>
               <div className="supercalc-result-sub mono">
-                Nodo Ω: {solvedInclination.ascendingNodeDeg.toFixed(1)}°E · ΔV
+                Node Ω: {solvedInclination.ascendingNodeDeg.toFixed(1)}°E · ΔV
                 plano: {solvedInclination.planeChangeDeltaVMs} m/s
               </div>
             </div>
@@ -209,8 +208,8 @@ export function SuperCalculator({
             <div className="supercalc-result-err">{statusMsg}</div>
           ) : (
             <div className="supercalc-result-hint">
-              Pulsa un registro (LAT / LON) e introduce las coordenadas visibles
-              en la Luna para calcular la inclinación.
+              Select LAT or LON and enter the displayed coordinates on the Moon
+              to calculate the inclination.
             </div>
           )}
         </div>
@@ -219,7 +218,7 @@ export function SuperCalculator({
       <div
         className="supercalc-keypad"
         role="group"
-        aria-label="Teclado numérico"
+        aria-label="Numeric keypad"
       >
         {["7", "8", "9", "4", "5", "6", "1", "2", "3"].map((digit) => (
           <button
@@ -235,7 +234,7 @@ export function SuperCalculator({
           type="button"
           className="calc-key calc-key-fn"
           onClick={handleToggleSign}
-          title="Cambiar signo (+/-)"
+          title="Change sign (+/-)"
         >
           +/−
         </button>
@@ -260,16 +259,16 @@ export function SuperCalculator({
           type="button"
           className="calc-key calc-key-fn"
           onClick={handleBackspace}
-          title="Borrar último dígito"
+          title="Delete last digit"
         >
           <Delete size={14} />
-          Borrar
+          Delete
         </button>
         <button
           type="button"
           className="calc-key calc-key-fn"
           onClick={handleClear}
-          title="Limpiar todo"
+          title="Clear all"
         >
           <RotateCcw size={13} />C
         </button>
@@ -278,14 +277,14 @@ export function SuperCalculator({
           className="calc-key calc-key-fn"
           onClick={() => setActiveField((f) => (f === "lat" ? "lon" : "lat"))}
         >
-          {activeField === "lat" ? "Ir a LON →" : "← Ir a LAT"}
+          {activeField === "lat" ? "Go to LON →" : "← Go to LAT"}
         </button>
         <button
           type="button"
           className="calc-key calc-key-enter"
           onClick={handleCompute}
         >
-          CALCULAR i°
+          CALCULATE i°
         </button>
       </div>
     </div>

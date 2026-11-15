@@ -1,1 +1,1 @@
-"""Geometría lunar y herramientas de ILARGI."""
+"""ILARGI lunar geometry and analysis tools."""

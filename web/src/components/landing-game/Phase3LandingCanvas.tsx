@@ -43,7 +43,6 @@ const SAFE_LANDING_SPEED_MS = 4.5;
 const INITIAL_ALTITUDE_M = 175;
 const BASE_DESCENT_SPEED_MS = -10.5;
 
-// Generamos cráteres deterministas alrededor de la zona de aterrizaje para aportar relieve nítido incluso a muy baja altura
 function buildCraterField(): CraterFeature[] {
   const craters: CraterFeature[] = [];
   let seed = 42197;
@@ -54,7 +53,7 @@ function buildCraterField(): CraterFeature[] {
   for (let i = 0; i < 240; i++) {
     const x = (rand() - 0.5) * 900;
     const y = (rand() - 0.5) * 900;
-    // Dejamos el círculo central de aterrizaje bastante despejado de cráteres grandes
+
     const d0 = Math.hypot(x, y);
     const maxR = d0 < 28 ? 3.5 : 32;
     const r = 2 + Math.pow(rand(), 1.7) * maxR;
@@ -65,10 +64,6 @@ function buildCraterField(): CraterFeature[] {
 
 const CRATERS = buildCraterField();
 
-/**
- * Construye un patrón 2x2 espejado sin costuras a partir de un recorte craterizado
- * de la textura lunar real (/textures/moon_color.jpg).
- */
 function buildSeamlessMoonTile(img: HTMLImageElement): HTMLCanvasElement {
   const tileSize = 768;
   const out = document.createElement("canvas");
@@ -77,7 +72,6 @@ function buildSeamlessMoonTile(img: HTMLImageElement): HTMLCanvasElement {
   const octx = out.getContext("2d");
   if (!octx) return out;
 
-  // Recortamos una región cuadrada ecuatorial/media con cráteres y mares nítidos (sin estiramiento polar)
   const sx = Math.floor(img.width * 0.34);
   const sy = Math.floor(img.height * 0.22);
   const sw = Math.min(img.width - sx, Math.floor(img.width * 0.275));
@@ -158,7 +152,6 @@ export function Phase3LandingCanvas({
     finalSpeedMs: 0,
   });
 
-  // Cargar textura lunar real (/textures/moon_color.jpg) para el suelo de la cámara
   useEffect(() => {
     let cancelled = false;
     const img = new Image();
@@ -201,8 +194,8 @@ export function Phase3LandingCanvas({
       finalSpeedMs: 0,
     });
     onIlargiSpeak(
-      "Modo Aterrizar · Cámara en patas",
-      "Usa las flechas (o WASD) para llevar tu X hacia donde indican las flechas crecientes. ¡El descenso es rápido (~10 m/s): mantén ESPACIO para frenar y alejar el suelo, y cuadra tu X dentro del círculo!",
+      "Landing mode · Downward camera",
+      "Use arrow keys or WASD to guide your projected touchdown marker toward the target. Hold SPACE to slow the descent and align the X inside the circle.",
     );
   }, [onIlargiSpeak]);
 
@@ -210,7 +203,6 @@ export function Phase3LandingCanvas({
     resetPhase3();
   }, [site.id, resetPhase3]);
 
-  // Listeners de teclado (Flechas + WASD + Espacio)
   useEffect(() => {
     const setKey = (
       code: string,
@@ -257,7 +249,6 @@ export function Phase3LandingCanvas({
     };
   }, []);
 
-  // Bucle principal de física y renderizado Canvas 2D de cámara en patas
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -277,7 +268,6 @@ export function Phase3LandingCanvas({
       const keys = keysRef.current;
 
       if (s.outcome === "playing") {
-        // Control horizontal ágil y preciso
         const latAccel = 30.0;
         let ax = 0;
         let ay = 0;
@@ -302,7 +292,6 @@ export function Phase3LandingCanvas({
         s.landerX += s.vx * dt;
         s.landerY += s.vy * dt;
 
-        // Control vertical ágil: descenso base ~ -10.5 m/s; ESPACIO frena rápido y sube!
         if (keys.space) {
           s.vz += 16.5 * dt;
           s.vz = Math.min(s.vz, 7.5);
@@ -326,26 +315,25 @@ export function Phase3LandingCanvas({
           ) {
             s.outcome = "won";
             onIlargiSpeak(
-              "¡Alunizaje perfecto!",
-              `¡Misión cumplida en ${site.name}! Cuadraste la X dentro del círculo a ${errorM.toFixed(1)} m del centro y posaste las patas suavemente a ${touchSpeed.toFixed(1)} m/s.`,
+              "Successful landing",
+              `Mission complete at ${site.name}! The X is inside the target circle, ${errorM.toFixed(1)} m from the center, with touchdown speed ${touchSpeed.toFixed(1)} m/s.`,
             );
           } else if (errorM > TARGET_CIRCLE_RADIUS_M + 2) {
             s.outcome = "missed";
             onIlargiSpeak(
-              "Fuera de la zona de aterrizaje",
-              `Tocaste suelo a ${errorM.toFixed(1)} m del centro del círculo. ¡Inténtalo de nuevo siguiendo las flechas crecientes y usa ESPACIO si necesitas frenar para cuadrar la X!`,
+              "Outside landing zone",
+              `You touched down ${errorM.toFixed(1)} m from the target center. Try again using the guide arrows and SPACE to slow down.`,
             );
           } else {
             s.outcome = "hard_landing";
             onIlargiSpeak(
-              "¡Descenso demasiado rápido!",
-              `Alineaste el círculo, pero bajaste a ${touchSpeed.toFixed(1)} m/s (máx seguro ${SAFE_LANDING_SPEED_MS} m/s). ¡Pulsa ESPACIO cerca del suelo para frenar la bajada!`,
+              "Descent too fast",
+              `You reached the circle but descended at ${touchSpeed.toFixed(1)} m/s (game limit ${SAFE_LANDING_SPEED_MS} m/s). Hold SPACE near the ground to slow the descent.`,
             );
           }
         }
       }
 
-      // Predicción de dónde aterrizaría ahora (X móvil según velocidad/movimiento)
       const lookaheadSec = Math.min(3.2, Math.max(0, s.altM / 20));
       const predX = s.landerX + s.vx * lookaheadSec;
       const predY = s.landerY + s.vy * lookaheadSec;
@@ -353,7 +341,6 @@ export function Phase3LandingCanvas({
       const distM = Math.hypot(s.landerX, s.landerY);
       const alignedInCircle = predDistM <= TARGET_CIRCLE_RADIUS_M;
 
-      // Ajustar resolución física del canvas
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const w = canvas.clientWidth || 720;
       const h = canvas.clientHeight || 500;
@@ -371,10 +358,8 @@ export function Phase3LandingCanvas({
       const cx = w / 2;
       const cy = h / 2;
 
-      // Escala dinámica según altitud: al pulsar ESPACIO sube la altura -> pixelsPerMeter baja -> ¡la imagen se aleja!
       const pixelsPerMeter = (Math.min(w, h) * 0.42) / (26 + s.altM * 0.62);
 
-      // 1. Fondo con textura lunar real (/textures/moon_color.jpg) con scroll y zoom relativos
       ctx.fillStyle = "#1b2230";
       ctx.fillRect(0, 0, w, h);
 
@@ -382,7 +367,6 @@ export function Phase3LandingCanvas({
       if (tile) {
         const pattern = ctx.createPattern(tile, "repeat");
         if (pattern) {
-          // 1 metro lunar equivale a 2.8 texels del patrón para mantener nitidez y alinear 1:1 con cráteres y objetivo
           const texelsPerMeter = 2.8;
           const screenPxPerTexel = pixelsPerMeter / texelsPerMeter;
           const matrix = new DOMMatrix()
@@ -395,13 +379,12 @@ export function Phase3LandingCanvas({
           pattern.setTransform(matrix);
           ctx.fillStyle = pattern;
           ctx.fillRect(0, 0, w, h);
-          // Veladura sutil para contraste óptimo del HUD y retículas sobre la foto lunar
+
           ctx.fillStyle = "rgba(11, 16, 27, 0.22)";
           ctx.fillRect(0, 0, w, h);
         }
       }
 
-      // Cuadrícula telemétrica sutil del terreno que hace scroll con la nave
       const gridStepM = 25;
       const startGridX =
         Math.floor((s.landerX - w / (2 * pixelsPerMeter)) / gridStepM) *
@@ -429,7 +412,6 @@ export function Phase3LandingCanvas({
         ctx.stroke();
       }
 
-      // 2. Cráteres locales sobre la textura para mantener nitidez y relieve a baja altura
       for (const c of CRATERS) {
         const sx = cx + (c.x - s.landerX) * pixelsPerMeter;
         const sy = cy + (c.y - s.landerY) * pixelsPerMeter;
@@ -442,12 +424,12 @@ export function Phase3LandingCanvas({
         ) {
           continue;
         }
-        // Sombra interior del cráter
+
         ctx.beginPath();
         ctx.arc(sx, sy, sr, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(9, 13, 22, ${0.24 + c.depth * 0.22})`;
         ctx.fill();
-        // Borde iluminado por el Sol
+
         ctx.beginPath();
         ctx.arc(sx - sr * 0.07, sy - sr * 0.07, sr, 0, Math.PI * 2);
         ctx.strokeStyle = "rgba(226, 232, 240, 0.22)";
@@ -455,7 +437,7 @@ export function Phase3LandingCanvas({
         ctx.stroke();
       }
 
-      // 3. CÍRCULO OBJETIVO DE ATERRIZAJE en (0, 0)
+      // Landing target circle at world origin
       const targetScreenX = cx + (0 - s.landerX) * pixelsPerMeter;
       const targetScreenY = cy + (0 - s.landerY) * pixelsPerMeter;
       const targetRadiusPx = Math.max(
@@ -464,7 +446,6 @@ export function Phase3LandingCanvas({
       );
       const pulse = 0.7 + 0.3 * Math.sin(now * 0.006);
 
-      // Halo exterior del círculo de aterrizaje
       ctx.beginPath();
       ctx.arc(
         targetScreenX,
@@ -478,7 +459,6 @@ export function Phase3LandingCanvas({
         : "rgba(245, 158, 11, 0.10)";
       ctx.fill();
 
-      // Anillo principal del círculo final
       ctx.beginPath();
       ctx.arc(targetScreenX, targetScreenY, targetRadiusPx, 0, Math.PI * 2);
       ctx.strokeStyle = alignedInCircle
@@ -506,20 +486,19 @@ export function Phase3LandingCanvas({
       ctx.font = "bold 11px 'JetBrains Mono', monospace";
       ctx.textAlign = "center";
       ctx.fillText(
-        alignedInCircle ? "ZONA DE ATERRIZAJE · ¡CUADRADA!" : "OBJETIVO ○",
+        alignedInCircle ? "LANDING ZONE · ALIGNED" : "TARGET ○",
         targetScreenX,
         targetScreenY + targetRadiusPx + 16,
       );
 
       // 4. FLECHAS DIRECCIONALES QUE AUMENTAN DE TAMAÑO SEGÚN SE VA ACERCANDO
-      // Cuando estás lejos son pequeñas; conforme te acercas al objetivo aumentan de tamaño,
-      // y en el momento final ya ves el círculo grande para cuadrar la X.
+
       if (distM > 10) {
         const dx = 0 - s.landerX;
         const dy = 0 - s.landerY;
         const ang = Math.atan2(dy, dx);
         const closeness = Math.max(0, Math.min(1, 1 - distM / 145));
-        // Tamaño crece claramente al acercarse (de 0.45x hasta 1.95x)
+
         const arrowScale = 0.45 + closeness * 1.5;
         const arrowAlpha = distM < 20 ? Math.max(0.2, (distM - 10) / 10) : 0.92;
 
@@ -527,7 +506,6 @@ export function Phase3LandingCanvas({
         ctx.translate(cx, cy);
         ctx.rotate(ang);
 
-        // Dibujamos 3 flechas/chevrones progresivos en dirección al círculo objetivo
         for (let step = 0; step < 3; step++) {
           const offset = 50 + step * (22 * arrowScale) + ((now * 0.04) % 18);
           const sz = (9 + step * 3.8) * arrowScale;
@@ -546,11 +524,9 @@ export function Phase3LandingCanvas({
         ctx.restore();
       }
 
-      // 5. LA "X" DE DÓNDE ATERRIZARÍA AHORA (se mueve con el movimiento de la nave)
       const predScreenX = cx + (predX - s.landerX) * pixelsPerMeter;
       const predScreenY = cy + (predY - s.landerY) * pixelsPerMeter;
 
-      // Línea guía desde el centro de las patas hasta la X proyectada
       ctx.beginPath();
       ctx.moveTo(cx, cy);
       ctx.lineTo(predScreenX, predScreenY);
@@ -560,14 +536,12 @@ export function Phase3LandingCanvas({
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Retícula central de la cámara (bajo el centro del aterrizador)
       ctx.beginPath();
       ctx.arc(cx, cy, 6, 0, Math.PI * 2);
       ctx.strokeStyle = "rgba(203, 213, 225, 0.5)";
       ctx.lineWidth = 1.2;
       ctx.stroke();
 
-      // Dibujo nítido de la "X" predictora de impacto
       const xSize = 15;
       const xColor = alignedInCircle ? "#10b981" : "#f43f5e";
       ctx.save();
@@ -593,7 +567,7 @@ export function Phase3LandingCanvas({
       ctx.fillStyle = xColor;
       ctx.font = "bold 11px 'JetBrains Mono', monospace";
       ctx.textAlign = "center";
-      ctx.fillText("TU X", 0, -xSize - 10);
+      ctx.fillText("YOUR X", 0, -xSize - 10);
       ctx.restore();
 
       // 6. RESPLANDOR DE PROPULSOR SI PULSA ESPACIO (freno / subida)
@@ -612,7 +586,6 @@ export function Phase3LandingCanvas({
         ctx.fillRect(0, 0, w, h);
       }
 
-      // 7. PATAS DEL ATERRIZADOR EN LAS 4 ESQUINAS (Vista de cámara ventral)
       const corners = [
         [0, 0, 1, 1],
         [w, 0, -1, 1],
@@ -624,7 +597,6 @@ export function Phase3LandingCanvas({
         const px = ox + sxDir * legReach;
         const py = oy + syDir * legReach;
 
-        // Sombra de la pata proyectada ligeramente hacia fuera según altitud
         ctx.strokeStyle = "rgba(2, 6, 23, 0.55)";
         ctx.lineWidth = 12;
         ctx.lineCap = "round";
@@ -633,7 +605,6 @@ export function Phase3LandingCanvas({
         ctx.lineTo(px + sxDir * 6, py + syDir * 6);
         ctx.stroke();
 
-        // Puntal metálico de la pata
         ctx.strokeStyle = "#475569";
         ctx.lineWidth = 8;
         ctx.beginPath();
@@ -648,7 +619,6 @@ export function Phase3LandingCanvas({
         ctx.lineTo(px, py);
         ctx.stroke();
 
-        // Plato de apoyo (footpad)
         ctx.beginPath();
         ctx.arc(px, py, 14, 0, Math.PI * 2);
         ctx.fillStyle = "#1e293b";
@@ -663,7 +633,6 @@ export function Phase3LandingCanvas({
         ctx.fill();
       }
 
-      // Viñeta sutil de lente óptica
       const vig = ctx.createRadialGradient(
         cx,
         cy,
@@ -679,7 +648,6 @@ export function Phase3LandingCanvas({
 
       ctx.restore();
 
-      // Sincronizar HUD React a ~15 fps para mantener interfaz fluida
       if (now - hudTick > 65 || s.outcome !== "playing") {
         hudTick = now;
         setHud({
@@ -720,19 +688,19 @@ export function Phase3LandingCanvas({
         <div className="moon-hud-top">
           <div className="moon-hud-pills">
             <span className="pill pill-cyan">
-              CÁMARA EN PATAS · MODO ATERRIZAR
+              DOWNWARD CAMERA · LANDING MODE
             </span>
             <span
               className={`pill ${hud.alignedInCircle ? "pill-ok" : "pill-amber"}`}
             >
               {hud.alignedInCircle
-                ? "¡X dentro del círculo!"
-                : `Distancia al círculo: ${hud.distM.toFixed(0)} m`}
+                ? "X inside the circle"
+                : `Distance to target: ${hud.distM.toFixed(0)} m`}
             </span>
           </div>
           <div className="moon-hud-pills">
             <span className="pill pill-muted mono">
-              Altitud: {hud.altM.toFixed(1)} m
+              Altitude: {hud.altM.toFixed(1)} m
             </span>
             <span
               className={`pill mono ${Math.abs(hud.vzMs) <= SAFE_LANDING_SPEED_MS ? "pill-ok" : "pill-amber"}`}
@@ -759,15 +727,15 @@ export function Phase3LandingCanvas({
                 </div>
                 <h3>
                   {hud.outcome === "won"
-                    ? "¡ATERRIZAJE LUNAR COMPLETADO!"
+                    ? "LUNAR LANDING COMPLETE"
                     : hud.outcome === "hard_landing"
-                      ? "¡Aterrizaje demasiado brusco!"
-                      : "Fuera del círculo objetivo"}
+                      ? "Touchdown too fast"
+                      : "Outside target circle"}
                 </h3>
                 <p className="mono">
-                  Desviación del círculo: {hud.finalErrorM.toFixed(1)} m
-                  (objetivo ≤ {TARGET_CIRCLE_RADIUS_M} m) · Velocidad:{" "}
-                  {hud.finalSpeedMs.toFixed(1)} m/s (seguro ≤{" "}
+                  Distance from target center: {hud.finalErrorM.toFixed(1)} m
+                  (target ≤ {TARGET_CIRCLE_RADIUS_M} m) · Speed:{" "}
+                  {hud.finalSpeedMs.toFixed(1)} m/s (game limit ≤{" "}
                   {SAFE_LANDING_SPEED_MS} m/s)
                 </p>
                 <div className="phase3-outcome-actions">
@@ -777,21 +745,21 @@ export function Phase3LandingCanvas({
                     onClick={resetPhase3}
                   >
                     <RotateCcw size={15} />
-                    Reintentar Fase 3
+                    Retry Phase 3
                   </button>
                   <button
                     type="button"
                     className="btn-secondary"
                     onClick={onRestartMission}
                   >
-                    Nueva misión (Fase 1)
+                    New mission (Phase 1)
                   </button>
                   <button
                     type="button"
                     className="btn-secondary"
                     onClick={onExitToEducation}
                   >
-                    Volver a Educación
+                    Return to Education
                   </button>
                 </div>
               </div>
@@ -802,33 +770,29 @@ export function Phase3LandingCanvas({
         <div className="moon-hud-bottom edu-legend-bar">
           <div className="edu-legend-items">
             <span className="legend-dot-item">
-              <i style={{ background: "#F43F5E" }} /> Tu X (dónde aterrizarías
-              ahora)
+              <i style={{ background: "#F43F5E" }} /> Your X (projected
+              touchdown ahora)
             </span>
             <span className="legend-dot-item">
-              <i style={{ background: "#38BDF8" }} /> Flechas guía (crecen al
+              <i style={{ background: "#38BDF8" }} /> Guide arrows (grow as you
               acercarte)
             </span>
             <span className="legend-dot-item">
-              <i style={{ background: "#10B981" }} /> Círculo final de
-              aterrizaje
+              <i style={{ background: "#10B981" }} /> Final landing circle
             </span>
           </div>
           <span className="pill pill-muted">
-            Flechas/WASD: mover · ESPACIO: frenar y alejar el suelo
+            Arrows/WASD: move · SPACE: brake and rise
           </span>
         </div>
       </div>
 
-      {/* PANEL DERECHO: Controles e instrumentación de vuelo */}
       <aside className="panel phase3-controls-card">
         <div className="panel-header">
           <div>
-            <div className="eyebrow eyebrow-accent">
-              INSTRUMENTOS DE ATERRIZAJE
-            </div>
+            <div className="eyebrow eyebrow-accent">LANDING INSTRUMENTS</div>
             <div className="panel-sub">
-              Controla el descenso rápido y frena con ESPACIO sobre{" "}
+              Control the descent and hold SPACE to brake over{" "}
               {site.name.split("·")[0].trim()}
             </div>
           </div>
@@ -836,11 +800,11 @@ export function Phase3LandingCanvas({
 
         <div className="phase3-metrics-grid">
           <div className="kpi-box">
-            <div className="kpi-label">Altitud sobre suelo</div>
+            <div className="kpi-label">Height above ground</div>
             <div className="kpi-value kpi-earth">{hud.altM.toFixed(1)} m</div>
           </div>
           <div className="kpi-box">
-            <div className="kpi-label">Vel. vertical</div>
+            <div className="kpi-label">Vertical speed</div>
             <div
               className={`kpi-value ${hud.vzMs > 0 ? "kpi-sun" : Math.abs(hud.vzMs) <= SAFE_LANDING_SPEED_MS ? "kpi-ok" : "kpi-sun"}`}
             >
@@ -849,13 +813,13 @@ export function Phase3LandingCanvas({
             </div>
           </div>
           <div className="kpi-box">
-            <div className="kpi-label">Vel. horizontal</div>
+            <div className="kpi-label">Horizontal speed</div>
             <div className="kpi-value">
               {Math.hypot(hud.vxMs, hud.vyMs).toFixed(1)} m/s
             </div>
           </div>
           <div className="kpi-box">
-            <div className="kpi-label">Distancia X → ○</div>
+            <div className="kpi-label">Distance X → ○</div>
             <div
               className={`kpi-value ${hud.alignedInCircle ? "kpi-ok" : "kpi-sun"}`}
             >
@@ -864,16 +828,15 @@ export function Phase3LandingCanvas({
           </div>
         </div>
 
-        {/* Controles táctiles / ratón equivalentes a teclado */}
         <div className="phase3-pad-box">
-          <div className="eyebrow">PILOTAJE RCS (O TECLAS ↑ ↓ ← → / WASD)</div>
+          <div className="eyebrow">RCS CONTROL (OR ↑ ↓ ← → / WASD)</div>
           <div className="phase3-dpad">
             <div />
             <button
               type="button"
               className="btn-secondary phase3-dpad-btn"
               {...bindTouchKey("up")}
-              aria-label="Mover arriba"
+              aria-label="Move up"
             >
               <ArrowUp size={16} />
             </button>
@@ -882,7 +845,7 @@ export function Phase3LandingCanvas({
               type="button"
               className="btn-secondary phase3-dpad-btn"
               {...bindTouchKey("left")}
-              aria-label="Mover izquierda"
+              aria-label="Move left"
             >
               <ArrowLeft size={16} />
             </button>
@@ -890,7 +853,7 @@ export function Phase3LandingCanvas({
               type="button"
               className="btn-secondary phase3-dpad-btn"
               {...bindTouchKey("down")}
-              aria-label="Mover abajo"
+              aria-label="Move down"
             >
               <ArrowDown size={16} />
             </button>
@@ -898,7 +861,7 @@ export function Phase3LandingCanvas({
               type="button"
               className="btn-secondary phase3-dpad-btn"
               {...bindTouchKey("right")}
-              aria-label="Mover derecha"
+              aria-label="Move right"
             >
               <ArrowRight size={16} />
             </button>
@@ -909,18 +872,18 @@ export function Phase3LandingCanvas({
             className={`phase3-space-btn ${hud.spacePressed ? "active" : ""}`}
             {...bindTouchKey("space")}
           >
-            <strong>[ ESPACIO ] FRENAR BAJADA / SUBIR</strong>
+            <strong>[ SPACE ] BRAKE / RISE</strong>
             <span>
               {hud.spacePressed
-                ? "Propulsor encendido · La imagen se aleja"
-                : "Mantén pulsado para frenar o ganar altura"}
+                ? "Thruster active · Ground moves away"
+                : "Hold to brake or gain altitude"}
             </span>
           </button>
         </div>
 
         <button type="button" className="btn-secondary" onClick={resetPhase3}>
           <RotateCcw size={14} />
-          Reiniciar aproximación (Fase 3)
+          Restart approach (Phase 3)
         </button>
       </aside>
     </div>

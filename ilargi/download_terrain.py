@@ -1,4 +1,4 @@
-"""Descarga los productos topográficos oficiales de LOLA."""
+"""Download and verify official LOLA terrain products."""
 
 import hashlib
 import os
@@ -33,15 +33,15 @@ def digest(path: Path) -> str:
 
 def download(path: Path, url: str, size: int, expected_hash: str) -> None:
     if path.exists() and path.stat().st_size == size and digest(path) == expected_hash:
-        print(f"Ya disponible: {path}")
+        print(f"Already available: {path}")
         return
     part = path.with_suffix(path.suffix + ".part")
-    print(f"Descargando {path.name} ({size / 1e9:.2f} GB)...", flush=True)
+    print(f"Downloading {path.name} ({size / 1e9:.2f} GB)...", flush=True)
     with urlopen(url, timeout=60) as response, part.open("wb") as output:
         while chunk := response.read(1024 * 1024):
             output.write(chunk)
     if part.stat().st_size != size or digest(part) != expected_hash:
-        raise ValueError(f"Descarga incompleta o SHA-256 incorrecto: {part}")
+        raise ValueError(f"Incomplete download or invalid SHA-256: {part}")
     os.replace(part, path)
 
 
