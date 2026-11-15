@@ -159,7 +159,7 @@ function SkyAzimuthPlotCanvas({
       traces.push({
         x: truncPts.map((p) => p.rel),
         y: truncPts.map((p) => p.el),
-        name: "Interrupted terrain",
+        name: "Terrain coverage interrupted",
         legendrank: 4,
         type: "scatter",
         mode: "markers",
@@ -169,19 +169,19 @@ function SkyAzimuthPlotCanvas({
 
     const layout: Record<string, unknown> = {
       height,
-      paper_bgcolor: "#131B2E",
-      plot_bgcolor: "#0B101B",
+      paper_bgcolor: "#1b1f1b",
+      plot_bgcolor: "#101310",
       font: {
         color: "#CBD5E1",
         family: "Inter, system-ui, sans-serif",
         size: 11,
       },
-      margin: { l: 48, r: 14, t: 34, b: 42 },
+      margin: { l: 65, r: 14, t: 34, b: 60 },
       legend: {
         orientation: "h",
         y: 1.12,
         x: 0,
-        bgcolor: "rgba(19, 27, 46, 0.75)",
+        bgcolor: "rgba(27, 31, 27, 0.9)",
         font: { size: 11, color: "#CBD5E1" },
       },
       shapes: [
@@ -197,16 +197,16 @@ function SkyAzimuthPlotCanvas({
         },
       ],
       xaxis: {
-        title: `Azimuth relative to center (${centerDeg.toFixed(1)}°) (°)`,
+        title: { text: `Azimuth relative to ${centerDeg.toFixed(1)}° (°)` },
         range: [-180, 180],
-        gridcolor: "#26334D",
-        zerolinecolor: "#26334D",
+        gridcolor: "#42483f",
+        zerolinecolor: "#42483f",
         tickfont: { color: "#94A3B8" },
       },
       yaxis: {
-        title: "Local elevation (°)",
+        title: { text: "Local elevation (°)" },
         range: [yMin, yMax],
-        gridcolor: "#26334D",
+        gridcolor: "#42483f",
         zerolinecolor: "#475569",
         tickfont: { color: "#94A3B8" },
       },

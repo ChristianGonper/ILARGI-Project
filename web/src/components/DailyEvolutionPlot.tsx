@@ -64,33 +64,33 @@ function DailyEvolutionPlotCanvas({
 
     const layout: Record<string, unknown> = {
       height,
-      paper_bgcolor: "#131B2E",
-      plot_bgcolor: "#0B101B",
+      paper_bgcolor: "#1b1f1b",
+      plot_bgcolor: "#101310",
       font: {
         color: "#CBD5E1",
         family: "Inter, system-ui, sans-serif",
         size: 11,
       },
-      margin: { l: 48, r: 14, t: 32, b: 40 },
+      margin: { l: 65, r: 14, t: 32, b: 60 },
       legend: {
         orientation: "h",
         y: 1.14,
         x: 0,
-        bgcolor: "rgba(19, 27, 46, 0.75)",
+        bgcolor: "rgba(27, 31, 27, 0.9)",
         font: { size: 11, color: "#CBD5E1" },
       },
       xaxis: {
-        title: "Time (UTC)",
+        title: { text: "Time (UTC)" },
         range: [
           result.start_utc,
           result.series.sun[result.series.sun.length - 1]?.utc ??
             result.start_utc,
         ],
-        gridcolor: "#26334D",
+        gridcolor: "#42483f",
         tickfont: { color: "#94A3B8" },
       },
       yaxis: {
-        title: "Elevation (°)",
+        title: { text: "Elevation (°)" },
         range: (() => {
           const values = [...result.series.sun, ...result.series.earth]
             .flatMap((s) => [s.elevation_deg, s.horizon_deg])
@@ -100,7 +100,7 @@ function DailyEvolutionPlotCanvas({
           const pad = Math.max(1, (high - low) * 0.08);
           return [low - pad, high + pad];
         })(),
-        gridcolor: "#26334D",
+        gridcolor: "#42483f",
         zerolinecolor: "#475569",
         tickfont: { color: "#94A3B8" },
       },

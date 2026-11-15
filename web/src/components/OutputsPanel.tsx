@@ -174,7 +174,7 @@ export function OutputsPanel({ result, onClose, hidden }: OutputsPanelProps) {
           {result.nights.earth_outages.length > 0 && (
             <div className="telemetry-row">
               <strong>
-                Earth occultation intervals (
+                Earth below horizon intervals (
                 {result.nights.earth_outages.length}):
               </strong>{" "}
               <span className="mono">
