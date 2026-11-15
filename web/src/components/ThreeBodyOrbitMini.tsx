@@ -94,10 +94,6 @@ export function ThreeBodyOrbitMini({
     controls.minDistance = 1.2;
     controls.maxDistance = 55;
 
-    const grid = new THREE.GridHelper(32, 24, 0x1e293b, 0x0f172a);
-    grid.position.y = -0.02;
-    scene.add(grid);
-
     // Estrellas discretas
     const stars = new Float32Array(300 * 3);
     for (let i = 0; i < 300; i++) {
@@ -413,7 +409,7 @@ export function ThreeBodyOrbitMini({
             className={`btn-mini ${viewMode === "earth_moon_1to1" ? "active" : ""}`}
             onClick={() => setViewMode("earth_moon_1to1")}
           >
-            Earth–Moon 1:1
+            Earth & Moon to scale
           </button>
           <button
             type="button"

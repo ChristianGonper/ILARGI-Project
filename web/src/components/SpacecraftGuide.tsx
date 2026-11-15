@@ -1,7 +1,12 @@
+import { SpacecraftPreview } from "./SpacecraftPreview";
 export function SpacecraftGuide() {
   return (
     <details className="panel spacecraft-guide">
-      <summary>Meet your spacecraft: mass, energy and steering</summary>
+      <summary>
+        Your spacecraft{" "}
+        <span className="muted-note">Mass, power and steering</span>
+      </summary>
+      <SpacecraftPreview />
       <p>
         A classroom spacecraft inspired by IM-1 / Odysseus. These exercise
         parameters describe a generic vehicle; they are not verified flight

@@ -1,3 +1,4 @@
+import { SpacecraftPreview } from "../SpacecraftPreview";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
@@ -231,6 +232,7 @@ export function LunarLandingGame({
               </div>
             </div>
 
+            <SpacecraftPreview />
             <div className="phase1-site-list">
               {gameSites.map((s) => {
                 const active = selectedSite.id === s.id;

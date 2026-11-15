@@ -71,6 +71,7 @@ function makeManualPoint(uid: number, lat = -89.5, lon = 0): PointDraft {
 
 export function App() {
   const analysisRequest = useRef(0);
+  const [resultsHidden, setResultsHidden] = useState(false);
   const [mode, setMode] = useState<AppMode>("home");
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [historicalSites, setHistoricalSites] = useState<HistoricalSite[]>([]);
@@ -258,7 +259,6 @@ export function App() {
     );
   }
 
-  const [resultsHidden, setResultsHidden] = useState(false);
   const singleResult = results && results.length === 1 ? results[0] : null;
   const multiResults = results && results.length > 1 ? results : null;
 

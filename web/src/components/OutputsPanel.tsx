@@ -64,14 +64,14 @@ export function OutputsPanel({ result, onClose, hidden }: OutputsPanelProps) {
                 ? ` · tangent ${result.search_radius_km.toFixed(1)} km`
                 : ""}
             </div>
+            <span
+              className={`pill ${result.horizon_mode === "lola" ? "pill-ok" : "pill-muted"}`}
+            >
+              {result.horizon_label}
+            </span>
           </details>
         </div>
         <div className="outputs-head-actions">
-          <span
-            className={`pill ${result.horizon_mode === "lola" ? "pill-ok" : "pill-muted"}`}
-          >
-            {result.horizon_label}
-          </span>
           <button
             type="button"
             className="btn-icon"

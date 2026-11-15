@@ -257,7 +257,20 @@ function SingleDiscCanvas({
         name: state,
         type: "scattergl",
         mode: "markers",
-        marker: { size: 3, color },
+        marker: {
+          size: 3.4,
+          color:
+            state === "Visible"
+              ? pts.x.map((x, index) => {
+                  const r = sample.angular_radius_deg;
+                  const radius = Math.min(1, Math.hypot(x, pts.y[index]) / r);
+                  const light = 1 - 0.25 * radius * radius;
+                  return body === "SUN"
+                    ? `rgb(${Math.round(250 * light)},${Math.round(190 * light)},${Math.round(68 * light)})`
+                    : `rgb(${Math.round(71 * light)},${Math.round(141 * light)},${Math.round(236 * light)})`;
+                })
+              : color,
+        },
       });
     }
 
@@ -456,8 +469,8 @@ export function DiscVisibilityPanel({ result }: DiscVisibilityPanelProps) {
           )}
         </div>
         <div className="disc-caption">
-          Disc fraction above the horizon and direct solar fraction after
-          occultation by Earth.
+          Schematic discs: shading is illustrative. Disc fraction above the
+          horizon and direct solar fraction after occultation by Earth.
         </div>
       </div>
     </div>
