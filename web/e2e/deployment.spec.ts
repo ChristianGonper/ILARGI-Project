@@ -68,6 +68,7 @@ test("education cycles, multiple locations and landing game work without Python"
   await page.goto("/");
   await page.getByRole("button", { name: /Explore with ILARGI/ }).click();
   await expect(page.getByRole("option").first()).toBeVisible();
+  await expect(page.locator(".ilargi-bubble-badges svg")).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: "Start animation", exact: true }),
   ).toBeEnabled();

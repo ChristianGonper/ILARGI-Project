@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Volume2 } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ILARGI_FUN_FACTS } from "../data/educationFacts";
 
 interface IlargiMascotProps {
@@ -81,7 +81,6 @@ export function IlargiMascot({
         <div className="ilargi-bubble-head">
           <div className="ilargi-bubble-badges">
             <span className="pill pill-cyan">
-              <Volume2 size={11} />{" "}
               {bubbleMode === "fact" ? "DID YOU KNOW?" : speakerMood}
             </span>
           </div>
