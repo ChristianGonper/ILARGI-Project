@@ -2,6 +2,7 @@
 @import "./styles/home.css";
 @import "./styles/education.css";
 @import "./styles/landing-game.css";
+@import "./styles/observatory.css";
 
 :focus-visible {
   outline: 2px solid var(--cyan);

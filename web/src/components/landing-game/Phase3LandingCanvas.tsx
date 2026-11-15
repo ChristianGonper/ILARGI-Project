@@ -884,7 +884,7 @@ export function Phase3LandingCanvas({
             </div>
           </div>
           <div className="kpi-box">
-            <div className="kpi-label">Distance X → ○</div>
+            <div className="kpi-label">Predicted landing error</div>
             <div
               className={`kpi-value ${hud.alignedInCircle ? "kpi-ok" : "kpi-sun"}`}
             >

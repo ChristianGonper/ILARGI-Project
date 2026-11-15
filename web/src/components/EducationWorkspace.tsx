@@ -304,6 +304,7 @@ export function EducationWorkspace() {
           <div className="edu-site-select-wrap">
             <select
               className="input-select"
+              title={manualCoords ? "Manual coordinates" : selectedSite?.name}
               value={manualCoords ? "__manual__" : (selectedSite?.id ?? "")}
               onChange={(e) => {
                 const found = sites.find((s) => s.id === e.target.value);

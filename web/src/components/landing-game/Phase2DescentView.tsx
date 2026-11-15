@@ -406,8 +406,8 @@ export function Phase2DescentView({
               opacity="0.55"
             />
             <text
-              x="46"
-              y="52"
+              x="160"
+              y="35"
               fill="#38bdf8"
               fontSize="11"
               fontFamily="JetBrains Mono, monospace"
@@ -463,9 +463,9 @@ export function Phase2DescentView({
             />
             <circle cx="550" cy="282" r="2" fill="#c4b5fd" />
             <text
-              x="550"
-              y="309"
-              textAnchor="middle"
+              x="625"
+              y="320"
+              textAnchor="end"
               fill="#10b981"
               fontSize="11"
               fontFamily="JetBrains Mono, monospace"

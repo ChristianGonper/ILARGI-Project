@@ -537,7 +537,7 @@ export function Phase1OrbitViewport3D({
         .normalize();
       camera.position.copy(dir.multiplyScalar(3.6));
     } else if (preset === "south") {
-      camera.position.set(0.9, -2.15, 1.65);
+      camera.position.set(1.3, -3.1, 2.4);
     } else {
       camera.position.set(0.5, 0.7, 4.2);
     }

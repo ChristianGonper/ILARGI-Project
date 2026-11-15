@@ -143,7 +143,7 @@ export function EducationMoonViewport3D({
     const width = container.clientWidth || 640;
     const height = container.clientHeight || 480;
     const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 100);
-    camera.position.set(0.9, -2.05, 1.75);
+    camera.position.set(1.25, -2.9, 2.45);
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -595,15 +595,15 @@ export function EducationMoonViewport3D({
       const lon =
         manualCoords?.longitudeEastDeg ?? selectedSite?.longitude_east_deg ?? 0;
       const dir = latLonToThreeVector(lat, lon, 1).normalize();
-      camera.position.copy(dir.multiplyScalar(2.55));
+      camera.position.copy(dir.multiplyScalar(4.0));
     } else if (preset === "south") {
-      camera.position.set(0.85, -2.05, 1.75);
+      camera.position.set(1.2, -2.9, 2.45);
     } else if (preset === "north") {
-      camera.position.set(0.85, 2.05, 1.75);
+      camera.position.set(1.2, 2.9, 2.45);
     } else if (preset === "nearside") {
-      camera.position.set(0.25, 0.35, 2.75);
+      camera.position.set(0.35, 0.5, 4.0);
     } else {
-      camera.position.set(-0.25, 0.35, -2.75);
+      camera.position.set(-0.35, 0.5, -4.0);
     }
     controls.target.set(0, 0, 0);
     controls.update();
@@ -697,7 +697,7 @@ export function EducationMoonViewport3D({
         <span className="pill pill-muted">
           {pinMode
             ? "Pin active: click the surface"
-            : "Drag to rotate · Live sunlight"}
+            : "Drag to rotate · Simulated sunlight"}
         </span>
       </div>
     </div>
