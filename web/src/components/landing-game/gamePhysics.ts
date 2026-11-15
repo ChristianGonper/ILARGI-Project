@@ -2,7 +2,7 @@ import type { EducationSite } from "../../types";
 
 export const LUNAR_RADIUS_KM = 1737.4;
 export const LUNAR_RADIUS_M = 1_737_400;
-export const LUNAR_MU_M3_S2 = 4.9028e12; // GM de la Luna (m^3/s^2)
+export const LUNAR_MU_M3_S2 = 4.9028e12;
 export const LUNAR_GRAVITY_M_S2 = 1.622;
 
 export interface GameLandingSite {
@@ -16,10 +16,6 @@ export interface GameLandingSite {
   hint: string;
 }
 
-/**
- * Emplazamientos curados para el juego (todos con latitud != 0° para que
- * el cambio de inclinación desde la parking orbit ecuatorial sea visual y real).
- */
 export const FALLBACK_GAME_SITES: GameLandingSite[] = [
   {
     id: "game-mons-mouton",
@@ -29,7 +25,7 @@ export const FALLBACK_GAME_SITES: GameLandingSite[] = [
     longitudeEastDeg: 31.74,
     orbitAltitudeKm: 108,
     landingGateKm: 8,
-    hint: "Meseta polar sur con grandes ventanas de luz solar.",
+    hint: "Southern polar plateau.",
   },
   {
     id: "game-chandrayaan-3",
@@ -39,17 +35,17 @@ export const FALLBACK_GAME_SITES: GameLandingSite[] = [
     longitudeEastDeg: 32.32,
     orbitAltitudeKm: 115,
     landingGateKm: 5,
-    hint: "El alunizaje más cercano al Polo Sur logrado hasta hoy.",
+    hint: "A landing at southern high latitude.",
   },
   {
     id: "game-change-4",
-    name: "Cráter Von Kármán · Chang'e 4",
+    name: "Von Kármán Crater · Chang'e 4",
     mission: "Chang'e 4 (2019)",
     latitudeDeg: -45.46,
     longitudeEastDeg: 177.59,
     orbitAltitudeKm: 120,
     landingGateKm: 4,
-    hint: "Primer aterrizaje en la cara oculta de la Luna.",
+    hint: "The first lunar far-side landing.",
   },
   {
     id: "game-apollo-15",
@@ -59,7 +55,7 @@ export const FALLBACK_GAME_SITES: GameLandingSite[] = [
     longitudeEastDeg: 3.63,
     orbitAltitudeKm: 106,
     landingGateKm: 6,
-    hint: "Junto a los Montes Apeninos y la grieta de Hadley.",
+    hint: "Near the Apennine Mountains and Hadley Rille.",
   },
   {
     id: "game-apollo-17",
@@ -69,17 +65,17 @@ export const FALLBACK_GAME_SITES: GameLandingSite[] = [
     longitudeEastDeg: 30.77,
     orbitAltitudeKm: 112,
     landingGateKm: 2,
-    hint: "Último alunizaje tripulado del programa Apolo.",
+    hint: "The final crewed landing of the Apollo program.",
   },
   {
     id: "game-shackleton",
-    name: "Borde Cráter Shackleton",
-    mission: "NASA PGDA 69 · Polo Sur",
+    name: "Shackleton Crater Rim",
+    mission: "NASA PGDA 69 · South Pole",
     latitudeDeg: -89.54,
     longitudeEastDeg: -155.73,
     orbitAltitudeKm: 105,
     landingGateKm: 5,
-    hint: "Órbita casi polar (≈90°) para alcanzar el borde del Polo Sur.",
+    hint: "A near-polar orbit reaches this southern rim.",
   },
 ];
 
@@ -112,7 +108,7 @@ export function mapEducationSitesToGameSites(
       });
     }
   }
-  // Si hay sitios adicionales desde la API con latitud suficiente, aseguramos al menos 6 opciones
+
   for (const s of eduSites) {
     if (base.length >= 8) break;
     if (Math.abs(s.latitude_deg) < 2.0) continue;
@@ -139,9 +135,8 @@ export interface PlaneChangeSolution {
   planeChangeDeltaVMs: number;
 }
 
-/**
- * Calcula la inclinación mínima y el nodo ascendente para que el ground track
- * de una órbita circular corte exactamente con (latitudeDeg, longitudeEastDeg).
+/** Choose a circular orbit whose latitude extremum passes through the target.
+ * The impulsive plane-change estimate assumes a common node with the initial orbit.
  */
 export function solveInclinationForSite(
   latitudeDeg: number,
@@ -149,9 +144,18 @@ export function solveInclinationForSite(
   orbitAltitudeKm: number,
   initialInclinationDeg = 0,
 ): PlaneChangeSolution {
-  const absLat = Math.min(89.9, Math.max(0.5, Math.abs(latitudeDeg)));
-  // Si lat >= 0, el ápice norte (u = +90°) está en lon = Omega + 90° -> Omega = lon - 90°
-  // Si lat < 0, el ápice sur (u = -90°) está en lon = Omega - 90° -> Omega = lon + 90°
+  if (
+    !Number.isFinite(latitudeDeg) ||
+    Math.abs(latitudeDeg) > 90 ||
+    !Number.isFinite(longitudeEastDeg) ||
+    !Number.isFinite(orbitAltitudeKm) ||
+    orbitAltitudeKm <= 0 ||
+    !Number.isFinite(initialInclinationDeg)
+  ) {
+    throw new Error("Invalid orbit or target coordinates");
+  }
+  const absLat = Math.abs(latitudeDeg);
+
   const rawOmega =
     latitudeDeg >= 0 ? longitudeEastDeg - 90 : longitudeEastDeg + 90;
   const ascendingNodeDeg = ((((rawOmega + 180) % 360) + 360) % 360) - 180;
@@ -169,10 +173,7 @@ export function solveInclinationForSite(
   };
 }
 
-/**
- * Calcula la trayectoria del ground track (lat, lon) de una órbita circular
- * inclinada alrededor de la Luna para un ángulo de argumento de latitud u ∈ [0, 2π].
- */
+/** Geographic projection of a circular orbit in a fixed lunar frame. */
 export function orbitPointLatLon(
   inclinationDeg: number,
   ascendingNodeDeg: number,
@@ -206,14 +207,19 @@ export interface Phase2Mechanics {
   totalDescentDeltaVMs: number;
 }
 
-/**
- * Calcula velocidades orbitales (m/s) y ΔV necesario (m/s) para bajar desde la
- * parking orbit hasta la altura de transición a Modo Aterrizar (Fase 3).
- */
+/** Educational two-impulse transfer and braking estimate; not a trajectory optimizer. */
 export function computePhase2Mechanics(
   orbitAltitudeKm: number,
   landingGateKm: number,
 ): Phase2Mechanics {
+  if (
+    !Number.isFinite(orbitAltitudeKm) ||
+    !Number.isFinite(landingGateKm) ||
+    landingGateKm < 0 ||
+    orbitAltitudeKm <= landingGateKm
+  ) {
+    throw new Error("Orbital altitude must exceed a nonnegative landing gate");
+  }
   const r1 = LUNAR_RADIUS_M + orbitAltitudeKm * 1000;
   const r2 = LUNAR_RADIUS_M + landingGateKm * 1000;
   const aTransfer = (r1 + r2) / 2;
@@ -223,7 +229,7 @@ export function computePhase2Mechanics(
   const vTransferPeri = Math.sqrt(LUNAR_MU_M3_S2 * (2 / r2 - 1 / aTransfer));
 
   const deorbitBurnDeltaVMs = v1Circ - vTransferApo;
-  // Frenado retropropulsivo final hasta velocidad vertical lenta de entrada a Fase 3 (~6 m/s)
+
   const totalDescentDeltaVMs = deorbitBurnDeltaVMs + (vTransferPeri - 6);
 
   return {

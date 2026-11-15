@@ -51,7 +51,6 @@ export function LunarLandingGame({
 
   const [pinMode, setPinMode] = useState(false);
 
-  // Estado de Fase 1: Parking orbit empieza en inclinación 0° (ecuatorial)
   const [solvedInclination, setSolvedInclination] =
     useState<PlaneChangeSolution | null>(null);
   const [currentInclinationDeg, setCurrentInclinationDeg] = useState(0);
@@ -62,15 +61,14 @@ export function LunarLandingGame({
     mood: string;
     text: string;
   }>({
-    mood: "Fase 1 · Parking Orbit",
-    text: "¡Bienvenido a bordo! Tu aterrizador está en una parking orbit: una órbita circular de espera alrededor del ecuador lunar (inclinación 0°). Elige un punto de aterrizaje, observa su latitud y longitud sobre la Luna e introdúcelas en la Supercalculadora.",
+    mood: "Phase 1 · Parking Orbit",
+    text: "Welcome aboard. Your lander starts in an equatorial parking orbit. Choose a landing site and enter its latitude and longitude in the calculator.",
   });
 
   const handleIlargiSpeak = useCallback((mood: string, text: string) => {
     setIlargiState({ mood, text });
   }, []);
 
-  // Nodo ascendente calculado para alinear el plano orbital con la longitud del sitio elegido
   const targetSolutionPreview = useMemo(
     () =>
       solveInclinationForSite(
@@ -82,7 +80,6 @@ export function LunarLandingGame({
     [selectedSite],
   );
 
-  // Animación suave de cambio de plano orbital cuando el usuario aplica la inclinación calculada
   useEffect(() => {
     if (!tiltingOrbit || !solvedInclination) return;
     const startInc = currentInclinationDeg;
@@ -101,8 +98,8 @@ export function LunarLandingGame({
         setTiltingOrbit(false);
         setGroundTrackAligned(true);
         handleIlargiSpeak(
-          "¡Ground Track Alineado!",
-          `¡Perfecto! Con inclinación i = ${targetInc.toFixed(2)}° (el ángulo entre el plano orbital y el ecuador), el ground track ya corta justo por encima de ${selectedSite.name}. ¡Pulsa "Pasar a Fase 2" para preparar el descenso!`,
+          "Ground track aligned",
+          `With inclination i = ${targetInc.toFixed(2)}° (the angle between the orbital plane and equator), the ground track crosses ${selectedSite.name}. Select Phase 2 to prepare the descent.`,
         );
       }
     };
@@ -120,8 +117,8 @@ export function LunarLandingGame({
     setGroundTrackAligned(false);
     setPinMode(false);
     handleIlargiSpeak(
-      "Fase 1 · Parking Orbit",
-      `Objetivo fijado en ${siteToUse.name} (Lat ${siteToUse.latitudeDeg.toFixed(2)}°, Lon ${siteToUse.longitudeEastDeg.toFixed(2)}°E). Ahora estamos en una parking orbit ecuatorial (i = 0°). Mete esas coordenadas en la Supercalculadora para descubrir qué inclinación necesitas.`,
+      "Phase 1 · Parking Orbit",
+      `Target set to ${siteToUse.name} (Lat ${siteToUse.latitudeDeg.toFixed(2)}°, Lon ${siteToUse.longitudeEastDeg.toFixed(2)}°E). Start from an equatorial parking orbit (i = 0°). Enter the coordinates in the calculator to find the required inclination.`,
     );
   };
 
@@ -133,13 +130,13 @@ export function LunarLandingGame({
     const safeLat = Math.abs(latDeg) < 1 ? (latDeg >= 0 ? 1.5 : -1.5) : latDeg;
     const custom: GameLandingSite = {
       id: "custom-surface",
-      name: "Punto personalizado",
-      mission: "Selección libre 3D",
+      name: "Custom location",
+      mission: "Free 3D selection",
       latitudeDeg: Number(safeLat.toFixed(2)),
       longitudeEastDeg: Number(lonDeg.toFixed(2)),
       orbitAltitudeKm: 110,
       landingGateKm: 5,
-      hint: "Coordenada elegida sobre el globo lunar",
+      hint: "Coordinates selected on the lunar globe",
     };
     resetToPhase1(custom);
   };
@@ -148,16 +145,16 @@ export function LunarLandingGame({
     if (!solvedInclination || tiltingOrbit || groundTrackAligned) return;
     setTiltingOrbit(true);
     handleIlargiSpeak(
-      "Cambio de inclinación en curso",
-      `Encendiendo motores laterales (ΔV = ${solvedInclination.planeChangeDeltaVMs} m/s) para inclinar la órbita hasta ${solvedInclination.requiredInclinationDeg.toFixed(2)}° y cruzar el punto objetivo.`,
+      "Changing orbital inclination",
+      `Applying the plane-change maneuver (ΔV = ${solvedInclination.planeChangeDeltaVMs} m/s) to reach inclination ${solvedInclination.requiredInclinationDeg.toFixed(2)}° and cross the target location.`,
     );
   };
 
   const goToPhase2 = () => {
     setPhase(2);
     handleIlargiSpeak(
-      "Fase 2 · Altura de órbita y ΔV",
-      `Tu órbita está a ${selectedSite.orbitAltitudeKm} km de altura y el Modo Aterrizar (Fase 3) empieza a ${selectedSite.landingGateKm} km. Resta ambas alturas, introduce cuántos km debes bajar y pulsa el botón rojo del cohete.`,
+      "Phase 2 · Orbital altitude and ΔV",
+      `Your orbital altitude is ${selectedSite.orbitAltitudeKm} km and final landing mode (Phase 3) begins at ${selectedSite.landingGateKm} km. Subtract the altitudes, enter the descent distance and press the launch button.`,
     );
   };
 
@@ -172,15 +169,14 @@ export function LunarLandingGame({
             onClick={onExitGame}
           >
             <ArrowLeft size={14} />
-            Volver a Educación
+            Return to Education
           </button>
           <div className="game-title-block">
             <span className="eyebrow eyebrow-accent">
-              MISIÓN ATERRIZAJE LUNAR · MODO JUEGO
+              LUNAR LANDING MISSION · GAME MODE
             </span>
             <span className="muted-note">
-              Objetivo: {selectedSite.name} (
-              {selectedSite.latitudeDeg.toFixed(2)}
+              Target: {selectedSite.name} ({selectedSite.latitudeDeg.toFixed(2)}
               °, {selectedSite.longitudeEastDeg.toFixed(2)}°E)
             </span>
           </div>
@@ -189,25 +185,25 @@ export function LunarLandingGame({
         <div
           className="game-stepper"
           role="navigation"
-          aria-label="Fases del juego"
+          aria-label="Game phases"
         >
           <div
             className={`game-step ${phase === 1 ? "active" : phase > 1 ? "done" : ""}`}
           >
             <span className="game-step-num">1</span>
-            <span>Parking Orbit e Inclinación</span>
+            <span>Parking orbit and inclination</span>
           </div>
           <span className="game-step-sep">→</span>
           <div
             className={`game-step ${phase === 2 ? "active" : phase > 2 ? "done" : ""}`}
           >
             <span className="game-step-num">2</span>
-            <span>Descenso y ΔV</span>
+            <span>Descent and ΔV</span>
           </div>
           <span className="game-step-sep">→</span>
           <div className={`game-step ${phase === 3 ? "active" : ""}`}>
             <span className="game-step-num">3</span>
-            <span>Modo Aterrizar</span>
+            <span>Landing mode</span>
           </div>
         </div>
 
@@ -215,10 +211,10 @@ export function LunarLandingGame({
           type="button"
           className="btn-secondary btn-compact"
           onClick={() => resetToPhase1(selectedSite)}
-          title="Reiniciar juego desde la Fase 1"
+          title="Restart game from Phase 1"
         >
           <RotateCcw size={13} />
-          Reiniciar
+          Restart
         </button>
       </div>
 
@@ -229,10 +225,10 @@ export function LunarLandingGame({
             <div className="panel-header">
               <div>
                 <div className="eyebrow eyebrow-accent">
-                  1. ELIGE PUNTO DE ATERRIZAJE
+                  1. CHOOSE A LANDING SITE
                 </div>
                 <div className="panel-sub">
-                  Observa su latitud y longitud en la superficie lunar
+                  Read the latitude and longitude on the lunar surface
                 </div>
               </div>
             </div>
@@ -261,22 +257,21 @@ export function LunarLandingGame({
             >
               <Crosshair size={14} />
               {pinMode
-                ? "Pin 3D activo (haz clic en la Luna)"
-                : "Elegir punto libre en la Luna 3D"}
+                ? "3D pin active (click the Moon)"
+                : "Choose a location on the Moon"}
             </button>
 
-            {/* Tarjeta visible de coordenadas del punto elegido */}
             <div className="phase1-target-readout">
-              <div className="eyebrow">COORDENADAS VISIBLES EN SUPERFICIE</div>
+              <div className="eyebrow">SURFACE COORDINATES</div>
               <div className="phase1-coord-pair mono">
                 <div>
-                  <span className="muted-note">Latitud:</span>{" "}
+                  <span className="muted-note">Latitude:</span>{" "}
                   <strong className="kpi-sun">
                     {selectedSite.latitudeDeg.toFixed(2)}°
                   </strong>
                 </div>
                 <div>
-                  <span className="muted-note">Longitud:</span>{" "}
+                  <span className="muted-note">Longitude:</span>{" "}
                   <strong className="kpi-earth">
                     {selectedSite.longitudeEastDeg.toFixed(2)}°E
                   </strong>
@@ -290,19 +285,18 @@ export function LunarLandingGame({
               targetLongitudeDeg={selectedSite.longitudeEastDeg}
               orbitAltitudeKm={selectedSite.orbitAltitudeKm}
               solvedInclination={solvedInclination}
-              onCalculated={(sol) => {
-                setSolvedInclination(sol);
+              onCalculated={(solution) => {
+                setSolvedInclination(solution);
                 handleIlargiSpeak(
-                  "Definición: Inclinación Orbital",
-                  `La supercalculadora indica inclinación i = ${sol.requiredInclinationDeg.toFixed(2)}°. La inclinación es el ángulo entre tu órbita y el ecuador lunar: al inclinar la órbita hasta ese ángulo, el ground track alcanza la latitud de tu objetivo. ¡Pulsa "Aplicar inclinación" para inclinar la órbita!`,
+                  "Orbital inclination",
+                  `The calculator gives inclination i = ${solution.requiredInclinationDeg.toFixed(2)}°. Inclination is the angle between the orbit and lunar equator. Apply it to make the ground track reach the target latitude.`,
                 );
               }}
               onErrorFeedback={(msg) =>
-                handleIlargiSpeak("Comprueba las coordenadas", msg)
+                handleIlargiSpeak("Check coordinates", msg)
               }
             />
 
-            {/* Botones de maniobra y avance a Fase 2 */}
             {solvedInclination && !groundTrackAligned && (
               <button
                 type="button"
@@ -312,8 +306,8 @@ export function LunarLandingGame({
               >
                 <Orbit size={16} />
                 {tiltingOrbit
-                  ? "Inclinando órbita y ground track…"
-                  : `Aplicar inclinación (${solvedInclination.requiredInclinationDeg.toFixed(2)}°) a la órbita`}
+                  ? "Changing orbit and ground track…"
+                  : `Apply inclination (${solvedInclination.requiredInclinationDeg.toFixed(2)}°) to orbit`}
               </button>
             )}
 
@@ -324,7 +318,7 @@ export function LunarLandingGame({
                 onClick={goToPhase2}
               >
                 <CheckCircle2 size={16} />
-                Pasar a Fase 2: Descenso Orbital
+                Continue to Phase 2: Orbital descent
                 <ArrowRight size={16} />
               </button>
             )}
