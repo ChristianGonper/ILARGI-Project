@@ -19,7 +19,7 @@ export const ILARGI_FUN_FACTS: IlargiFact[] = [
   {
     id: "fact-mirror-drift",
     tag: "Lunar ranging",
-    text: "Laser ranging shows that the Moon is moving away from Earth at about 3.8 centimeters per year.",
+    text: "Laser ranging shows that the Moon is moving away from Earth at about 3.8 centimeters (1.5 inches) per year.",
   },
   {
     id: "fact-coldest-place",
@@ -43,7 +43,7 @@ export const LUNAR_MIRROR_GUIDE = {
     "3. The round trip takes roughly 2.5 seconds; precise timing supports distance measurements.",
   ],
   discoveries: [
-    "The Moon recedes from Earth at about 3.8 cm per year.",
+    "The Moon recedes from Earth at about 3.8 cm (1.5 in) per year.",
     "Lunar rotation measurements help constrain the Moon's interior.",
     "Ranging tests gravitational physics using passive reflectors on the Moon.",
   ],
