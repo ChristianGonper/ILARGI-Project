@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, Delete, Flame, Gauge, Rocket } from "lucide-react";
 import { computePhase2Mechanics, type GameLandingSite } from "./gamePhysics";
+import { LanderPortrait } from "./LanderPortrait";
 
 interface Phase2DescentViewProps {
   site: GameLandingSite;
@@ -480,38 +481,18 @@ export function Phase2DescentView({
               strokeDasharray="5 4"
             />
 
-            {/* Nave aterrizador animada */}
+            {/* Illustrative descent: reuse the same lander as the orbital view. */}
             <g transform={`translate(${landerSvgX}, ${landerSvgY})`}>
               {burning && (
                 <path
-                  d="M 8 -4 L 30 -10 L 18 0 L 28 8 L 8 4 Z"
+                  d="M -4 12 L 0 30 L 4 12 Z"
                   fill="#f59e0b"
                   opacity="0.9"
                 />
               )}
-              <polygon
-                points="-10,-8 10,-8 14,5 -14,5"
-                fill="#e2e8f0"
-                stroke="#38bdf8"
-                strokeWidth="1.5"
-              />
-              <line
-                x1="-10"
-                y1="5"
-                x2="-16"
-                y2="13"
-                stroke="#94a3b8"
-                strokeWidth="2"
-              />
-              <line
-                x1="10"
-                y1="5"
-                x2="16"
-                y2="13"
-                stroke="#94a3b8"
-                strokeWidth="2"
-              />
-              <circle cx="0" cy="-2" r="3.5" fill="#f59e0b" />
+              <foreignObject x="-32" y="-36" width="64" height="64">
+                <LanderPortrait />
+              </foreignObject>
             </g>
           </svg>
         </div>
