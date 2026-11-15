@@ -4,7 +4,7 @@ La web se publica en **Cloudflare Pages**, y la API científica en **Google Clou
 
 ## Estado y alcance
 
-La web está publicada en **https://ilargi-jury.pages.dev/** y la API en Google Cloud Run. El proyecto Pages usa Direct Upload con la sesión OAuth local. Los recursos y comandos concretos están en [live.md](live.md). La publicación automática requiere un token específico de Pages; no se necesitan claves dentro del frontend.
+La web está publicada en **https://ilargi.pages.dev/** y la API en Google Cloud Run. El proyecto Pages usa Direct Upload con la sesión OAuth local. Los recursos y comandos concretos están en [live.md](live.md). La publicación automática requiere un token específico de Pages; no se necesitan claves dentro del frontend.
 
 - Mission Analysis: los 11 puntos del catálogo, selección de varios puntos, gráficas, comparación, exportación CSV, globo y capas de materiales.
 - Educación: 23 ubicaciones con sus ciclos, animación, vista Sol–Tierra–Luna, capa WEH y juego de aterrizaje. La interfaz agrupa algunos ejemplos polares del catálogo como ya hacía en local.
@@ -24,7 +24,7 @@ npm --prefix web ci
 ./scripts/deploy-pages.ps1 -ApiUrl https://TU_API.run.app
 ```
 
-URL estable: https://ilargi-jury.pages.dev/. La rama de producción del proyecto Pages es `deployment/jury-hybrid`; el script la utiliza también después de fusionar a main. No hace falta renombrarla, pues es una etiqueta de despliegue de Pages.
+URL estable: https://ilargi.pages.dev/. La rama de producción del proyecto Pages es `deployment/jury-hybrid`; el script la utiliza también después de fusionar a main. No hace falta renombrarla, pues es una etiqueta de despliegue de Pages.
 
 Para publicar automáticamente tras los checks de main, el workflow `deploy-pages.yml` necesita el secreto GitHub `CLOUDFLARE_API_TOKEN` (token específico con Account / Cloudflare Pages / Edit, limitado a esta cuenta), y la variable `CLOUDFLARE_ACCOUNT_ID`. La variable opcional `ILARGI_API_URL` activa la API; sin ella publica modo estático. Durante la migración, el job `publish-migration` publica el artefacto ya probado de esta rama tras los checks, cuando `ILARGI_DEPLOY_ENABLED=true`. No publica desde eventos de pull request. La sesión OAuth local no se copia a GitHub.
 

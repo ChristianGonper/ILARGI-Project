@@ -2,8 +2,8 @@
 
 Actualizado: 15 de noviembre de 2026.
 
-- Web del jurado: https://ilargi-jury.pages.dev/.
-- Proyecto Cloudflare Pages: `ilargi-jury`, Direct Upload, rama de producción `deployment/jury-hybrid`.
+- Web del jurado: https://ilargi.pages.dev/.
+- Proyecto Cloudflare Pages: `ilargi`, Direct Upload, rama de producción `deployment/jury-hybrid`.
 - Proyecto Google Cloud: `ilargi-space-apps-2026`.
 - API: https://ilargi-api-l4mfoqterq-ew.a.run.app.
 - Servicio Cloud Run: `ilargi-api`, región `europe-west1`.
@@ -23,7 +23,9 @@ Publicar una actualización del frontend con la sesión local:
 Actualizar la API con Google Cloud CLI autenticado:
 
 ```powershell
-./scripts/deploy-cloud-run.ps1 -ProjectId ilargi-space-apps-2026 -FrontendOrigin https://ilargi-jury.pages.dev
+./scripts/deploy-cloud-run.ps1 -ProjectId ilargi-space-apps-2026 -FrontendOrigin https://ilargi.pages.dev
 ```
 
 La API es pública y usa CORS explícito para la web estable. Las previews con otros orígenes muestran el respaldo. Para servir únicamente los datos guardados, publicar con `./scripts/deploy-pages.ps1` sin `ApiUrl`. Las instrucciones, parámetros del catálogo y comprobaciones están en [README.md](README.md).
+
+La dirección anterior `https://ilargi-jury.pages.dev/` se conserva disponible y también está permitida en CORS; las nuevas publicaciones van al proyecto `ilargi`.

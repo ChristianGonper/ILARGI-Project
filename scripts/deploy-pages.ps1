@@ -1,5 +1,5 @@
 param(
-    [string]$ProjectName = 'ilargi-jury',
+    [string]$ProjectName = 'ilargi',
     [string]$Branch = 'deployment/jury-hybrid',
     [string]$ApiUrl = ''
 )

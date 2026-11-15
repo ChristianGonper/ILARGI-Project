@@ -20,6 +20,9 @@ export function HomeScreen({ onSelectMode, demoNotice }: HomeScreenProps) {
           A LUNAR EXPLORATION PROJECT <span> / </span> NASA SPACE APPS
         </span>
       </header>
+      <div className="home-expanded-name">
+        Interactive Lunar Analyzer for Radiance, Geometry, and Intervisibility
+      </div>
       <main className="home-main">
         <div className="home-intro">
           <div className="home-kicker">
@@ -83,9 +86,7 @@ export function HomeScreen({ onSelectMode, demoNotice }: HomeScreenProps) {
         </section>
       </main>
       <footer className="home-footer">
-        <span>
-          ILARGI <i> / </i> INTERACTIVE LUNAR ANALYZER
-        </span>
+        <span>ILARGI</span>
         <span>BUILT FOR THE CURIOUS</span>
         <DataSourcesLink />
       </footer>

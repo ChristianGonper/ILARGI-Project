@@ -69,3 +69,7 @@ The scientific model uses public NASA, NAIF/JPL, IAU, and peer-reviewed data alo
   - [CLPS Lunar Mission Browser (reference inspiration)](https://github.com/EmanuelAbasto/CLPS-Lunar-Mission-Browser)
 - **Initial concept candidates (not adopted):** Earlier hackathon brainstorming notes dated 2026-11-11 considered CesiumJS / Cesium Moon, Apache ECharts, Plotly Python, `pymoo`, and PyVista. None of those libraries or services are used in the current implementation; the active stack is documented in the Software Dependencies tables above and in [Project concept](project-concept.md).
 - **Catalog coordinates note:** Educational site descriptions were revised to avoid presenting uncited local illumination percentages, water concentrations, or visibility guarantees as calculated results. Curated catalog coordinates in [`ilargi/sites.py`](../ilargi/sites.py) remain demonstration locations and have not been individually revalidated against an authoritative coordinate catalog in this review.
+
+## Brand typography
+
+The ILARGI wordmark and expanded name use the original Vasca font from [DaFont](https://www.dafont.com/vasca.font). The listing and downloaded archive do not specify a license or identify an author. See [font provenance](../web/public/fonts/README.md); no open-source license is claimed.

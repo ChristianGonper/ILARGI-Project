@@ -4,6 +4,33 @@
 @import "./styles/landing-game.css";
 @import "./styles/observatory.css";
 
+@font-face {
+  font-family: "Vasca";
+  src: url("/fonts/Vasca.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.home-wordmark,
+.brand-title,
+.brand-sub,
+.home-expanded-name {
+  font-family: "Vasca", serif;
+  font-weight: 400;
+  letter-spacing: 0.025em;
+}
+
+.home-expanded-name {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 18px 0 0;
+  font-size: clamp(15px, 1.4vw, 21px);
+  line-height: 1.5;
+  color: #c5d5ae;
+}
+
 :focus-visible {
   outline: 2px solid var(--cyan);
   outline-offset: 3px;

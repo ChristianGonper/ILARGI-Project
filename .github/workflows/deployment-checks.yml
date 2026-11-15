@@ -81,7 +81,7 @@ jobs:
         with:
           name: jury-static-site
           path: web/dist
-      - run: npx --no-install wrangler pages deploy web/dist --project-name ilargi-jury --branch deployment/jury-hybrid
+      - run: npx --no-install wrangler pages deploy web/dist --project-name ilargi --branch deployment/jury-hybrid
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
