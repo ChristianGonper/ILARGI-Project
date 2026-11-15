@@ -8,7 +8,13 @@ import {
 } from "../three/moonCoordinates";
 import type { HistoricalSite, MoonViewport3DProps } from "../types";
 import { loadLunarHeightField, LunarTerrain } from "../three/lunarTerrain";
-import { moonNavigationSpeeds } from "../three/moonNavigation";
+import {
+  createCameraOrbitTween,
+  moonNavigationSpeeds,
+  stepCameraOrbitTween,
+  type CameraOrbitTween,
+} from "../three/moonNavigation";
+import { buildVividWehCanvas } from "../three/wehOverlay";
 
 interface HoverTooltip {
   x: number;
@@ -177,6 +183,7 @@ export function MoonViewport3D({
 
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
+  const cameraTweenRef = useRef<CameraOrbitTween | null>(null);
   const histGroupRef = useRef<THREE.Group | null>(null);
   const activeGroupRef = useRef<THREE.Group | null>(null);
   const moonMeshRef = useRef<THREE.Mesh | null>(null);
@@ -234,6 +241,10 @@ export function MoonViewport3D({
     controls.maxDistance = 5.5;
     controls.enablePan = false;
     controlsRef.current = controls;
+    const onControlStart = () => {
+      cameraTweenRef.current = null;
+    };
+    controls.addEventListener("start", onControlStart);
 
     scene.add(new THREE.AmbientLight(0xdbeafe, 0.45));
     const sunLight = new THREE.DirectionalLight(0xfff7ed, 1.4);
@@ -514,6 +525,14 @@ export function MoonViewport3D({
     let rafId = 0;
     const animate = () => {
       rafId = requestAnimationFrame(animate);
+      if (cameraTweenRef.current) {
+        const active = stepCameraOrbitTween(
+          cameraTweenRef.current,
+          camera,
+          controls,
+        );
+        if (!active) cameraTweenRef.current = null;
+      }
       Object.assign(controls, moonNavigationSpeeds(camera.position.length()));
       controls.update();
       terrain?.update(camera.position);
@@ -553,6 +572,7 @@ export function MoonViewport3D({
       terrain?.dispose();
       cancelAnimationFrame(rafId);
       resizeObserver.disconnect();
+      controls.removeEventListener("start", onControlStart);
       renderer.domElement.removeEventListener("pointerdown", onPointerDown);
       renderer.domElement.removeEventListener("pointermove", onPointerMove);
       renderer.domElement.removeEventListener("pointerup", onPointerUp);
@@ -575,10 +595,17 @@ export function MoonViewport3D({
     };
   }, []);
 
-  const [wehTexture, setWehTexture] = useState<HTMLImageElement | null>(null);
+  const [wehCanvas, setWehCanvas] = useState<HTMLCanvasElement | null>(null);
   useEffect(() => {
     const image = new Image();
-    image.onload = () => setWehTexture(image);
+    image.onload = () =>
+      setWehCanvas(
+        buildVividWehCanvas(
+          image,
+          image.naturalWidth || 720,
+          image.naturalHeight || 360,
+        ),
+      );
     image.src = "/textures/weh_lawrence2022.png";
     return () => {
       image.onload = null;
@@ -608,8 +635,8 @@ export function MoonViewport3D({
       const meta = mineralOverlay.elements.find((e) => e.id === id);
       if (!meta || !meta.available) continue;
       if (id === "WEH") {
-        if (wehTexture) {
-          ctx.drawImage(wehTexture, 0, 0, w, h);
+        if (wehCanvas) {
+          ctx.drawImage(wehCanvas, 0, 0, w, h);
           painted = true;
         }
         continue;
@@ -633,7 +660,7 @@ export function MoonViewport3D({
     tex.needsUpdate = true;
     (mesh.material as THREE.Material).visible = painted;
     mesh.visible = painted && moonMeshRef.current?.visible === true;
-  }, [mineralOverlay, selectedMinerals, wehTexture]);
+  }, [mineralOverlay, selectedMinerals, wehCanvas]);
 
   useEffect(() => {
     const group = histGroupRef.current;
@@ -741,15 +768,16 @@ export function MoonViewport3D({
   const moveCamera = (preset: "south" | "nearside") => {
     setCameraPreset(preset);
     const camera = cameraRef.current;
-    const controls = controlsRef.current;
-    if (!camera || !controls) return;
-    if (preset === "south") {
-      camera.position.set(1.4, -2.9, 2.75);
-    } else {
-      camera.position.set(0.5, 0.65, 4.1);
-    }
-    controls.target.set(0, 0, 0);
-    controls.update();
+    if (!camera) return;
+    const targetPos =
+      preset === "south"
+        ? new THREE.Vector3(1.4, -2.9, 2.75)
+        : new THREE.Vector3(0.5, 0.65, 4.1);
+    cameraTweenRef.current = createCameraOrbitTween(
+      camera.position,
+      targetPos,
+      700,
+    );
   };
 
   return (

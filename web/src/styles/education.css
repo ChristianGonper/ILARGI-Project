@@ -2,20 +2,54 @@
 .edu-shell {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .edu-workspace-grid {
   display: grid;
-  grid-template-columns: 336px minmax(0, 1fr);
-  gap: 12px;
+  grid-template-columns: 320px minmax(0, 1.35fr) 360px;
+  gap: 14px;
   align-items: start;
 }
 
-@media (max-width: 1180px) {
+@media (max-width: 1320px) {
+  .edu-workspace-grid {
+    grid-template-columns: 290px minmax(0, 1fr) 330px;
+  }
+}
+
+@media (max-width: 1060px) {
   .edu-workspace-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.edu-left-col,
+.edu-center-col,
+.edu-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.edu-panel-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.edu-section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.edu-section-head .panel-sub {
+  margin: 0;
 }
 
 .edu-sidebar {
@@ -27,169 +61,92 @@
 .edu-cat-tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 6px;
 }
 
-.edu-site-select-wrap {
+.edu-site-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-}
-
-.edu-site-quick-list {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  max-height: 165px;
+  gap: 6px;
+  max-height: 440px;
   overflow-y: auto;
-  padding-right: 2px;
+  padding-right: 3px;
 }
 
-.edu-site-chip {
+.edu-site-row {
   display: flex;
-  align-items: center;
-  gap: 7px;
+  align-items: flex-start;
+  gap: 9px;
+  width: 100%;
   text-align: left;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 5px 8px;
+  padding: 8px 10px;
   color: var(--silver);
   cursor: pointer;
-  font-size: 11.5px;
-  transition: border-color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
 }
 
-.edu-site-chip:hover {
+.edu-site-row:hover {
   border-color: var(--muted);
+  background: rgba(255, 255, 255, 0.02);
 }
 
-.edu-site-chip.active {
+.edu-site-row.active {
   border-color: var(--cyan);
   background: var(--elevated);
   color: var(--text);
 }
 
-.edu-site-chip-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.edu-site-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
 }
 
-.edu-movie-box {
-  border-top: 1px solid var(--border);
-  padding-top: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
-
-.edu-movie-controls {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.edu-play-btn {
-  flex: 1;
-  height: 32px;
-}
-
-.edu-speed-select {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  color: var(--text);
-  border-radius: 6px;
-  height: 32px;
-  padding: 0 7px;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 11.5px;
-}
-
-.edu-slider-label {
+.edu-site-row-body {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
+  flex: 1;
 }
 
-.edu-slider-meta {
+.edu-site-row-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: inherit;
+}
+
+.edu-site-row-meta {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.edu-mini-pill {
+  font-size: 10px;
+  padding: 1px 6px;
+}
+
+.edu-site-row-region {
   font-size: 11px;
-  color: var(--cyan);
+  color: var(--muted);
 }
 
-.edu-live-telemetry {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 8px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.edu-live-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  font-size: 11.5px;
-}
-
-.edu-date-field {
-  margin-top: 2px;
-}
-
-.edu-extras-box {
-  border-top: 1px solid var(--border);
-  padding-top: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.edu-feature-btn {
+.edu-pin-btn {
   width: 100%;
-  justify-content: space-between;
-  height: auto;
-  min-height: 36px;
-  padding: 6px 10px;
-  text-align: left;
+  justify-content: center;
 }
 
-.edu-pgda-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--cyan);
-  font-size: 11.5px;
-  text-decoration: none;
-}
-
-.edu-pgda-link:hover {
-  text-decoration: underline;
-}
-
-.edu-stage {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.edu-dual-viewports {
-  display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(340px, 0.9fr);
-  gap: 12px;
-  align-items: stretch;
-}
-
-@media (max-width: 1020px) {
-  .edu-dual-viewports {
-    grid-template-columns: 1fr;
-  }
-}
-
+/* --- Center Column: Globe + Large 3-Body Orbit --- */
 .edu-globe-panel {
   padding: 10px;
   display: flex;
@@ -201,7 +158,7 @@
 }
 
 .edu-moon-canvas {
-  height: 490px;
+  height: clamp(410px, 52vh, 560px);
 }
 
 .edu-legend-bar {
@@ -211,7 +168,7 @@
 .edu-legend-items {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
@@ -220,7 +177,7 @@
   align-items: center;
   gap: 5px;
   color: var(--silver);
-  font-size: 11px;
+  font-size: 11.5px;
 }
 
 .legend-dot-item i {
@@ -230,25 +187,19 @@
   display: inline-block;
 }
 
-.edu-right-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* --- 3-Body Orbit Mini-Window (Expandable half-screen view) --- */
+/* --- 3-Body Orbit Large View (Below Moon) --- */
 .orbit-mini-shell {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 10px;
+  padding: 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .orbit-mini-docked {
-  height: 356px;
+  height: 440px;
 }
 
 .orbit-mini-expanded {
@@ -263,12 +214,12 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .orbit-mini-sub {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
   margin-top: 2px;
 }
@@ -276,7 +227,7 @@
 .orbit-mini-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   flex-wrap: wrap;
 }
 
@@ -287,7 +238,7 @@
 
 .orbit-canvas-container {
   flex: 1;
-  min-height: 200px;
+  min-height: 280px;
   border: 1px solid var(--border);
   border-radius: 6px;
   overflow: hidden;
@@ -298,35 +249,217 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 12px;
   flex-wrap: wrap;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--silver);
 }
 
-.edu-info-card {
-  flex: 1;
+/* --- Right Column: Animation, Selected Location & WEH/Phenomena --- */
+.edu-animation-card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
-.edu-mirror-card {
-  border-color: var(--emerald);
+.edu-anim-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.edu-site-title {
+.edu-anim-header .panel-sub {
   margin: 3px 0 0;
+}
+
+.edu-play-btn {
+  margin-left: auto;
+  flex: 0 0 auto;
+  height: 34px;
+  padding: 0 13px;
+  white-space: nowrap;
+}
+
+.edu-phase-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 9px 11px;
+}
+
+.edu-phase-current {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.edu-phase-glyph {
+  flex-shrink: 0;
+}
+
+.edu-phase-kicker {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.edu-phase-name {
   font-size: 14px;
   color: var(--text);
 }
 
-.edu-site-facts {
+.edu-phase-select-field span {
+  font-size: 11px;
+}
+
+/* --- Selected Location Card --- */
+.edu-info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.edu-info-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.edu-site-hero {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.edu-site-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text);
+}
+
+.edu-site-submeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.edu-site-coords {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.edu-site-story {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.edu-site-facts-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.edu-fact-item {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.edu-fact-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.edu-fact-label .pill {
+  margin-left: auto;
+}
+
+.edu-fact-item p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
   color: var(--silver);
+}
+
+.edu-site-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 2px;
+}
+
+/* --- WEH & Lunar Phenomena Card --- */
+.edu-phenomena-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.edu-feature-btn {
+  width: 100%;
+  justify-content: space-between;
+  height: auto;
+  min-height: 40px;
+  padding: 7px 11px;
+  text-align: left;
+}
+
+.edu-feature-btn-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.edu-phenomena-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--silver);
+  background: var(--bg);
+  border-left: 2px solid var(--cyan);
+  padding: 7px 10px;
+}
+
+.edu-mirror-box {
+  background: var(--bg);
+  border: 1px solid var(--emerald);
+  border-radius: 6px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.edu-mirror-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--emerald);
+  font-size: 13px;
 }
 
 .edu-card-p {
@@ -347,7 +480,7 @@
 }
 
 .edu-discoveries {
-  background: var(--bg);
+  background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 8px 10px;
@@ -360,4 +493,59 @@
 
 .edu-mascot-dock {
   border-color: rgba(56, 189, 248, 0.45);
+  padding: 12px;
+  overflow: hidden;
+}
+
+.edu-mascot-dock .ilargi-mascot-wrap {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  min-width: 0;
+}
+
+.edu-mascot-dock .ilargi-avatar-stage {
+  align-self: center;
+  width: 92px;
+  height: 92px;
+}
+
+.edu-mascot-dock .ilargi-avatar-img {
+  width: 76px;
+}
+
+.edu-mascot-dock .ilargi-bubble {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.edu-mascot-dock .ilargi-bubble-tail {
+  left: 50%;
+  top: -8px;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border: 0;
+  border-top: 1px solid #596a55;
+  border-left: 1px solid #596a55;
+}
+
+.edu-mascot-dock .ilargi-bubble-head {
+  gap: 6px;
+}
+
+.edu-mascot-dock .ilargi-fact-controls {
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.edu-mascot-dock .ilargi-fact-btn {
+  margin-left: auto;
+}
+
+.edu-mascot-dock .ilargi-fact-next,
+.edu-mascot-dock .ilargi-bubble-text {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }

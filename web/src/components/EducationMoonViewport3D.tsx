@@ -5,6 +5,12 @@ import {
   latLonToThreeVector,
   threeVectorToLatLon,
 } from "../three/moonCoordinates";
+import {
+  createCameraOrbitTween,
+  stepCameraOrbitTween,
+  type CameraOrbitTween,
+} from "../three/moonNavigation";
+import { createVividWehTexture } from "../three/wehOverlay";
 import type {
   EducationCategory,
   EducationCycleFrame,
@@ -27,8 +33,16 @@ interface EducationMoonViewport3DProps {
   showWaterLayer: boolean;
   showMirrorLaser: boolean;
   pinMode: boolean;
+  focusTrigger?: number;
+  nearSideTrigger?: number;
   onSelectSite: (site: EducationSite) => void;
   onSurfacePick: (latitudeDeg: number, longitudeEastDeg: number) => void;
+}
+
+function formatLatLonHuman(lat: number, lon: number): string {
+  const latHem = lat >= 0 ? "N" : "S";
+  const lonHem = lon >= 0 ? "E" : "W";
+  return `${Math.abs(lat).toFixed(2)}° ${latHem}, ${Math.abs(lon).toFixed(2)}° ${lonHem}`;
 }
 
 const CATEGORY_COLORS: Record<EducationCategory, number> = {
@@ -100,6 +114,8 @@ export function EducationMoonViewport3D({
   showWaterLayer,
   showMirrorLaser,
   pinMode,
+  focusTrigger = 0,
+  nearSideTrigger = 0,
   onSelectSite,
   onSurfacePick,
 }: EducationMoonViewport3DProps) {
@@ -111,6 +127,10 @@ export function EducationMoonViewport3D({
 
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
+  const cameraTweenRef = useRef<CameraOrbitTween | null>(null);
+  const prevSelectionKeyRef = useRef<string | null>(null);
+  const currentFrameRef = useRef<EducationCycleFrame | null>(currentFrame);
+  currentFrameRef.current = currentFrame;
   const sunLightRef = useRef<THREE.DirectionalLight | null>(null);
   const earthLightRef = useRef<THREE.DirectionalLight | null>(null);
   const sunBeaconRef = useRef<THREE.Mesh | null>(null);
@@ -157,6 +177,10 @@ export function EducationMoonViewport3D({
     controls.minDistance = 1.45;
     controls.maxDistance = 5.5;
     controls.enablePan = false;
+    const onControlStart = () => {
+      cameraTweenRef.current = null;
+    };
+    controls.addEventListener("start", onControlStart);
     controlsRef.current = controls;
 
     const ambient = new THREE.AmbientLight(0x93c5fd, 0.14);
@@ -305,19 +329,21 @@ export function EducationMoonViewport3D({
 
     const wehGeometry = new THREE.SphereGeometry(1.0025, 128, 96);
     wehGeometry.rotateY(-Math.PI / 2);
-    const wehTexture = loader.load(
-      "/textures/weh_lawrence2022.png",
-      (texture) => {
-        if (disposed) texture.dispose();
-      },
-    );
-    wehTexture.colorSpace = THREE.SRGBColorSpace;
+    let wehTexture: THREE.CanvasTexture | null = null;
     const wehMaterial = new THREE.MeshStandardMaterial({
-      map: wehTexture,
       transparent: true,
       depthWrite: false,
       roughness: 0.95,
     });
+    const wehImage = new Image();
+    wehImage.onload = () => {
+      if (disposed) return;
+      const tex = createVividWehTexture(wehImage);
+      wehTexture = tex;
+      wehMaterial.map = tex;
+      wehMaterial.needsUpdate = true;
+    };
+    wehImage.src = "/textures/weh_lawrence2022.png";
     waterGroup.add(new THREE.Mesh(wehGeometry, wehMaterial));
     waterGroup.visible = false;
 
@@ -349,7 +375,7 @@ export function EducationMoonViewport3D({
           y: ev.clientY - rect.top - 12,
           title: site.name,
           subtitle: `${site.category_label} · ${site.mission_or_source}`,
-          coords: `λ=${site.latitude_deg.toFixed(2)}°, θ=${site.longitude_east_deg.toFixed(2)}°E`,
+          coords: formatLatLonHuman(site.latitude_deg, site.longitude_east_deg),
         });
       } else {
         renderer.domElement.style.cursor = callbacksRef.current.pinMode
@@ -420,6 +446,14 @@ export function EducationMoonViewport3D({
           pulseRing.scale.set(s, s, 1);
         }
       }
+      if (cameraTweenRef.current) {
+        const active = stepCameraOrbitTween(
+          cameraTweenRef.current,
+          camera,
+          controls,
+        );
+        if (!active) cameraTweenRef.current = null;
+      }
       controls.update();
       renderer.render(scene, camera);
     };
@@ -429,6 +463,7 @@ export function EducationMoonViewport3D({
       disposed = true;
       cancelAnimationFrame(rafId);
       resizeObserver.disconnect();
+      controls.removeEventListener("start", onControlStart);
       renderer.domElement.removeEventListener("pointerdown", onPointerDown);
       renderer.domElement.removeEventListener("pointermove", onPointerMove);
       renderer.domElement.removeEventListener("pointerup", onPointerUp);
@@ -436,8 +471,9 @@ export function EducationMoonViewport3D({
       fallbackTex.dispose();
       loadedColor?.dispose();
       loadedBump?.dispose();
+      wehImage.onload = null;
       wehGeometry.dispose();
-      wehTexture.dispose();
+      wehTexture?.dispose();
       wehMaterial.dispose();
       sphereGeo.dispose();
       sphereMat.dispose();
@@ -581,46 +617,117 @@ export function EducationMoonViewport3D({
     group.add(sprite);
   }, [selectedSite, manualCoords]);
 
+  const earthViewPosition = () => {
+    const frame = currentFrameRef.current;
+    if (frame) {
+      return moonMeToThree(frame.earth_me_unit, 1)
+        .normalize()
+        .multiplyScalar(4.0);
+    }
+    return new THREE.Vector3(0, 0, 4.0);
+  };
+
   const moveCamera = (
     preset: "focus" | "south" | "north" | "nearside" | "farside",
   ) => {
     setCameraPreset(preset);
     const camera = cameraRef.current;
-    const controls = controlsRef.current;
-    if (!camera || !controls) return;
+    if (!camera) return;
 
+    let targetPos: THREE.Vector3;
     if (preset === "focus") {
       const lat =
         manualCoords?.latitudeDeg ?? selectedSite?.latitude_deg ?? -89.45;
       const lon =
         manualCoords?.longitudeEastDeg ?? selectedSite?.longitude_east_deg ?? 0;
       const dir = latLonToThreeVector(lat, lon, 1).normalize();
-      camera.position.copy(dir.multiplyScalar(4.0));
+      targetPos = dir.multiplyScalar(4.0);
     } else if (preset === "south") {
-      camera.position.set(1.2, -2.9, 2.45);
+      targetPos = new THREE.Vector3(1.2, -2.9, 2.45);
     } else if (preset === "north") {
-      camera.position.set(1.2, 2.9, 2.45);
+      targetPos = new THREE.Vector3(1.2, 2.9, 2.45);
     } else if (preset === "nearside") {
-      camera.position.set(0.35, 0.5, 4.0);
+      targetPos = earthViewPosition();
     } else {
-      camera.position.set(-0.35, 0.5, -4.0);
+      targetPos = earthViewPosition().negate();
     }
-    controls.target.set(0, 0, 0);
-    controls.update();
+    cameraTweenRef.current = createCameraOrbitTween(
+      camera.position,
+      targetPos,
+      700,
+    );
   };
+
+  useEffect(() => {
+    const key = manualCoords
+      ? `manual:${manualCoords.latitudeDeg}:${manualCoords.longitudeEastDeg}`
+      : selectedSite
+        ? `site:${selectedSite.id}`
+        : null;
+    if (!key) return;
+    if (prevSelectionKeyRef.current === null) {
+      prevSelectionKeyRef.current = key;
+      return;
+    }
+    if (prevSelectionKeyRef.current === key) return;
+    prevSelectionKeyRef.current = key;
+
+    const camera = cameraRef.current;
+    if (!camera) return;
+    const lat =
+      manualCoords?.latitudeDeg ?? selectedSite?.latitude_deg ?? -89.45;
+    const lon =
+      manualCoords?.longitudeEastDeg ?? selectedSite?.longitude_east_deg ?? 0;
+    const dir = latLonToThreeVector(lat, lon, 1).normalize();
+    cameraTweenRef.current = createCameraOrbitTween(
+      camera.position,
+      dir.multiplyScalar(4.0),
+      720,
+    );
+    setCameraPreset("focus");
+  }, [selectedSite, manualCoords]);
+
+  useEffect(() => {
+    if (focusTrigger <= 0) return;
+    const camera = cameraRef.current;
+    if (!camera) return;
+    const lat =
+      manualCoords?.latitudeDeg ?? selectedSite?.latitude_deg ?? -89.45;
+    const lon =
+      manualCoords?.longitudeEastDeg ?? selectedSite?.longitude_east_deg ?? 0;
+    const dir = latLonToThreeVector(lat, lon, 1).normalize();
+    cameraTweenRef.current = createCameraOrbitTween(
+      camera.position,
+      dir.multiplyScalar(4.0),
+      700,
+    );
+    setCameraPreset("focus");
+  }, [focusTrigger, manualCoords, selectedSite]);
+
+  useEffect(() => {
+    if (nearSideTrigger <= 0) return;
+    const camera = cameraRef.current;
+    if (!camera) return;
+    cameraTweenRef.current = createCameraOrbitTween(
+      camera.position,
+      earthViewPosition(),
+      750,
+    );
+    setCameraPreset("nearside");
+  }, [nearSideTrigger]);
 
   return (
     <div className="moon-viewport-shell edu-moon-shell">
       <div className="moon-hud-top">
         <div className="moon-hud-pills">
-          <span className="pill pill-muted">Explore the Moon</span>
+          <h2 className="edu-panel-title">3D Moon Globe</h2>
           {showWaterLayer && (
             <span className="pill pill-cyan">
-              WEH: brighter areas contain more hydrogen
+              WEH: brighter areas show more hydrogen
             </span>
           )}
           {(showMirrorLaser || selectedSite?.category === "mirror") && (
-            <span className="pill pill-ok">Earth ↔ LRRR laser</span>
+            <span className="pill pill-ok">Earth ↔ Moon laser</span>
           )}
         </div>
         <div className="moon-camera-btns">
@@ -681,22 +788,21 @@ export function EducationMoonViewport3D({
       <div className="moon-hud-bottom edu-legend-bar">
         <div className="edu-legend-items">
           <span className="legend-dot-item">
-            <i style={{ background: "#F59E0B" }} /> Illuminated terrain (PGDA
-            69)
+            <i style={{ background: "#F59E0B" }} /> Illuminated terrain
           </span>
           <span className="legend-dot-item">
-            <i style={{ background: "#22D3EE" }} /> Permanent shadow (PSR)
+            <i style={{ background: "#22D3EE" }} /> Permanent shadow
           </span>
           <span className="legend-dot-item">
-            <i style={{ background: "#C4B5FD" }} /> Landing spots
+            <i style={{ background: "#C4B5FD" }} /> Landing sites
           </span>
           <span className="legend-dot-item">
-            <i style={{ background: "#10B981" }} /> LRRR reflectors
+            <i style={{ background: "#10B981" }} /> Laser reflectors
           </span>
         </div>
         <span className="pill pill-muted">
           {pinMode
-            ? "Pin active: click the surface"
+            ? "Pin active: click the Moon surface"
             : "Drag to rotate · Simulated sunlight"}
         </span>
       </div>

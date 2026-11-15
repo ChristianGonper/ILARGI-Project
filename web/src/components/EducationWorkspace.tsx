@@ -3,19 +3,17 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Crosshair,
   Droplets,
-  Info,
-  Pause,
+  Eye,
+  Globe,
   Play,
   Rocket,
   RotateCcw,
-  Sparkles,
   Sun,
   X,
 } from "lucide-react";
 import {
   fetchEducationCycle,
   fetchEducationSites,
-  formatUtcShort,
   interpolateEducationFrame,
 } from "../api";
 import { SpacecraftGuide } from "./SpacecraftGuide";
@@ -29,37 +27,94 @@ import { EducationMoonViewport3D } from "./EducationMoonViewport3D";
 import { IlargiMascot } from "./IlargiMascot";
 import { LunarLandingGame } from "./landing-game/LunarLandingGame";
 import {
+  LUNAR_PHASES,
   ThreeBodyOrbitMini,
-  phaseLabelFromFraction,
+  detectLunarPhase,
+  findPhaseFrameHours,
+  phaseLabelFromKey,
+  type LunarPhaseKey,
 } from "./ThreeBodyOrbitMini";
-const CATEGORY_OPTIONS: {
-  id: "all" | EducationCategory;
+
+type SiteFilterId = "all" | "light_shadow" | "landing" | "mirror";
+
+const FILTER_OPTIONS: {
+  id: SiteFilterId;
   label: string;
 }[] = [
   { id: "all", label: "All" },
-  { id: "eternal_light", label: "Illuminated terrain" },
-  { id: "psr", label: "Shadow (PSR)" },
+  { id: "light_shadow", label: "Light & Shadow" },
   { id: "landing", label: "Landing" },
   { id: "mirror", label: "Reflectors" },
 ];
+
 const CATEGORY_BADGE_CLASS: Record<EducationCategory, string> = {
   eternal_light: "pill-amber",
   psr: "pill-cyan",
   landing: "pill-violet",
   mirror: "pill-ok",
 };
+
+const CATEGORY_SHORT_LABEL: Record<EducationCategory, string> = {
+  eternal_light: "Illuminated",
+  psr: "Shadow",
+  landing: "Landing",
+  mirror: "Reflector",
+};
+
+const CATEGORY_DOT_COLOR: Record<EducationCategory, string> = {
+  eternal_light: "#F59E0B",
+  psr: "#22D3EE",
+  landing: "#C4B5FD",
+  mirror: "#10B981",
+};
+
+function formatCoords(lat: number, lon: number): string {
+  const latHem = lat >= 0 ? "N" : "S";
+  const lonHem = lon >= 0 ? "E" : "W";
+  return `${Math.abs(lat).toFixed(2)}° ${latHem}, ${Math.abs(lon).toFixed(2)}° ${lonHem}`;
+}
+
+function MoonPhaseGlyph({ phase }: { phase: LunarPhaseKey }) {
+  return (
+    <svg
+      width="22"
+      height="22"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="edu-phase-glyph"
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="9.5"
+        fill="#141814"
+        stroke="#94a3b8"
+        strokeWidth="1.5"
+      />
+      {phase === "full_moon" && (
+        <circle cx="12" cy="12" r="8.5" fill="#f1f5f9" />
+      )}
+      {phase === "first_quarter" && (
+        <path d="M12 2.5 A9.5 9.5 0 0 1 12 21.5 Z" fill="#f1f5f9" />
+      )}
+      {phase === "last_quarter" && (
+        <path d="M12 2.5 A9.5 9.5 0 0 0 12 21.5 Z" fill="#f1f5f9" />
+      )}
+    </svg>
+  );
+}
+
 export function EducationWorkspace() {
   const [sites, setSites] = useState<EducationSite[]>([]);
-  const [categoryFilter, setCategoryFilter] = useState<
-    "all" | EducationCategory
-  >("all");
+  const [siteFilter, setSiteFilter] = useState<SiteFilterId>("all");
   const [selectedSite, setSelectedSite] = useState<EducationSite | null>(null);
   const [manualCoords, setManualCoords] = useState<{
     latitudeDeg: number;
     longitudeEastDeg: number;
   } | null>(null);
   const [pinMode, setPinMode] = useState(false);
-  const [startDate, setStartDate] = useState("2026-04-02");
+  const [focusTrigger, setFocusTrigger] = useState(0);
+  const [nearSideTrigger, setNearSideTrigger] = useState(0);
   const [cycleData, setCycleData] = useState<EducationCycleResponse | null>(
     null,
   );
@@ -67,7 +122,6 @@ export function EducationWorkspace() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [hoursOffset, setHoursOffset] = useState(0);
   const [playing, setPlaying] = useState(false);
-  const [speedHoursPerSec, setSpeedHoursPerSec] = useState(36);
   const [showWaterLayer, setShowWaterLayer] = useState(false);
   const [showMirrorGuide, setShowMirrorGuide] = useState(false);
   const [gameActive, setGameActive] = useState(false);
@@ -75,10 +129,13 @@ export function EducationWorkspace() {
     mood: string;
     text: string;
   } | null>(null);
+
+  const animationSpeedHoursPerSec = 40;
+
   useEffect(() => {
     void fetchEducationSites()
       .then((list) => {
-        // One high-illumination and one shadow example per hemisphere.
+        // Keep one illuminated and one shadow example per hemisphere for clean polar coverage.
         const seen = new Set<string>();
         list = list.filter((site) => {
           if (site.category !== "eternal_light" && site.category !== "psr")
@@ -101,12 +158,14 @@ export function EducationWorkspace() {
         );
       });
   }, []);
+
   const activeLat =
     manualCoords?.latitudeDeg ?? selectedSite?.latitude_deg ?? -89.45;
   const activeLon =
     manualCoords?.longitudeEastDeg ??
     selectedSite?.longitude_east_deg ??
     -137.31;
+
   useEffect(() => {
     let cancelled = false;
     setLoadingCycle(true);
@@ -114,7 +173,7 @@ export function EducationWorkspace() {
     void fetchEducationCycle({
       latitudeDeg: activeLat,
       longitudeEastDeg: activeLon,
-      startDate,
+      startDate: "2026-04-02",
       startTime: "15:00",
       durationHours: 709.0,
       stepMinutes: 180,
@@ -139,8 +198,10 @@ export function EducationWorkspace() {
     return () => {
       cancelled = true;
     };
-  }, [activeLat, activeLon, startDate]);
+  }, [activeLat, activeLon]);
+
   const maxHours = cycleData?.duration_hours ?? 709.0;
+
   useEffect(() => {
     if (!playing || !cycleData) return;
     let rafId = 0;
@@ -148,23 +209,45 @@ export function EducationWorkspace() {
     const tick = (now: number) => {
       const dt = Math.min(0.1, (now - lastTs) / 1000);
       lastTs = now;
+      let finished = false;
       setHoursOffset((prev) => {
-        const next = prev + dt * speedHoursPerSec;
-        return next >= maxHours ? 0 : next;
+        const next = prev + dt * animationSpeedHoursPerSec;
+        if (next >= maxHours) {
+          finished = true;
+          return maxHours;
+        }
+        return next;
       });
+      if (finished) {
+        setPlaying(false);
+        return;
+      }
       rafId = requestAnimationFrame(tick);
     };
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [playing, cycleData, speedHoursPerSec, maxHours]);
+  }, [playing, cycleData, maxHours]);
+
   const currentFrame = useMemo(() => {
     if (!cycleData) return null;
     return interpolateEducationFrame(cycleData.frames, hoursOffset);
   }, [cycleData, hoursOffset]);
+
+  const currentPhase = useMemo(
+    () => detectLunarPhase(cycleData?.frames ?? [], hoursOffset, currentFrame),
+    [cycleData?.frames, hoursOffset, currentFrame],
+  );
+
   const filteredSites = useMemo(() => {
-    if (categoryFilter === "all") return sites;
-    return sites.filter((s) => s.category === categoryFilter);
-  }, [sites, categoryFilter]);
+    if (siteFilter === "all") return sites;
+    if (siteFilter === "light_shadow") {
+      return sites.filter(
+        (s) => s.category === "eternal_light" || s.category === "psr",
+      );
+    }
+    return sites.filter((s) => s.category === siteFilter);
+  }, [sites, siteFilter]);
+
   const handleSelectSite = (site: EducationSite) => {
     setManualCoords(null);
     setSelectedSite(site);
@@ -175,6 +258,7 @@ export function EducationWorkspace() {
       text: site.ilargi_story,
     });
   };
+
   const handleSurfacePick = (latitudeDeg: number, longitudeEastDeg: number) => {
     setManualCoords({ latitudeDeg, longitudeEastDeg });
     setPinMode(false);
@@ -182,34 +266,68 @@ export function EducationWorkspace() {
     setIlargiOverride({
       mood: "Custom location",
       text: isPolar
-        ? `You selected a polar location (${latitudeDeg.toFixed(1)}°, ${longitudeEastDeg.toFixed(1)}°E). Watch the low Sun move over the terrain during the cycle.`
-        : `You selected the location (${latitudeDeg.toFixed(1)}°, ${longitudeEastDeg.toFixed(1)}°E). Play the animation to follow the lunar day–night boundary.`,
+        ? `You picked a polar spot (${formatCoords(latitudeDeg, longitudeEastDeg)}). Start the animation to watch how low sunlight sweeps around the craters.`
+        : `You picked a custom spot (${formatCoords(latitudeDeg, longitudeEastDeg)}). Start the animation to follow the lunar day–night boundary.`,
     });
   };
+
   const handleToggleWater = () => {
     const next = !showWaterLayer;
     setShowWaterLayer(next);
     if (next) {
       setIlargiOverride({
         mood: "Water-equivalent hydrogen",
-        text: "WEH expresses estimated hydrogen as an equivalent amount of water. Stronger intensity means higher WEH, without confirming water or ice. The display emphasizes higher concentrations using a nonlinear opacity scale (0-120 ppm hydrogen). Each measurement covers roughly 50 km; it cannot locate individual ice deposits.",
+        text: "Brighter cyan areas near the poles highlight higher hydrogen levels measured from orbit. High hydrogen can be a clue to water ice hidden in cold craters, though it doesn't confirm ice on its own.",
       });
     } else {
       setIlargiOverride(null);
     }
   };
+
   const handleToggleMirrorGuide = () => {
     const next = !showMirrorGuide;
     setShowMirrorGuide(next);
     if (next) {
       setIlargiOverride({
-        mood: "Lunar retroreflectors",
-        text: "Lunar retroreflectors use corner-cube prisms to return laser light toward its source. Round-trip timing helps measure the changing Earth–Moon distance.",
+        mood: "Lunar laser reflectors",
+        text: "Lunar reflectors use corner-cube prisms to bounce laser pulses straight back to Earth. Timing the round trip reveals how the Moon's distance changes.",
       });
     } else {
       setIlargiOverride(null);
     }
   };
+
+  const handleAnimationAction = () => {
+    if (!cycleData) return;
+    setNearSideTrigger((n) => n + 1);
+    if (playing) {
+      setHoursOffset(0);
+      setPlaying(true);
+      setIlargiOverride({
+        mood: "Animation restarted",
+        text: "Restarted from the beginning of the lunar cycle. Drag the Moon to view any crater while sunlight moves.",
+      });
+      return;
+    }
+
+    if (hoursOffset >= maxHours - 0.5) {
+      setHoursOffset(0);
+    }
+    setPlaying(true);
+    setIlargiOverride({
+      mood: "Lunar cycle playing",
+      text: "Watch sunlight sweep across the Moon's Earth-facing side as it goes through a full cycle of phases.",
+    });
+  };
+
+  const handlePhaseSelect = (phase: LunarPhaseKey) => {
+    if (!cycleData) return;
+    setPlaying(false);
+    setNearSideTrigger((n) => n + 1);
+    const targetHours = findPhaseFrameHours(cycleData.frames, phase);
+    setHoursOffset(targetHours);
+  };
+
   const ilargiDisplay = useMemo(() => {
     if (ilargiOverride) return ilargiOverride;
     if (selectedSite) {
@@ -220,11 +338,10 @@ export function EducationWorkspace() {
     }
     return {
       mood: "Lunar guide",
-      text: "Choose a landing site, illuminated ridge or polar shadow region, then press Play to follow a full lunar solar cycle.",
+      text: "Pick any lunar site on the left, then start the animation on the right to explore a full cycle of Moon phases.",
     };
   }, [ilargiOverride, selectedSite]);
-  const lunarDaysElapsed = hoursOffset / 24.0;
-  const lunarDayPct = Math.min(100, (hoursOffset / 708.734) * 100);
+
   if (gameActive) {
     return (
       <LunarLandingGame
@@ -234,6 +351,12 @@ export function EducationWorkspace() {
       />
     );
   }
+
+  const canLandAtSelectedSite =
+    Boolean(selectedSite) &&
+    !manualCoords &&
+    Math.abs(selectedSite?.latitude_deg ?? 0) >= 2;
+
   return (
     <div className="edu-shell">
       <div className="panel edu-game-launch-bar">
@@ -259,6 +382,7 @@ export function EducationWorkspace() {
           Start landing game
         </button>
       </div>
+
       {errorMsg && (
         <div className="error-banner" role="alert">
           <span>{errorMsg}</span>
@@ -271,340 +395,391 @@ export function EducationWorkspace() {
           </button>
         </div>
       )}
+
       <div className="edu-workspace-grid">
-        <div className="panel edu-mascot-dock">
-          <IlargiMascot
-            speakerMood={ilargiDisplay.mood}
-            message={ilargiDisplay.text}
-            showFunFacts
-          />
-        </div>
-        {/* Location, timeline and educational layers */}
-        <aside className="panel edu-sidebar">
-          <div className="panel-header">
-            <div>
-              <div className="eyebrow">1. CHOOSE A LOCATION</div>
-              <div className="panel-sub">
-                Landing sites, illuminated terrain, polar shadows and reflectors
-              </div>
+        {/* LEFT COLUMN: Mascot + Expanded Locations List */}
+        <div className="edu-left-col">
+          <div className="panel edu-mascot-dock">
+            <IlargiMascot
+              speakerMood={ilargiDisplay.mood}
+              message={ilargiDisplay.text}
+              showFunFacts
+            />
+          </div>
+
+          <aside className="panel edu-sidebar">
+            <div className="edu-section-head">
+              <h2 className="edu-panel-title">Lunar Locations</h2>
+              <p className="panel-sub">
+                Filter by category or select any site below
+              </p>
             </div>
-          </div>
-          <div className="edu-cat-tabs" role="tablist">
-            {CATEGORY_OPTIONS.map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                className={`btn-mini ${categoryFilter === cat.id ? "active" : ""}`}
-                onClick={() => setCategoryFilter(cat.id)}
-              >
-                {cat.label}
-              </button>
-            ))}
-          </div>
-          <div className="edu-site-select-wrap">
-            <select
-              className="input-select"
-              title={manualCoords ? "Manual coordinates" : selectedSite?.name}
-              value={manualCoords ? "__manual__" : (selectedSite?.id ?? "")}
-              onChange={(e) => {
-                const found = sites.find((s) => s.id === e.target.value);
-                if (found) handleSelectSite(found);
-              }}
-              aria-label="Select lunar location"
+
+            <div
+              className="edu-cat-tabs"
+              role="tablist"
+              aria-label="Filter locations by category"
             >
-              {manualCoords && (
-                <option value="__manual__">
-                  Manual ({manualCoords.latitudeDeg.toFixed(2)}°,{" "}
-                  {manualCoords.longitudeEastDeg.toFixed(2)}°E)
-                </option>
-              )}
-              {CATEGORY_OPTIONS.filter((category) => category.id !== "all").map(
-                (category) => {
-                  const matches = filteredSites.filter(
-                    (site) => site.category === category.id,
-                  );
-                  return (
-                    matches.length > 0 && (
-                      <optgroup key={category.id} label={category.label}>
-                        {matches.map((site) => (
-                          <option key={site.id} value={site.id}>
-                            {site.name}
-                          </option>
-                        ))}
-                      </optgroup>
-                    )
-                  );
-                },
-              )}
-            </select>
+              {FILTER_OPTIONS.map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  className={`btn-mini ${siteFilter === cat.id ? "active" : ""}`}
+                  onClick={() => setSiteFilter(cat.id)}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            <div
+              className="edu-site-list"
+              role="listbox"
+              aria-label="Lunar sites"
+            >
+              {filteredSites.map((site) => {
+                const isActive = !manualCoords && selectedSite?.id === site.id;
+                return (
+                  <button
+                    key={site.id}
+                    type="button"
+                    role="option"
+                    aria-selected={isActive}
+                    className={`edu-site-row ${isActive ? "active" : ""}`}
+                    onClick={() => handleSelectSite(site)}
+                  >
+                    <span
+                      className="edu-site-dot"
+                      style={{ background: CATEGORY_DOT_COLOR[site.category] }}
+                      aria-hidden="true"
+                    />
+                    <span className="edu-site-row-body">
+                      <span className="edu-site-row-name">{site.name}</span>
+                      <span className="edu-site-row-meta">
+                        <span
+                          className={`pill edu-mini-pill ${CATEGORY_BADGE_CLASS[site.category]}`}
+                        >
+                          {CATEGORY_SHORT_LABEL[site.category]}
+                        </span>
+                        <span className="edu-site-row-region">
+                          {site.region}
+                        </span>
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
             <button
               type="button"
-              className={`btn-secondary btn-compact ${pinMode ? "active" : ""}`}
+              className={`btn-secondary btn-compact edu-pin-btn ${pinMode ? "active" : ""}`}
               onClick={() => setPinMode((v) => !v)}
             >
               <Crosshair size={14} />
               {pinMode
-                ? "Globe pin: ACTIVE (click the Moon)"
-                : "Place a point on the globe"}
+                ? "Globe pin active: click the Moon"
+                : "Place a custom point on the globe"}
             </button>
+          </aside>
+        </div>
+
+        {/* CENTER COLUMN: Moon Globe + Large Three-Body Orbit View Below */}
+        <section className="edu-center-col">
+          <div className="panel edu-globe-panel">
+            <ViewportFrame>
+              <EducationMoonViewport3D
+                sites={sites}
+                selectedSite={selectedSite}
+                manualCoords={manualCoords}
+                currentFrame={currentFrame}
+                showWaterLayer={showWaterLayer}
+                showMirrorLaser={showMirrorGuide}
+                pinMode={pinMode}
+                focusTrigger={focusTrigger}
+                nearSideTrigger={nearSideTrigger}
+                onSelectSite={handleSelectSite}
+                onSurfacePick={handleSurfacePick}
+              />
+            </ViewportFrame>
           </div>
-          {/* Full-cycle timeline */}
-          <div className="edu-movie-box">
-            <div className="panel-header">
+
+          <ThreeBodyOrbitMini
+            frames={cycleData?.frames ?? []}
+            currentFrame={currentFrame}
+          />
+        </section>
+
+        {/* RIGHT COLUMN: Animation + Selected Site Info + WEH & Phenomena */}
+        <aside className="edu-right-col">
+          {/* Lunar Cycle Animation */}
+          <div className="panel edu-animation-card">
+            <div className="edu-anim-header">
               <div>
-                <div className="eyebrow eyebrow-accent">
-                  2. ANIMATION · FULL LUNAR CYCLE
-                </div>
-                <div className="panel-sub">
-                  1 lunar solar day ≈ 29.53 Earth days (709 h)
+                <h2 className="edu-panel-title">Lunar Cycle Animation</h2>
+                <p className="panel-sub">
+                  Watch or jump to the four main Moon phases
+                </p>
+              </div>
+              <button
+                type="button"
+                className="btn-primary edu-play-btn"
+                disabled={!cycleData || loadingCycle}
+                onClick={handleAnimationAction}
+              >
+                {playing ? <RotateCcw size={15} /> : <Play size={15} />}
+                {playing ? "Restart animation" : "Start animation"}
+              </button>
+            </div>
+
+            <div className="edu-phase-status-row">
+              <div className="edu-phase-current">
+                <MoonPhaseGlyph phase={currentPhase} />
+                <div>
+                  <div className="edu-phase-kicker">Current Moon phase</div>
+                  <strong className="edu-phase-name">
+                    {phaseLabelFromKey(currentPhase)}
+                  </strong>
                 </div>
               </div>
               {loadingCycle && <span className="pill pill-cyan">Loading…</span>}
             </div>
-            <div className="edu-movie-controls">
-              <button
-                type="button"
-                className="btn-primary edu-play-btn"
-                disabled={!cycleData}
-                onClick={() => {
-                  setPlaying((p) => !p);
-                  if (!playing) {
-                    setIlargiOverride({
-                      mood: "Solar animation playing",
-                      text: "Watch sunlight move over the craters. Rotate the globe with your mouse while the animation continues.",
-                    });
-                  }
-                }}
-              >
-                {playing ? <Pause size={15} /> : <Play size={15} />}
-                {playing ? "Pause animation" : "Play animation"}
-              </button>
-              <button
-                type="button"
-                className="btn-secondary btn-compact"
-                onClick={() => {
-                  setPlaying(false);
-                  setHoursOffset(0);
-                }}
-                title="Return to cycle start"
-              >
-                <RotateCcw size={14} />
-              </button>
+
+            <label className="field edu-phase-select-field">
+              <span>Jump to a Moon phase</span>
               <select
-                className="edu-speed-select"
-                value={speedHoursPerSec}
-                onChange={(e) => setSpeedHoursPerSec(Number(e.target.value))}
-                aria-label="Animation speed"
+                className="input-select"
+                value={currentPhase}
+                disabled={!cycleData}
+                onChange={(e) =>
+                  handlePhaseSelect(e.target.value as LunarPhaseKey)
+                }
+                aria-label="Select Moon phase"
               >
-                <option value={12}>1× slow</option>
-                <option value={36}>3× normal</option>
-                <option value={72}>6× fast</option>
-                <option value={144}>12× turbo</option>
+                {LUNAR_PHASES.map((phase) => (
+                  <option key={phase.key} value={phase.key}>
+                    {phase.label}
+                  </option>
+                ))}
               </select>
-            </div>
-            <label className="edu-slider-label">
-              <div className="edu-slider-meta">
-                <span className="mono">
-                  Day {lunarDaysElapsed.toFixed(1)} / 29.5 (
-                  {Math.round(hoursOffset)} h)
-                </span>
-                <span className="mono">{lunarDayPct.toFixed(0)}% of cycle</span>
-              </div>
-              <input
-                type="range"
-                className="disc-slider"
-                min={0}
-                max={maxHours}
-                step={0.5}
-                value={hoursOffset}
-                onChange={(e) => {
-                  setPlaying(false);
-                  setHoursOffset(Number(e.target.value));
-                }}
-              />
-            </label>
-            {currentFrame && (
-              <div className="edu-live-telemetry">
-                <div className="edu-live-row">
-                  <span className="muted-note">UTC instant</span>
-                  <span className="mono">
-                    {formatUtcShort(currentFrame.utc)}
-                  </span>
-                </div>
-                <div className="edu-live-row">
-                  <span className="muted-note">Sun at this location</span>
-                  <span
-                    className={`pill ${currentFrame.sun_visible ? "pill-amber" : "pill-muted"}`}
-                  >
-                    <Sun size={11} />{" "}
-                    {currentFrame.sun_visible
-                      ? `Sunlit (${currentFrame.sun_elevation_deg.toFixed(1)}°)`
-                      : `In shadow (${currentFrame.sun_elevation_deg.toFixed(1)}°)`}
-                  </span>
-                </div>
-                <div className="edu-live-row">
-                  <span className="muted-note">Lunar phase (from Earth)</span>
-                  <span className="mono">
-                    {Math.round(currentFrame.illumination_fraction * 100)}% ·{" "}
-                    {phaseLabelFromFraction(currentFrame.illumination_fraction)}
-                  </span>
-                </div>
-              </div>
-            )}
-            <label className="field edu-date-field">
-              <span>Simulation start date (UTC)</span>
-              <input
-                type="date"
-                min="1972-01-01"
-                max="2100-12-31"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
             </label>
           </div>
-          {/* WEH and laser reflector explanations */}
-          <div className="edu-extras-box">
-            <div className="eyebrow">3. WEH AND LUNAR PHENOMENA</div>
+
+          {/* Selected Location Details */}
+          <div className="panel edu-info-card">
+            <div className="edu-section-head">
+              <div className="edu-info-top-row">
+                <h2 className="edu-panel-title">Selected Location</h2>
+                {selectedSite && !manualCoords ? (
+                  <span
+                    className={`pill ${CATEGORY_BADGE_CLASS[selectedSite.category]}`}
+                  >
+                    {selectedSite.category_label}
+                  </span>
+                ) : (
+                  <span className="pill pill-cyan">Custom pin</span>
+                )}
+              </div>
+            </div>
+
+            {selectedSite && !manualCoords ? (
+              <>
+                <div className="edu-site-hero">
+                  <h3 className="edu-site-title">{selectedSite.name}</h3>
+                  <div className="edu-site-submeta">
+                    <span className="pill pill-muted">
+                      {selectedSite.mission_or_source}
+                    </span>
+                    <span className="edu-site-coords mono">
+                      {formatCoords(
+                        selectedSite.latitude_deg,
+                        selectedSite.longitude_east_deg,
+                      )}
+                    </span>
+                  </div>
+                </div>
+
+                <p className="edu-site-story">{selectedSite.ilargi_story}</p>
+
+                <div className="edu-site-facts-grid">
+                  <div className="edu-fact-item">
+                    <div className="edu-fact-label">
+                      <Sun size={14} className="tag-sun" />
+                      <span>Sunlight</span>
+                      {currentFrame && (
+                        <span
+                          className={`pill ${currentFrame.sun_visible ? "pill-amber" : "pill-muted"}`}
+                        >
+                          {currentFrame.sun_visible ? "Sunlit" : "In shadow"}
+                        </span>
+                      )}
+                    </div>
+                    <p>{selectedSite.illumination_note}</p>
+                  </div>
+
+                  <div className="edu-fact-item">
+                    <div className="edu-fact-label">
+                      <Globe size={14} className="tag-earth" />
+                      <span>Earth visibility</span>
+                    </div>
+                    <p>{selectedSite.earth_visibility_note}</p>
+                  </div>
+
+                  <div className="edu-fact-item">
+                    <div className="edu-fact-label">
+                      <Droplets size={14} className="tag-ok" />
+                      <span>Water &amp; ice context</span>
+                    </div>
+                    <p>{selectedSite.water_note}</p>
+                  </div>
+                </div>
+
+                <div className="edu-site-actions">
+                  <button
+                    type="button"
+                    className="btn-secondary btn-compact"
+                    onClick={() => setFocusTrigger((n) => n + 1)}
+                  >
+                    <Eye size={14} />
+                    Focus on globe
+                  </button>
+                  {canLandAtSelectedSite && (
+                    <button
+                      type="button"
+                      className="btn-primary btn-compact"
+                      onClick={() => {
+                        setPlaying(false);
+                        setGameActive(true);
+                      }}
+                    >
+                      <Rocket size={14} />
+                      Land here
+                    </button>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="edu-site-hero">
+                  <h3 className="edu-site-title">Custom Surface Location</h3>
+                  {manualCoords && (
+                    <span className="edu-site-coords mono">
+                      {formatCoords(
+                        manualCoords.latitudeDeg,
+                        manualCoords.longitudeEastDeg,
+                      )}
+                    </span>
+                  )}
+                </div>
+                <p className="edu-site-story">
+                  You placed a custom pin on the Moon. Start the animation above
+                  to see how sunlight changes here over a full lunar cycle, or
+                  turn on the hydrogen layer below to explore polar water clues.
+                </p>
+                {currentFrame && (
+                  <div className="edu-fact-item">
+                    <div className="edu-fact-label">
+                      <Sun size={14} className="tag-sun" />
+                      <span>Current sunlight</span>
+                      <span
+                        className={`pill ${currentFrame.sun_visible ? "pill-amber" : "pill-muted"}`}
+                      >
+                        {currentFrame.sun_visible ? "Sunlit" : "In shadow"}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                <div className="edu-site-actions">
+                  <button
+                    type="button"
+                    className="btn-secondary btn-compact"
+                    onClick={() => setFocusTrigger((n) => n + 1)}
+                  >
+                    <Eye size={14} />
+                    Focus on globe
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* WEH & Lunar Phenomena */}
+          <div className="panel edu-phenomena-card">
+            <div className="edu-section-head">
+              <h2 className="edu-panel-title">WEH &amp; Lunar Phenomena</h2>
+              <p className="panel-sub">
+                Toggle surface water-ice clues and laser reflector guides
+              </p>
+            </div>
+
             <button
               type="button"
               className={`btn-secondary edu-feature-btn ${showWaterLayer ? "active" : ""}`}
               onClick={handleToggleWater}
             >
-              <Droplets size={15} className="tag-earth" />
-              <span>Water-equivalent hydrogen (WEH)</span>
+              <span className="edu-feature-btn-left">
+                <Droplets size={15} className="tag-earth" />
+                <span>Water-equivalent hydrogen (WEH)</span>
+              </span>
               <span className="pill pill-cyan">
                 {showWaterLayer ? "ON" : "OFF"}
               </span>
             </button>
+
+            {showWaterLayer && (
+              <p className="edu-phenomena-note">
+                Brighter cyan regions mark places where orbital instruments
+                detected higher hydrogen levels — an important clue when
+                searching for hidden polar ice.
+              </p>
+            )}
+
             <button
               type="button"
               className={`btn-secondary edu-feature-btn ${showMirrorGuide ? "active" : ""}`}
               onClick={handleToggleMirrorGuide}
             >
-              <Sparkles size={15} className="tag-ok" />
               <span>How do lunar reflectors work?</span>
-              <span className="pill pill-ok">LRRR</span>
+              <span className="pill pill-ok">
+                {showMirrorGuide ? "Hide" : "Guide"}
+              </span>
             </button>
-            <a
-              href="https://pgda.gsfc.nasa.gov/products/69"
-              target="_blank"
-              rel="noreferrer"
-              className="edu-pgda-link"
-            >
-              <Info size={13} />
-              Polar illumination and shadow: NASA PGDA LOLA 69
-            </a>
-          </div>
-        </aside>
-        {/* Globe, three-body view and guide */}
-        <section className="edu-stage">
-          <div className="edu-dual-viewports">
-            <div className="panel edu-globe-panel">
-              <ViewportFrame>
-                <EducationMoonViewport3D
-                  sites={sites}
-                  selectedSite={selectedSite}
-                  manualCoords={manualCoords}
-                  currentFrame={currentFrame}
-                  showWaterLayer={showWaterLayer}
-                  showMirrorLaser={showMirrorGuide}
-                  pinMode={pinMode}
-                  onSelectSite={handleSelectSite}
-                  onSurfacePick={handleSurfacePick}
-                />
-              </ViewportFrame>
-            </div>
-            <div className="edu-right-stack">
-              <ThreeBodyOrbitMini
-                frames={cycleData?.frames ?? []}
-                currentFrame={currentFrame}
-              />
-              {showMirrorGuide ? (
-                <div className="panel edu-info-card edu-mirror-card">
-                  <div className="panel-header">
-                    <div>
-                      <div className="eyebrow tag-ok">
-                        {LUNAR_MIRROR_GUIDE.title}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      className="btn-icon"
-                      onClick={() => setShowMirrorGuide(false)}
-                      title="Close explanation"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                  <p className="edu-card-p">{LUNAR_MIRROR_GUIDE.summary}</p>
-                  <ul className="edu-card-list">
-                    {LUNAR_MIRROR_GUIDE.steps.map((st) => (
-                      <li key={st}>{st}</li>
+
+            {showMirrorGuide && (
+              <div className="edu-mirror-box">
+                <div className="edu-mirror-head">
+                  <strong>{LUNAR_MIRROR_GUIDE.title}</strong>
+                  <button
+                    type="button"
+                    className="btn-icon"
+                    onClick={() => setShowMirrorGuide(false)}
+                    title="Close explanation"
+                    aria-label="Close explanation"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+                <p className="edu-card-p">{LUNAR_MIRROR_GUIDE.summary}</p>
+                <ul className="edu-card-list">
+                  {LUNAR_MIRROR_GUIDE.steps.map((st) => (
+                    <li key={st}>{st}</li>
+                  ))}
+                </ul>
+                <div className="edu-discoveries">
+                  <strong>What can we learn from them?</strong>
+                  <ul>
+                    {LUNAR_MIRROR_GUIDE.discoveries.map((d) => (
+                      <li key={d}>{d}</li>
                     ))}
                   </ul>
-                  <div className="edu-discoveries">
-                    <strong>What can we learn from them?</strong>
-                    <ul>
-                      {LUNAR_MIRROR_GUIDE.discoveries.map((d) => (
-                        <li key={d}>{d}</li>
-                      ))}
-                    </ul>
-                  </div>
                 </div>
-              ) : (
-                <div className="panel edu-info-card">
-                  <div className="panel-header">
-                    <div>
-                      <div className="eyebrow">
-                        {manualCoords
-                          ? "MANUAL COORDINATES"
-                          : (selectedSite?.category_label ??
-                            "LOCATION DETAILS")}
-                      </div>
-                      <h3 className="edu-site-title">
-                        {manualCoords
-                          ? `Location (${manualCoords.latitudeDeg.toFixed(2)}°, ${manualCoords.longitudeEastDeg.toFixed(2)}°E)`
-                          : (selectedSite?.name ?? "Select a location")}
-                      </h3>
-                    </div>
-                    {selectedSite && !manualCoords && (
-                      <span
-                        className={`pill ${CATEGORY_BADGE_CLASS[selectedSite.category]}`}
-                      >
-                        {selectedSite.mission_or_source}
-                      </span>
-                    )}
-                  </div>
-                  {selectedSite && !manualCoords ? (
-                    <div className="edu-site-facts">
-                      <div>
-                        <strong className="tag-sun">Sunlight:</strong>{" "}
-                        {selectedSite.illumination_note}
-                      </div>
-                      <div>
-                        <strong className="tag-earth">Earth:</strong>{" "}
-                        {selectedSite.earth_visibility_note}
-                      </div>
-                      <div>
-                        <strong className="tag-ok">Water (H₂O):</strong>{" "}
-                        {selectedSite.water_note}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="edu-card-p">
-                      The coordinates were selected on the lunar globe. Play the
-                      cycle to inspect changing solar elevation, and enable{" "}
-                      <strong>WEH</strong> to explore estimated hydrogen
-                      abundance.
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
-          <SpacecraftGuide />
-        </section>
+        </aside>
       </div>
+
+      <SpacecraftGuide />
     </div>
   );
 }

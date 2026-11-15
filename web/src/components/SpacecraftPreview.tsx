@@ -24,9 +24,13 @@ export function SpacecraftPreview() {
     controls.enablePan = false;
     controls.enableDamping = true;
     const resize = new ResizeObserver(() => {
-      renderer.setSize(root.clientWidth, 200);
-      camera.aspect = root.clientWidth / 200;
-      camera.updateProjectionMatrix();
+      const width = root.clientWidth;
+      const height = root.clientHeight || 200;
+      if (width > 0 && height > 0) {
+        renderer.setSize(width, height);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      }
     });
     resize.observe(root);
     let frame = 0;

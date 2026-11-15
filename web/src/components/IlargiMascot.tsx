@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Sparkles, Volume2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Volume2 } from "lucide-react";
 import { ILARGI_FUN_FACTS } from "../data/educationFacts";
 
 interface IlargiMascotProps {
@@ -82,7 +82,7 @@ export function IlargiMascot({
           <div className="ilargi-bubble-badges">
             <span className="pill pill-cyan">
               <Volume2 size={11} />{" "}
-              {bubbleMode === "fact" ? "LUNAR DISCOVERY" : speakerMood}
+              {bubbleMode === "fact" ? "DID YOU KNOW?" : speakerMood}
             </span>
           </div>
           {showFunFacts && (
@@ -110,8 +110,7 @@ export function IlargiMascot({
                 className="btn-mini ilargi-fact-btn"
                 onClick={() => handleTriggerFact(1)}
               >
-                <Sparkles size={12} />
-                Explore ({factIdx + 1}/{ILARGI_FUN_FACTS.length})
+                Did you know ({factIdx + 1}/{ILARGI_FUN_FACTS.length})
                 <ChevronRight size={13} />
               </button>
             </div>

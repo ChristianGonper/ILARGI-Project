@@ -6,6 +6,11 @@ import {
   latLonToThreeVector,
   threeVectorToLatLon,
 } from "../../three/moonCoordinates";
+import {
+  createCameraOrbitTween,
+  stepCameraOrbitTween,
+  type CameraOrbitTween,
+} from "../../three/moonNavigation";
 import { orbitPointLatLon, type GameLandingSite } from "./gamePhysics";
 
 interface Phase1OrbitViewport3DProps {
@@ -82,6 +87,9 @@ export function Phase1OrbitViewport3D({
   const orbitLineRef = useRef<THREE.Line | null>(null);
   const groundTrackLineRef = useRef<THREE.Line | null>(null);
   const spacecraftRef = useRef<THREE.Group | null>(null);
+  const cameraTweenRef = useRef<CameraOrbitTween | null>(null);
+  const prevSiteKeyRef = useRef<string | null>(null);
+  const prevAlignedRef = useRef<boolean>(groundTrackAligned);
 
   const orbitParamsRef = useRef({
     inc: currentInclinationDeg,
@@ -131,6 +139,10 @@ export function Phase1OrbitViewport3D({
     controls.maxDistance = 5.6;
     controls.enablePan = false;
     controlsRef.current = controls;
+    const onControlStart = () => {
+      cameraTweenRef.current = null;
+    };
+    controls.addEventListener("start", onControlStart);
 
     scene.add(new THREE.AmbientLight(0xcbd5e1, 0.55));
     const sunLight = new THREE.DirectionalLight(0xfffbeb, 1.9);
@@ -359,6 +371,15 @@ export function Phase1OrbitViewport3D({
         }
       }
 
+      if (cameraTweenRef.current) {
+        const active = stepCameraOrbitTween(
+          cameraTweenRef.current,
+          camera,
+          controls,
+        );
+        if (!active) cameraTweenRef.current = null;
+      }
+
       controls.update();
       renderer.render(scene, camera);
     };
@@ -368,6 +389,7 @@ export function Phase1OrbitViewport3D({
       disposed = true;
       cancelAnimationFrame(rafId);
       resizeObserver.disconnect();
+      controls.removeEventListener("start", onControlStart);
       renderer.domElement.removeEventListener("pointerdown", onPointerDown);
       renderer.domElement.removeEventListener("pointerup", onPointerUp);
       controls.dispose();
@@ -479,70 +501,68 @@ export function Phase1OrbitViewport3D({
     group.add(sprite);
   }, [selectedSite, groundTrackAligned]);
 
-  useEffect(() => {
-    if (cameraRef.current && controlsRef.current && cameraPreset === "target") {
-      const normal = latLonToThreeVector(
-        selectedSite.latitudeDeg,
-        selectedSite.longitudeEastDeg,
-        1,
-      ).normalize();
-      const camDir = normal
-        .add(new THREE.Vector3(0.28, 0.22, 0.28))
-        .normalize();
-      cameraRef.current.position.copy(camDir.multiplyScalar(3.6));
-      controlsRef.current.target.set(0, 0, 0);
-      controlsRef.current.update();
-    }
-  }, [selectedSite, cameraPreset]);
-
-  useEffect(() => {
-    if (!groundTrackAligned) return;
-    const camera = cameraRef.current;
-    const controls = controlsRef.current;
-    if (!camera || !controls) return;
-    const start = camera.position.clone();
-    const end = latLonToThreeVector(
-      selectedSite.latitudeDeg,
-      selectedSite.longitudeEastDeg,
+  const targetCameraPosition = (site: GameLandingSite) => {
+    const normal = latLonToThreeVector(
+      site.latitudeDeg,
+      site.longitudeEastDeg,
       1,
-    )
-      .normalize()
-      .add(new THREE.Vector3(0.3, 0.25, 0.3))
+    ).normalize();
+    return normal
+      .add(new THREE.Vector3(0.28, 0.22, 0.28))
       .normalize()
       .multiplyScalar(3.6);
-    const began = performance.now();
-    let frame = 0;
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - began) / 1200);
-      camera.position.lerpVectors(start, end, t * t * (3 - 2 * t));
-      controls.update();
-      if (t < 1) frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
+  };
+
+  useEffect(() => {
+    const key = `${selectedSite.id}:${selectedSite.latitudeDeg}:${selectedSite.longitudeEastDeg}`;
+    if (prevSiteKeyRef.current === null) {
+      prevSiteKeyRef.current = key;
+      return;
+    }
+    if (prevSiteKeyRef.current === key) return;
+    prevSiteKeyRef.current = key;
+
+    const camera = cameraRef.current;
+    if (!camera) return;
+    cameraTweenRef.current = createCameraOrbitTween(
+      camera.position,
+      targetCameraPosition(selectedSite),
+      720,
+    );
+    setCameraPreset("target");
+  }, [selectedSite]);
+
+  useEffect(() => {
+    const wasAligned = prevAlignedRef.current;
+    prevAlignedRef.current = groundTrackAligned;
+    if (!groundTrackAligned || wasAligned) return;
+    const camera = cameraRef.current;
+    if (!camera) return;
+    cameraTweenRef.current = createCameraOrbitTween(
+      camera.position,
+      targetCameraPosition(selectedSite),
+      900,
+    );
+    setCameraPreset("target");
   }, [groundTrackAligned, selectedSite]);
+
   const moveCamera = (preset: "target" | "global" | "south") => {
     setCameraPreset(preset);
     const camera = cameraRef.current;
-    const controls = controlsRef.current;
-    if (!camera || !controls) return;
+    if (!camera) return;
+    let targetPos: THREE.Vector3;
     if (preset === "target") {
-      const dir = latLonToThreeVector(
-        selectedSite.latitudeDeg,
-        selectedSite.longitudeEastDeg,
-        1,
-      )
-        .normalize()
-        .add(new THREE.Vector3(0.28, 0.22, 0.28))
-        .normalize();
-      camera.position.copy(dir.multiplyScalar(3.6));
+      targetPos = targetCameraPosition(selectedSite);
     } else if (preset === "south") {
-      camera.position.set(1.3, -3.1, 2.4);
+      targetPos = new THREE.Vector3(1.3, -3.1, 2.4);
     } else {
-      camera.position.set(0.5, 0.7, 4.2);
+      targetPos = new THREE.Vector3(0.5, 0.7, 4.2);
     }
-    controls.target.set(0, 0, 0);
-    controls.update();
+    cameraTweenRef.current = createCameraOrbitTween(
+      camera.position,
+      targetPos,
+      700,
+    );
   };
 
   return (
