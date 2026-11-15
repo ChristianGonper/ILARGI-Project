@@ -100,9 +100,6 @@ export function InputPanel({
             P<sub>i</sub>(λ, θ, t) · catalog or manual
           </div>
         </div>
-        <span className="pill pill-muted">
-          {points.length} / {MAX_POINTS} max
-        </span>
       </div>
 
       <div className="pin-mode-row">
@@ -132,7 +129,7 @@ export function InputPanel({
             onClick={() => onFocusPoint(idx)}
           >
             <div className="point-card-head">
-              <span className="point-tag">P{idx + 1}</span>
+              <span className="point-tag">{idx + 1}</span>
               <select
                 className="input-select"
                 value={pt.presetId}
@@ -238,7 +235,6 @@ export function InputPanel({
           <Plus size={15} />
           Add point
         </button>
-        <span className="muted-note">max {MAX_POINTS}</span>
       </div>
 
       <div className="params-section">

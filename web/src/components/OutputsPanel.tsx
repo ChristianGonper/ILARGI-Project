@@ -13,6 +13,7 @@ import { SkyAzimuthPlot } from "./SkyAzimuthPlot";
 
 interface OutputsPanelProps {
   result: SiteAnalysisResult;
+  hidden?: boolean;
   onClose: () => void;
 }
 
@@ -39,28 +40,31 @@ function downloadSeriesCsv(result: SiteAnalysisResult) {
   URL.revokeObjectURL(url);
 }
 
-export function OutputsPanel({ result, onClose }: OutputsPanelProps) {
+export function OutputsPanel({ result, onClose, hidden }: OutputsPanelProps) {
   return (
-    <aside className="panel outputs-panel">
+    <aside className="panel outputs-panel" hidden={hidden}>
       <div className="panel-header">
         <div>
           <div className="eyebrow eyebrow-accent">
             OUTPUTS · {result.label} · {result.site_name}
           </div>
-          <div className="mono-coords">
-            λ={result.latitude_deg.toFixed(3)}° · θ=
-            {result.longitude_east_deg.toFixed(3)}°E
-            {result.ground_elevation_m !== null
-              ? ` · elevation ${result.ground_elevation_m.toFixed(1)} m`
-              : " · reference sphere 1,737.4 km"}
-          </div>
-          <div className="mono-sub">
-            Start {formatUtcShort(result.start_utc)} · window{" "}
-            {result.duration_hours} h
-            {result.horizon_mode === "lola"
-              ? ` · tangent ${result.search_radius_km.toFixed(1)} km`
-              : ""}
-          </div>
+          <details className="result-context">
+            <summary>Location and analysis context</summary>
+            <div className="mono-coords">
+              λ={result.latitude_deg.toFixed(3)}° · θ=
+              {result.longitude_east_deg.toFixed(3)}°E
+              {result.ground_elevation_m !== null
+                ? ` · elevation ${result.ground_elevation_m.toFixed(1)} m`
+                : " · reference sphere 1,737.4 km"}
+            </div>
+            <div className="mono-sub">
+              Start {formatUtcShort(result.start_utc)} · window{" "}
+              {result.duration_hours} h
+              {result.horizon_mode === "lola"
+                ? ` · tangent ${result.search_radius_km.toFixed(1)} km`
+                : ""}
+            </div>
+          </details>
         </div>
         <div className="outputs-head-actions">
           <span
@@ -72,7 +76,8 @@ export function OutputsPanel({ result, onClose }: OutputsPanelProps) {
             type="button"
             className="btn-icon"
             onClick={onClose}
-            title="Close results panel"
+            title="Hide results panel"
+            aria-label="Hide results panel"
           >
             <X size={15} />
           </button>

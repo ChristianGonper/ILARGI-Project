@@ -223,6 +223,7 @@ export function SkyAzimuthPlot({ result, height = 300 }: SkyAzimuthPlotProps) {
   const subtitle = `${result.label} · ${result.site_name} (λ=${result.latitude_deg.toFixed(3)}°, θ=${result.longitude_east_deg.toFixed(3)}°E · ${result.horizon_label})`;
   return (
     <PlotFullscreenShell
+      replay
       title="Azimuth–elevation diagram (Horizon · Sun · Earth)"
       subtitle={subtitle}
       height={height}

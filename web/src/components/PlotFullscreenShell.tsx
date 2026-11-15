@@ -1,11 +1,12 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { Maximize2, Minimize2 } from "lucide-react";
+import { Maximize2, Minimize2, RotateCcw } from "lucide-react";
 
 interface PlotFullscreenShellProps {
   title: string;
   subtitle?: string;
   height: number;
+  replay?: boolean;
   children: (renderHeight: number, isFullscreen: boolean) => ReactNode;
 }
 
@@ -18,8 +19,20 @@ export function PlotFullscreenShell({
   title,
   subtitle,
   height,
+  replay = false,
   children,
 }: PlotFullscreenShellProps) {
+  const [replayKey, setReplayKey] = useState(0);
+  const replayButton = replay && (
+    <button
+      className="btn-mini"
+      type="button"
+      onClick={() => setReplayKey((k) => k + 1)}
+    >
+      <RotateCcw size={13} />
+      Replay tracks
+    </button>
+  );
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [modalHeight, setModalHeight] = useState<number>(
     computeFullscreenHeight,
@@ -54,6 +67,7 @@ export function PlotFullscreenShell({
       <div className="plot-shell">
         <div className="plot-shell-bar">
           <div className="chart-title">{title}</div>
+          {replayButton}
           <button
             type="button"
             className="btn-mini plot-expand-btn"
@@ -65,7 +79,7 @@ export function PlotFullscreenShell({
             <span>Expand</span>
           </button>
         </div>
-        {!isFullscreen && children(height, false)}
+        {!isFullscreen && <div key={replayKey}>{children(height, false)}</div>}
       </div>
 
       {isFullscreen &&
@@ -97,7 +111,8 @@ export function PlotFullscreenShell({
                   <span>Close (Esc)</span>
                 </button>
               </div>
-              <div className="plot-fullscreen-body">
+              {replayButton}
+              <div key={replayKey} className="plot-fullscreen-body">
                 {children(modalHeight, true)}
               </div>
             </div>

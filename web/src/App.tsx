@@ -1,3 +1,4 @@
+import { ViewportFrame } from "./components/ViewportFrame";
 import { lazy, useCallback, useEffect, useRef, useState } from "react";
 import { Home } from "lucide-react";
 import {
@@ -257,6 +258,7 @@ export function App() {
     );
   }
 
+  const [resultsHidden, setResultsHidden] = useState(false);
   const singleResult = results && results.length === 1 ? results[0] : null;
   const multiResults = results && results.length > 1 ? results : null;
 
@@ -314,8 +316,21 @@ export function App() {
             </div>
           )}
 
+          {singleResult && (
+            <div className="workspace-toolbar">
+              <button
+                className="btn-secondary"
+                type="button"
+                onClick={() => setResultsHidden(!resultsHidden)}
+              >
+                {resultsHidden
+                  ? "Show analysis results"
+                  : "Hide results to enlarge Moon"}
+              </button>
+            </div>
+          )}
           <main
-            className={`workspace-grid ${singleResult ? "with-outputs" : "globe-wide"}`}
+            className={`workspace-grid ${singleResult && !resultsHidden ? "with-outputs" : "globe-wide"}`}
           >
             <InputPanel
               points={points}
@@ -344,23 +359,26 @@ export function App() {
             />
 
             <section className="panel moon-panel">
-              <MoonViewport3D
-                historicalSites={historicalSites}
-                activePoints={points}
-                focusedIndex={singleResult ? 0 : focusedIndex}
-                pinMode={pinMode}
-                mineralOverlay={mineralOverlay}
-                selectedMinerals={selectedMinerals}
-                onSelectHistoricalSite={handleGlobeHistoricalClick}
-                onSelectActivePoint={(idx) => setFocusedIndex(idx)}
-                onSurfacePick={handleSurfacePick}
-              />
+              <ViewportFrame>
+                <MoonViewport3D
+                  historicalSites={historicalSites}
+                  activePoints={points}
+                  focusedIndex={singleResult ? 0 : focusedIndex}
+                  pinMode={pinMode}
+                  mineralOverlay={mineralOverlay}
+                  selectedMinerals={selectedMinerals}
+                  onSelectHistoricalSite={handleGlobeHistoricalClick}
+                  onSelectActivePoint={(idx) => setFocusedIndex(idx)}
+                  onSurfacePick={handleSurfacePick}
+                />
+              </ViewportFrame>
             </section>
 
             {singleResult && (
               <OutputsPanel
                 result={singleResult}
-                onClose={() => setResults(null)}
+                hidden={resultsHidden}
+                onClose={() => setResultsHidden(true)}
               />
             )}
           </main>

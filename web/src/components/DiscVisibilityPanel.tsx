@@ -328,12 +328,28 @@ export function DiscVisibilityPanel({ result }: DiscVisibilityPanelProps) {
     return bestIdx;
   }, [result]);
 
+  const [playing, setPlaying] = useState(false);
   const [sampleIdx, setSampleIdx] = useState(defaultIndex);
 
   useEffect(() => {
     setSampleIdx(defaultIndex);
   }, [defaultIndex]);
 
+  useEffect(() => {
+    if (!playing) return;
+    const timer = window.setInterval(
+      () =>
+        setSampleIdx((index) => {
+          if (index >= result.series.sun.length - 1) {
+            setPlaying(false);
+            return index;
+          }
+          return index + 1;
+        }),
+      180,
+    );
+    return () => window.clearInterval(timer);
+  }, [playing, result]);
   const sunSeries = result.series.sun;
   const earthSeries = result.series.earth;
   if (sunSeries.length === 0) return null;
@@ -361,7 +377,7 @@ export function DiscVisibilityPanel({ result }: DiscVisibilityPanelProps) {
         <div className="disc-controls">
           <div className="disc-controls-head">
             <span className="chart-title" style={{ marginBottom: 0 }}>
-              Disc sample time (UTC)
+              Disc timeline (UTC)
             </span>
             <span className="mono-sub">
               {formatUtcShort(sunSample.utc)}
@@ -370,13 +386,38 @@ export function DiscVisibilityPanel({ result }: DiscVisibilityPanelProps) {
                 : ""}
             </span>
           </div>
+          <div className="disc-playback">
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => {
+                if (clampedIdx === sunSeries.length - 1) setSampleIdx(0);
+                setPlaying(!playing);
+              }}
+            >
+              {playing ? "Pause" : "Play disc timeline"}
+            </button>
+            <button
+              type="button"
+              className="btn-mini"
+              onClick={() => {
+                setPlaying(false);
+                setSampleIdx(0);
+              }}
+            >
+              Restart
+            </button>
+          </div>
           <input
             type="range"
             min={0}
             max={Math.max(0, sunSeries.length - 1)}
             value={clampedIdx}
-            onChange={(ev) => setSampleIdx(Number(ev.target.value))}
-            aria-label="Disc sample time (UTC)"
+            onChange={(ev) => {
+              setPlaying(false);
+              setSampleIdx(Number(ev.target.value));
+            }}
+            aria-label="Disc timeline (UTC)"
             className="disc-slider"
           />
           <div className="disc-metrics-row mono-sub">
