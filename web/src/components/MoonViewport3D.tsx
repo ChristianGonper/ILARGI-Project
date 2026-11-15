@@ -783,10 +783,7 @@ export function MoonViewport3D({
   return (
     <div className="moon-viewport-shell">
       <div className="moon-hud-top">
-        <div className="moon-hud-pills">
-          <span className="pill pill-muted">Lunar surface</span>
-          <span className="pill pill-cyan">South of 80° S · LOLA / LP-GRS</span>
-        </div>
+        <div className="moon-hud-pills" />
         <div className="moon-camera-btns">
           <button
             type="button"

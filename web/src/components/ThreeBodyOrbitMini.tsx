@@ -26,9 +26,9 @@ function j2000ToEclipticThree(v: [number, number, number]): THREE.Vector3 {
   return new THREE.Vector3(x, zEcl, -yEcl);
 }
 
-const HELIO_SCALE = 1 / 12_000_000; // 150M km ≈ 12.5 unidades
+const HELIO_SCALE = 1 / 12_000_000; // 150M km ≈ 12.5 units
 const MOON_EXAGGERATION = 42;
-const REAL_SCALE_EARTH_MOON = 1 / 50_000; // 384,400 km ≈ 7.69 unidades (1:1 real!)
+const REAL_SCALE_EARTH_MOON = 1 / 50_000; // 384,400 km ≈ 7.69 units (true 1:1 scale)
 
 export type LunarPhaseKey =
   "new_moon" | "first_quarter" | "full_moon" | "last_quarter";
@@ -168,7 +168,7 @@ export function ThreeBodyOrbitMini({
     controls.minDistance = 1.2;
     controls.maxDistance = 55;
 
-    // Estrellas discretas
+    // Subtle background stars
     const stars = new Float32Array(300 * 3);
     for (let i = 0; i < 300; i++) {
       const r = 35 + Math.random() * 25;
@@ -384,7 +384,7 @@ export function ThreeBodyOrbitMini({
       refs.dirSunLight.visible = true;
       refs.moonLocator.visible = true;
 
-      // Radios proporcionales 1:1 (R_Earth=6371 km -> 0.127 u, R_Moon=1737.4 km -> 0.035 u)
+      // 1:1 proportional radii (R_Earth=6371 km -> 0.127 u, R_Moon=1737.4 km -> 0.035 u)
       const rEarthScaled = (6371 * REAL_SCALE_EARTH_MOON) / 0.28;
       const rMoonScaled = (1737.4 * REAL_SCALE_EARTH_MOON) / 0.11;
       refs.earthMesh.scale.setScalar(rEarthScaled);

@@ -127,7 +127,7 @@ export function Phase2DescentView({
     }
 
     const p = burnDone ? 1 : burnProgress;
-    // Dos sub-tramos:
+    // Two descent legs:
 
     if (p < 0.55) {
       const k = p / 0.55;
@@ -280,7 +280,7 @@ export function Phase2DescentView({
           {errorNote && <div className="supercalc-result-err">{errorNote}</div>}
         </div>
 
-        {/* TELEMETRÍA VELOCIDAD (m/s) Y ΔV NECESARIO */}
+        {/* Speed (m/s) and required ΔV telemetry */}
         <div className="phase2-telemetry-strip">
           <div className="phase2-telem-item">
             <span className="kpi-label">
@@ -308,7 +308,7 @@ export function Phase2DescentView({
           </div>
         </div>
 
-        {/* BOTÓN ROJO CON UN COHETE */}
+        {/* Red rocket ignition button */}
         <button
           type="button"
           className={`red-rocket-btn ${validated && !burning && !burnDone ? "ready" : ""} ${burning ? "burning" : ""}`}
@@ -374,7 +374,7 @@ export function Phase2DescentView({
               </linearGradient>
             </defs>
 
-            {/* Fondo estrellado */}
+            {/* Starfield background */}
             <rect width="640" height="330" fill="#060a12" />
             {[
               [42, 34],
@@ -415,7 +415,7 @@ export function Phase2DescentView({
               PARKING ORBIT ({mechanics.orbitAltitudeKm} km)
             </text>
 
-            {/* Superficie lunar curva */}
+            {/* Curved lunar surface */}
             <path
               d="M -20 330 Q 320 245 660 330 Z"
               fill="url(#moonHorizonGrad)"

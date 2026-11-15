@@ -218,7 +218,7 @@ export function EducationMoonViewport3D({
     });
     scene.add(new THREE.Points(starGeo, starMat));
 
-    // Esfera lunar texturizada LROC + relieve LOLA
+    // LROC textured lunar sphere + LOLA relief
     const fallbackTex = makeFallbackTexture();
     const sphereGeo = new THREE.SphereGeometry(1.0, 128, 96);
     sphereGeo.rotateY(-Math.PI / 2);

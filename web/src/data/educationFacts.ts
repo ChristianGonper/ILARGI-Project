@@ -136,7 +136,7 @@ export const POLAR_WATER_COLD_TRAPS: PolarColdTrapZone[] = [
     lonEastDeg: 44.313,
     radiusDeg: 1.35,
     areaKm2: 1221,
-    note: "1.221 km² in permanent shadow",
+    note: "1,221 km² in permanent shadow",
   },
   {
     id: "psr-faustini",
@@ -154,7 +154,7 @@ export const POLAR_WATER_COLD_TRAPS: PolarColdTrapZone[] = [
     lonEastDeg: -4.854,
     radiusDeg: 1.5,
     areaKm2: 1581,
-    note: "1.581 km² in permanent shadow",
+    note: "1,581 km² in permanent shadow",
   },
   {
     id: "psr-hermite",

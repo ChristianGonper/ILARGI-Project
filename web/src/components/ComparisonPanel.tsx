@@ -234,8 +234,8 @@ export function ComparisonPanel({
       {comparedLabels.length > 0 && (
         <div className="stacked-plots">
           <div className="eyebrow">
-            GRÁFICOS COMPARATIVOS APILADOS · ACIMUT vs ELEVACIÓN Y EVOLUCIÓN
-            DIARIA
+            STACKED COMPARISON CHARTS · AZIMUTH vs ELEVATION &amp; DAILY
+            EVOLUTION
           </div>
           {comparedLabels.map((lbl) => {
             const r = byLabel.get(lbl);

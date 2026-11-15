@@ -224,7 +224,7 @@ export function formatMaterialsSummary(r: SiteAnalysisResult): string {
     return `No LP-GRS data at this location · WEH: ${mat.water_status}`;
   }
   const parts = Object.entries(mat.elements).map(([sym, el]) => {
-    if (el.value === null) return `${sym}: s/d`;
+    if (el.value === null) return `${sym}: n/a`;
     const unit = el.unit.replace(" by mass", "");
     return `${sym}: ${el.value.toFixed(2)} ${unit} (${el.category})`;
   });
