@@ -5,27 +5,36 @@ ILARGI combines planetary ephemerides, spherical lunar topography, disc occultat
 ## End-to-end scientific pipeline
 
 ```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'background': '#ffffff', 'primaryTextColor': '#0f172a', 'lineColor': '#64748b'}}}%%
 flowchart LR
-    K["Pinned Ephemeris & Frame Kernels<br/>(NAIF DE440s, LSK, PCK, Lunar FK)"] --> E["Time & Ephemeris Session<br/>(UTC → ET/TDB, serialized SPICE)"]
-    E --> A["Apparent Surface Geometry<br/>(SPICE LT+S in MOON_ME_DE440_ME421)"]
-    A --> S["Sky Track Time Series<br/>(Sun & Earth azimuth, elevation, range)"]
+    classDef source fill:#ede9fe,stroke:#7c3aed,color:#0f172a,stroke-width:1.5px;
+    classDef ephem fill:#fef3c7,stroke:#d97706,color:#0f172a,stroke-width:1.5px;
+    classDef topo fill:#d1fae5,stroke:#059669,color:#0f172a,stroke-width:1.5px;
+    classDef engine fill:#dbeafe,stroke:#2563eb,color:#0f172a,stroke-width:1.5px;
+    classDef api fill:#ffe4e6,stroke:#e11d48,color:#0f172a,stroke-width:1.5px;
 
-    T["Lunar Elevation Reader<br/>(LOLA GeoTIFF & Global VRT validation)"] --> H["Spherical Horizon Tracer<br/>(Curved-Moon rays & multi-DEM merge)"]
+    K[("Pinned Ephemeris &amp; Frame Kernels<br/>NAIF DE440s · LSK · PCK · Lunar FK")]:::source --> E["Time &amp; Ephemeris Session<br/>UTC → ET/TDB · serialized SPICE"]:::ephem
+    E --> A["Apparent Surface Geometry<br/>SPICE LT+S in MOON_ME_DE440_ME421"]:::ephem
+    A --> S["Sky Track Time Series<br/>Sun &amp; Earth az, el, range"]:::ephem
 
-    S --> AN["Site Visibility & Analysis Engine"]
+    T[("Lunar Elevation Reader<br/>LOLA GeoTIFF &amp; Global VRT")]:::source --> H["Spherical Horizon Tracer<br/>Curved-Moon rays &amp; multi-DEM merge"]:::topo
+
+    S --> AN["Site Visibility &amp; Analysis Engine"]:::engine
     H --> AN
-    D["Finite Disc & Eclipse Model<br/>(61×61 disc grid vs. horizon & Earth)"] --> AN
-    EV["Crossing & Interval Solver<br/>(Sunrise/set, outages, simultaneous windows)"] --> AN
-    M["Regional Geochemistry Lookup<br/>(LP-GRS 5° cells & WEH 0.5° grid)"] --> AN
+    D["Finite Disc &amp; Eclipse Model<br/>61×61 disc grid vs. horizon &amp; Earth"]:::engine --> AN
+    EV["Crossing &amp; Interval Solver<br/>Sunrise/set, outages, simultaneous"]:::engine --> AN
+    M[("Regional Geochemistry Lookup<br/>LP-GRS 5° cells &amp; WEH 0.5° grid")]:::topo --> AN
 
-    E --> EDU["Educational Cycle & 3-Body Engine<br/>(Synodic cycle + J2000 geometric vectors)"]
+    E --> EDU["Educational Cycle &amp; 3-Body Engine<br/>Synodic cycle + J2000 geometric vectors"]:::engine
     A --> EDU
     H --> EDU
 
-    AN --> API["REST API & Serialization Layer"]
+    AN --> API{{"REST API &amp; Static Demo Export"}}:::api
     EDU --> API
-    SI["Curated Lunar Site Catalog"] --> API
+    SI[("Curated Lunar Site Catalog")]:::source --> API
 ```
+
+![Curved-Moon Ray Tracing and Finite-Disc Visibility](diagrams/lunar_horizon_and_disc.png)
 
 ## How the scientific subsystems connect
 
@@ -44,11 +53,11 @@ flowchart LR
 
   $$r_{\max}\cos(\alpha + \theta) = r_{\text{obs}}\cos(\alpha)$$
 
-- **Spherical ray tracing:** Along each azimuth (default `0.25°` step in the API), terrain is sampled along great-circle arcs at pixel spacing. Each sample's obstacle elevation angle accounts for lunar curvature and observer height:
+- **Spherical ray tracing:** Along each azimuth (`0.25°` default in the API; `1.0°` default in `analyze_site()`), terrain is sampled along great-circle arcs at pixel spacing (guarded at `4,000,000` ray samples). Each sample's obstacle elevation angle accounts for lunar curvature and observer height:
 
   $$\text{up} = (R + h)\cos\theta - (R + h_{\text{obs}}), \quad \text{horizontal} = (R + h)\sin\theta, \quad \text{elev} = \operatorname{atan2}(\text{up}, \text{horizontal})$$
 
-- **Explicit coverage and multi-resolution cascade:** Rays stop at `nodata` or raster edges without extrapolating, recording `coverage_m`. When both local high-resolution (20 m or 80 m) and wider/global (80 m or ~237 m) DEMs are available, the near DEM is traced first; its horizon elevation tightens the remaining search bound per azimuth before querying the coarser DEM only where needed. Where no DEM covers a site, an explicit ideal `0°` horizon is used and flagged.
+- **Explicit coverage and multi-resolution cascade:** Rays stop at `nodata` or raster edges without extrapolating, recording `coverage_m`. When both local high-resolution (`20 m` capped to `15 km` fine reach, or `80 m`) and wider/global (`80 m` or `~237 m`) DEMs are available, the near DEM is traced first; its horizon elevation tightens the remaining search bound per azimuth before querying the coarser DEM only where needed. Where no DEM covers a site, an explicit ideal `0°` horizon is used and flagged.
 
 ### 3. Finite discs, eclipses, and visibility events
 
@@ -62,5 +71,5 @@ flowchart LR
 
 ### 5. Educational engine and display separation
 
-- **Educational lunar cycle:** Reuses the SPICE surface geometry and a coarser (`5°` azimuth) LOLA horizon over one synodic lunar day (`~708.734 h`), while separately computing lunar-center Sun/Earth unit vectors in `MOON_ME_DE440_ME421` (for 3D globe illumination) and instantaneous `J2000` (`NONE`) heliocentric vectors (for the 3-body orbit view and lunar phase fraction).
+- **Educational lunar cycle:** Reuses the SPICE surface geometry and an optional single-DEM coarser (`5°` azimuth, up to `120 km`) LOLA horizon over one synodic lunar day (`~708.734 h`), while separately computing lunar-center Sun/Earth unit vectors in `MOON_ME_DE440_ME421` (for 3D globe illumination) and instantaneous `J2000` (`NONE`) heliocentric vectors (for the 3-body orbit view and lunar phase fraction).
 - **Display and gameplay separation:** The 3D globe relief uses a `2 × 2` block-averaged 8-samples/degree (~3.8 km/pixel) height field from NASA SVS CGI Moon Kit, and the landing game uses idealized two-body circular/impulsive orbital mechanics (`R = 1,737.4 km`, `GM = 4.9028 × 10¹² m³/s²`, `g = 1.622 m/s²`). Neither replaces the scientific backend calculations.
