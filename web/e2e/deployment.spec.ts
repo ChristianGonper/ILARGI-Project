@@ -1,5 +1,30 @@
 import { expect, test } from "@playwright/test";
 
+test("public live API calculates a location outside the saved catalog", async ({
+  page,
+}) => {
+  test.skip(
+    !process.env.ILARGI_LIVE_CHECK,
+    "Only run after connecting the public API.",
+  );
+  await page.goto("/");
+  await expect(page.getByRole("status")).toContainText(
+    "Live scientific API connected",
+    { timeout: 30000 },
+  );
+  await page.getByRole("button", { name: /Mission analysis/ }).click();
+  await page.getByLabel("Latitude (°)").fill("0.7");
+  await page.getByLabel("Longitude east (°)").fill("23.5");
+  await page.getByRole("button", { name: "Analyze locations" }).click();
+  await expect(page.locator(".js-plotly-plot").first()).toBeVisible({
+    timeout: 35000,
+  });
+  await expect(page.locator(".error-banner")).toHaveCount(0);
+  await expect(page.getByRole("status")).toContainText(
+    "Live scientific API connected",
+  );
+});
+
 test("API outage retains multi-point analysis, plots and honest request boundaries", async ({
   page,
 }) => {
@@ -63,5 +88,23 @@ test("education cycles, multiple locations and landing game work without Python"
   ).toBeEnabled();
   await page.getByRole("button", { name: "Start landing game" }).click();
   await expect(page.getByText("Phase 1 · Parking Orbit").first()).toBeVisible();
+  await page.getByRole("button", { name: "Calculate my orbit" }).click();
+  await page.getByRole("button", { name: /Apply inclination/ }).click();
+  await page
+    .getByRole("button", { name: "Continue to Phase 2: Orbital descent" })
+    .click();
+  await expect(
+    page.getByText("Phase 2 · Orbital altitude and ΔV").first(),
+  ).toBeVisible();
+  const altitudes = await page
+    .locator(".phase2-alt-box .kpi-value")
+    .allTextContents();
+  const descent = parseFloat(altitudes[0]) - parseFloat(altitudes[1]);
+  await page.getByPlaceholder("e.g. 100").fill(String(descent));
+  await page.getByRole("button", { name: "Check subtraction" }).click();
+  await page.locator(".red-rocket-btn").click();
+  await expect(
+    page.getByRole("button", { name: "Restart approach (Phase 3)" }),
+  ).toBeVisible({ timeout: 20000 });
   expect(errors).toEqual([]);
 });

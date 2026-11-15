@@ -257,8 +257,9 @@ export function App() {
   };
 
   const loadDemo = () => {
-    const demoPoints = historicalSites
-      .slice(0, 3)
+    const demoPoints = ["lola-center", "apollo-11", "change-4"]
+      .map((id) => historicalSites.find((site) => site.id === id))
+      .filter((site): site is HistoricalSite => site !== undefined)
       .map((site, index) => makePointFromSite(index + 1, site));
     const demoParams: AnalysisParams = {
       durationHours: 720,
