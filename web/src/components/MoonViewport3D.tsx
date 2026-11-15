@@ -217,7 +217,7 @@ export function MoonViewport3D({
       0.00001,
       100,
     );
-    camera.position.set(0.95, -1.95, 1.85);
+    camera.position.set(1.4, -2.9, 2.75);
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
@@ -744,9 +744,9 @@ export function MoonViewport3D({
     const controls = controlsRef.current;
     if (!camera || !controls) return;
     if (preset === "south") {
-      camera.position.set(0.95, -1.95, 1.85);
+      camera.position.set(1.4, -2.9, 2.75);
     } else {
-      camera.position.set(0.35, 0.45, 2.75);
+      camera.position.set(0.5, 0.65, 4.1);
     }
     controls.target.set(0, 0, 0);
     controls.update();
@@ -757,7 +757,7 @@ export function MoonViewport3D({
       <div className="moon-hud-top">
         <div className="moon-hud-pills">
           <span className="pill pill-muted">Lunar surface</span>
-          <span className="pill pill-cyan">80° S · LOLA / LP-GRS</span>
+          <span className="pill pill-cyan">South of 80° S · LOLA / LP-GRS</span>
         </div>
         <div className="moon-camera-btns">
           <button

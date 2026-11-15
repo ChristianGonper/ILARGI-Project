@@ -7,8 +7,25 @@ import * as THREE from "three";
 import {
   LunarHeightField,
   LunarTerrain,
+  loadLunarHeightField,
   terrainGeometry,
 } from "../src/three/lunarTerrain";
+
+test("terrain loading accepts both gzip assets and HTTP-decoded responses", async () => {
+  const payload = readFileSync(
+    new URL("../public/textures/moon_height.bin.gz", import.meta.url),
+  );
+  const originalFetch = globalThis.fetch;
+  try {
+    for (const bytes of [payload, gunzipSync(payload)]) {
+      globalThis.fetch = async () => new Response(bytes);
+      const field = await loadLunarHeightField(new AbortController().signal);
+      assert.ok(Number.isFinite(field.elevation(-89.5, 0)));
+    }
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
 
 test("height sampling uses half metres, pixel centers and longitude wrapping", () => {
   const field = new LunarHeightField(

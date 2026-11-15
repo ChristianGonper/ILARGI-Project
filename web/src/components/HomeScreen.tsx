@@ -1,4 +1,4 @@
-import { ArrowRight, Compass, GraduationCap, Microscope } from "lucide-react";
+import { ArrowRight, Compass, Telescope } from "lucide-react";
 import type { AppMode, HealthResponse } from "../types";
 
 interface HomeScreenProps {
@@ -10,84 +10,80 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
   return (
     <div className="home-shell">
       <header className="home-topbar">
-        <div className="topbar-left">
-          <span className="brand-title">ILARGI</span>
-          <span className="pill pill-cyan">
-            NASA Space Apps · Lunar Explorer
-          </span>
-        </div>
+        <span className="home-wordmark">
+          <span aria-hidden="true">◐</span> ILARGI
+        </span>
+        <span className="home-edition">
+          A LUNAR EXPLORATION PROJECT <span> / </span> NASA SPACE APPS
+        </span>
       </header>
       <main className="home-main">
-        <section className="home-hero">
-          <h1 className="home-title">ILARGI</h1>
-          <p className="home-lead">Discover the Moon.</p>
-        </section>
-        <section className="home-cards" aria-label="Choose an experience">
-          <article className="mode-card mode-card-edu">
-            <div className="mode-icon-badge edu">
-              <GraduationCap size={30} />
-            </div>
-            <span className="pill pill-cyan">Learn · Explore</span>
-            <h2>Education</h2>
-            <details className="mode-guide">
-              <summary>Which mode should I choose?</summary>
-              <p className="mode-desc">
-                Follow a full lunar solar cycle, rotate the Moon, and discover
-                how location changes the view.
-              </p>
-              <ul className="mode-features">
-                <li>A moving day–night boundary over the lunar globe.</li>
-                <li>
-                  Landing sites, illuminated ridges and polar shadow regions.
-                </li>
-                <li>Water-equivalent hydrogen and laser retroreflectors.</li>
-                <li>A three-body view and an educational landing game.</li>
-              </ul>
-            </details>
-            <button
-              className="btn-primary mode-cta"
-              type="button"
-              onClick={() => onSelectMode("education")}
-            >
-              <Compass size={16} /> Explore with ILARGI <ArrowRight size={16} />
-            </button>
-          </article>
-          <article className="mode-card mode-card-pro">
-            <div className="mode-icon-badge pro">
-              <Microscope size={30} />
-            </div>
-            <span className="pill pill-ok">Science · Compare</span>
-            <h2>Mission Analysis</h2>
-            <details className="mode-guide">
-              <summary>Which mode should I choose?</summary>
-              <p className="mode-desc">
-                Inspect the geometry behind each result and compare up to ten
-                lunar locations.
-              </p>
-              <ul className="mode-features">
-                <li>
-                  Select a catalog location or place a point on the globe.
-                </li>
-                <li>
-                  Compare apparent Sun and Earth tracks with LOLA terrain.
-                </li>
-                <li>
-                  Inspect visibility intervals, disc fractions and eclipses.
-                </li>
-                <li>Explore regional abundances and export CSV results.</li>
-              </ul>
-            </details>
-            <button
-              className="btn-primary mode-cta"
-              type="button"
-              onClick={() => onSelectMode("pro")}
-            >
-              <Microscope size={16} /> Open the explorer{" "}
-              <ArrowRight size={16} />
-            </button>
-          </article>
+        <div className="home-intro">
+          <div className="home-kicker">
+            <span /> AN OPEN WINDOW TO THE MOON
+          </div>
+          <h1>
+            Look closer.
+            <br />
+            <em>Go further.</em>
+          </h1>
+          <p>
+            Explore the light, landscape and stories of our nearest neighbour.
+          </p>
+          <div className="home-coordinate">
+            MOON <span> / </span> 384,400 KM FROM EARTH ON AVERAGE
+          </div>
+        </div>
+        <div className="home-moon-art" aria-hidden="true">
+          <div className="home-moon-orbit orbit-one" />
+          <div className="home-moon-orbit orbit-two" />
+          <div className="home-moon-disc" />
+          <span className="home-moon-caption">
+            THE MOON <b>01 / 01</b>
+          </span>
+        </div>
+        <section className="home-choices" aria-label="Choose an experience">
+          <div className="home-choices-label">
+            CHOOSE YOUR EXPERIENCE <span>↗</span>
+          </div>
+          <button
+            className="home-choice"
+            type="button"
+            onClick={() => onSelectMode("education")}
+          >
+            <span className="home-choice-number">01</span>
+            <span className="home-choice-icon">
+              <Compass size={23} />
+            </span>
+            <span className="home-choice-copy">
+              <strong>Explore with ILARGI</strong>
+              <small>Discover, experiment and land on the Moon.</small>
+            </span>
+            <ArrowRight className="home-choice-arrow" size={20} />
+          </button>
+          <button
+            className="home-choice"
+            type="button"
+            onClick={() => onSelectMode("pro")}
+          >
+            <span className="home-choice-number">02</span>
+            <span className="home-choice-icon">
+              <Telescope size={23} />
+            </span>
+            <span className="home-choice-copy">
+              <strong>Mission analysis</strong>
+              <small>Investigate lunar sites, visibility and terrain.</small>
+            </span>
+            <ArrowRight className="home-choice-arrow" size={20} />
+          </button>
         </section>
       </main>
+      <footer className="home-footer">
+        <span>
+          ILARGI <i> / </i> INTERACTIVE LUNAR ANALYZER
+        </span>
+        <span>BUILT FOR THE CURIOUS</span>
+      </footer>
     </div>
   );
 }

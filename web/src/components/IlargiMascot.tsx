@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Sparkles, Volume2 } from "lucide-react";
 import { ILARGI_FUN_FACTS } from "../data/educationFacts";
 
@@ -15,12 +15,18 @@ export function IlargiMascot({
   compact = false,
   showFunFacts = true,
 }: IlargiMascotProps) {
-  const [factIdx, setFactIdx] = useState(0);
+  const [factIdx, setFactIdx] = useState(() =>
+    Math.floor(Math.random() * ILARGI_FUN_FACTS.length),
+  );
   const [speaking, setSpeaking] = useState(true);
-  const [bubbleMode, setBubbleMode] = useState<"guide" | "fact">("guide");
+  const [bubbleMode, setBubbleMode] = useState<"guide" | "fact">(
+    showFunFacts ? "fact" : "guide",
+  );
+  const initialMessage = useRef(true);
 
   useEffect(() => {
-    setBubbleMode("guide");
+    if (initialMessage.current) initialMessage.current = false;
+    else setBubbleMode("guide");
     setSpeaking(true);
     const timer = window.setTimeout(() => setSpeaking(false), 2600);
     return () => window.clearTimeout(timer);
@@ -28,9 +34,10 @@ export function IlargiMascot({
 
   const handleTriggerFact = (delta: number) => {
     setBubbleMode("fact");
-    setFactIdx(
-      (prev) =>
-        (prev + delta + ILARGI_FUN_FACTS.length) % ILARGI_FUN_FACTS.length,
+    setFactIdx((prev) =>
+      bubbleMode === "guide" && delta === 1
+        ? prev
+        : (prev + delta + ILARGI_FUN_FACTS.length) % ILARGI_FUN_FACTS.length,
     );
     setSpeaking(true);
     window.setTimeout(() => setSpeaking(false), 2400);
@@ -75,7 +82,7 @@ export function IlargiMascot({
           <div className="ilargi-bubble-badges">
             <span className="pill pill-cyan">
               <Volume2 size={11} />{" "}
-              {bubbleMode === "fact" ? `${activeFact.tag}` : speakerMood}
+              {bubbleMode === "fact" ? "LUNAR DISCOVERY" : speakerMood}
             </span>
           </div>
           {showFunFacts && (
@@ -110,7 +117,23 @@ export function IlargiMascot({
             </div>
           )}
         </div>
-        <p className="ilargi-bubble-text">{shownText}</p>
+        {bubbleMode === "fact" && (
+          <p className="ilargi-bubble-text">
+            <strong>{activeFact.question}</strong>
+          </p>
+        )}
+        {showFunFacts ? (
+          <button
+            type="button"
+            className="ilargi-fact-next"
+            onClick={() => handleTriggerFact(1)}
+            aria-label="Next lunar discovery"
+          >
+            {shownText} <span aria-hidden="true"> →</span>
+          </button>
+        ) : (
+          <p className="ilargi-bubble-text">{shownText}</p>
+        )}
       </div>
     </div>
   );

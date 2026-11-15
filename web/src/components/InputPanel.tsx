@@ -95,10 +95,8 @@ export function InputPanel({
     <aside className="panel input-panel">
       <div className="panel-header">
         <div>
-          <div className="eyebrow">INPUT</div>
-          <div className="panel-sub">
-            P<sub>i</sub>(λ, θ, t) · catalog or manual
-          </div>
+          <div className="eyebrow">Analysis setup</div>
+          <div className="panel-sub">Choose a location and a starting time</div>
         </div>
       </div>
 
@@ -133,6 +131,7 @@ export function InputPanel({
               <select
                 className="input-select"
                 value={pt.presetId}
+                title={pt.siteName}
                 onChange={(e) => onSelectPreset(idx, e.target.value)}
                 aria-label={`Site P${idx + 1}`}
               >
@@ -164,7 +163,7 @@ export function InputPanel({
 
             <div className="field-grid-2">
               <label className="field">
-                <span>λ Latitude (°)</span>
+                <span>Latitude (°)</span>
                 <CoordinateInput
                   value={pt.latitudeDeg}
                   min={-89.999}
@@ -180,7 +179,7 @@ export function InputPanel({
               </label>
 
               <label className="field">
-                <span>θ East longitude (°)</span>
+                <span>Longitude east (°)</span>
                 <CoordinateInput
                   value={pt.longitudeEastDeg}
                   min={-180}
@@ -198,7 +197,7 @@ export function InputPanel({
 
             <div className="field-grid-2">
               <label className="field">
-                <span>t UTC date</span>
+                <span>UTC date</span>
                 <input
                   type="date"
                   min="1972-01-01"
@@ -363,10 +362,18 @@ export function InputPanel({
             })}
         </div>
         {selectedMinerals.includes("WEH") && (
-          <p>
-            WEH: stronger intensity means higher abundance; it does not confirm
-            ice. Lawrence et al. (2022).
-          </p>
+          <div className="weh-legend">
+            <strong>Hydrogen estimate · ppm</strong>
+            <div className="weh-legend-gradient" aria-hidden="true" />
+            <div className="weh-legend-labels">
+              <span>0 · less</span>
+              <span>120+ · more</span>
+            </div>
+            <p>
+              Opacity increases nonlinearly and saturates at 120 ppm. WEH does
+              not confirm ice. Lawrence et al. (2022).
+            </p>
+          </div>
         )}
       </div>
 
@@ -377,7 +384,7 @@ export function InputPanel({
         onClick={onLaunch}
       >
         <Rocket size={16} />
-        {loading ? "CALCULATING..." : "LAUNCH"}
+        {loading ? "Calculating…" : "Analyze locations"}
       </button>
     </aside>
   );

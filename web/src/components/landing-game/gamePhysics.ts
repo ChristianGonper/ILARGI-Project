@@ -19,7 +19,7 @@ export interface GameLandingSite {
 export const FALLBACK_GAME_SITES: GameLandingSite[] = [
   {
     id: "game-mons-mouton",
-    name: "Mons Mouton · Meseta Artemis III",
+    name: "Mons Mouton · Artemis III plateau",
     mission: "Artemis III / IM-2",
     latitudeDeg: -85.43,
     longitudeEastDeg: 31.74,
@@ -49,7 +49,7 @@ export const FALLBACK_GAME_SITES: GameLandingSite[] = [
   },
   {
     id: "game-apollo-15",
-    name: "Hadley-Apennine · Apolo 15",
+    name: "Hadley-Apennine · Apollo 15",
     mission: "Apollo 15 (1971)",
     latitudeDeg: 26.13,
     longitudeEastDeg: 3.63,
@@ -59,7 +59,7 @@ export const FALLBACK_GAME_SITES: GameLandingSite[] = [
   },
   {
     id: "game-apollo-17",
-    name: "Taurus-Littrow · Apolo 17",
+    name: "Taurus-Littrow · Apollo 17",
     mission: "Apollo 17 (1972)",
     latitudeDeg: 20.19,
     longitudeEastDeg: 30.77,

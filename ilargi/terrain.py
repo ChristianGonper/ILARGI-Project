@@ -12,8 +12,17 @@ SAMPLE = (
     / "data/terrain/lola_80m_south_pole_sample.tif"
 )
 RADIUS_M = 1_737_400.0
-POLAR = SAMPLE.with_name("LDEM_80S_80MPP_ADJ.TIF")
-GLOBAL = SAMPLE.with_name("ldem_128.vrt")
+SHARED_TERRAIN = Path.home() / ".ilargi" / "terrain"
+_SHARED_POLAR = SHARED_TERRAIN / "LDEM_80S_80MPP_ADJ.TIF"
+_SHARED_GLOBAL = SHARED_TERRAIN / "ldem_128.vrt"
+POLAR = (
+    _SHARED_POLAR if _SHARED_POLAR.is_file() else SAMPLE.with_name(_SHARED_POLAR.name)
+)
+GLOBAL = (
+    _SHARED_GLOBAL
+    if _SHARED_GLOBAL.is_file() and _SHARED_GLOBAL.with_suffix(".img").is_file()
+    else SAMPLE.with_name(_SHARED_GLOBAL.name)
+)
 
 
 class TerrainCoverageError(ValueError):

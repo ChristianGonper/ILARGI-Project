@@ -49,11 +49,18 @@ export async function loadLunarHeightField(
   signal: AbortSignal,
 ): Promise<LunarHeightField> {
   const response = await fetch("/textures/moon_height.bin.gz", { signal });
-  if (!response.ok || !response.body)
-    throw new Error("Could not load LOLA terrain");
-  const buffer = await new Response(
-    response.body.pipeThrough(new DecompressionStream("gzip")),
-  ).arrayBuffer();
+  if (!response.ok) throw new Error("Could not load LOLA terrain");
+  const payload = await response.arrayBuffer();
+  const bytes = new Uint8Array(payload);
+  // Browsers already decode responses served with Content-Encoding: gzip.
+  const buffer =
+    bytes[0] === 0x1f && bytes[1] === 0x8b
+      ? await new Response(
+          new Blob([payload])
+            .stream()
+            .pipeThrough(new DecompressionStream("gzip")),
+        ).arrayBuffer()
+      : payload;
   // Explicit little endian decoding, independent of the host platform.
   const view = new DataView(buffer);
   const values = new Int16Array(buffer.byteLength / 2);
