@@ -1,4 +1,4 @@
-declare module "plotly.js-dist-min" {
+declare module "plotly.js-gl2d-dist-min" {
   const Plotly: {
     react: (
       root: HTMLElement,

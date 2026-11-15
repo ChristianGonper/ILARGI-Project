@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { lazy, useCallback, useEffect, useState } from "react";
 import { Home } from "lucide-react";
 import {
   analyzePoints,
@@ -6,12 +6,10 @@ import {
   fetchHistoricalSites,
   fetchMaterialsOverlay,
 } from "./api";
-import { ComparisonPanel } from "./components/ComparisonPanel";
-import { EducationWorkspace } from "./components/EducationWorkspace";
+
 import { HomeScreen } from "./components/HomeScreen";
 import { InputPanel, MAX_POINTS } from "./components/InputPanel";
-import { MoonViewport3D } from "./components/MoonViewport3D";
-import { OutputsPanel } from "./components/OutputsPanel";
+
 import type {
   AnalysisParams,
   AppMode,
@@ -21,6 +19,30 @@ import type {
   PointDraft,
   SiteAnalysisResult,
 } from "./types";
+
+const ComparisonPanel = lazy(() =>
+  import("./components/ComparisonPanel").then((module) => ({
+    default: module.ComparisonPanel,
+  })),
+);
+
+const EducationWorkspace = lazy(() =>
+  import("./components/EducationWorkspace").then((module) => ({
+    default: module.EducationWorkspace,
+  })),
+);
+
+const MoonViewport3D = lazy(() =>
+  import("./components/MoonViewport3D").then((module) => ({
+    default: module.MoonViewport3D,
+  })),
+);
+
+const OutputsPanel = lazy(() =>
+  import("./components/OutputsPanel").then((module) => ({
+    default: module.OutputsPanel,
+  })),
+);
 
 function makePointFromSite(uid: number, site: HistoricalSite): PointDraft {
   return {
@@ -38,7 +60,7 @@ function makeManualPoint(uid: number, lat = -89.5, lon = 0): PointDraft {
   return {
     uid,
     presetId: "manual",
-    siteName: "Coordenada manual",
+    siteName: "Manual coordinates",
     latitudeDeg: lat,
     longitudeEastDeg: lon,
     startDate: "2026-04-02",
@@ -57,7 +79,7 @@ export function App() {
     {
       uid: 1,
       presetId: "lola-center",
-      siteName: "Polo Sur · Muestra LOLA Centro",
+      siteName: "South Pole · LOLA Sample Center",
       latitudeDeg: -89.5,
       longitudeEastDeg: 0,
       startDate: "2026-04-02",
@@ -95,9 +117,7 @@ export function App() {
       })
       .catch((err: unknown) => {
         setErrorMsg(
-          err instanceof Error
-            ? err.message
-            : "No se pudieron cargar los sitios históricos",
+          err instanceof Error ? err.message : "Could not load catalog sites",
         );
       });
   }, []);
@@ -130,7 +150,7 @@ export function App() {
       prev.map((pt, i) => {
         if (i !== index) return pt;
         if (presetId === "manual") {
-          return { ...pt, presetId: "manual", siteName: "Coordenada manual" };
+          return { ...pt, presetId: "manual", siteName: "Manual coordinates" };
         }
         const site = historicalSites.find((s) => s.id === presetId);
         if (!site) return pt;
@@ -219,7 +239,7 @@ export function App() {
         ? {
             ...pt,
             presetId: "manual",
-            siteName: "Coordenada manual",
+            siteName: "Manual coordinates",
             latitudeDeg,
             longitudeEastDeg,
           }
@@ -250,13 +270,13 @@ export function App() {
             type="button"
             className="btn-mini home-back-btn"
             onClick={() => setMode("home")}
-            title="Volver a la pantalla inicial"
+            title="Return to home"
           >
             <Home size={13} />
             Inicio
           </button>
           <span className="brand-title">ILARGI</span>
-          <div className="mode-switch-group" role="group" aria-label="Modo">
+          <div className="mode-switch-group" role="group" aria-label="Mode">
             <button
               type="button"
               className={`mode-switch-btn ${mode === "education" ? "active edu" : ""}`}
