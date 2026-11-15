@@ -84,18 +84,18 @@ export const ILARGI_FUN_FACTS: IlargiFact[] = [
 ];
 
 export const LUNAR_MIRROR_GUIDE = {
-  title: "Lunar laser retroreflectors (LRRR)",
+  title: "How lunar laser reflectors work",
   summary:
-    "Corner-cube prisms return incident light toward its source. Earth observatories measure the round-trip travel time of laser pulses to study the Earth–Moon system.",
+    "Corner-cube prisms return incoming laser light straight back toward its source. Observatories on Earth time the round-trip pulse to measure the Earth–Moon distance.",
   steps: [
     "1. An Earth observatory sends a laser pulse toward a lunar reflector.",
-    "2. A small fraction of the light returns toward the observatory.",
-    "3. The round trip takes roughly 2.5 seconds; precise timing supports distance measurements.",
+    "2. A small fraction of the light bounces straight back toward the observatory.",
+    "3. The round trip takes roughly 2.5 seconds; precise timing reveals distance changes down to millimeters.",
   ],
   discoveries: [
-    "The Moon recedes from Earth at about 3.8 cm (1.5 in) per year.",
-    "Lunar rotation measurements help constrain the Moon's interior.",
-    "Ranging tests gravitational physics using passive reflectors on the Moon.",
+    "The Moon moves away from Earth by about 3.8 cm (1.5 in) every year.",
+    "Measuring the Moon's tiny wobbles helps scientists study its deep interior.",
+    "Laser ranging lets physicists test Einstein's gravity using passive mirrors on the Moon.",
   ],
 };
 
@@ -113,12 +113,12 @@ export interface PolarColdTrapZone {
 export const POLAR_WATER_COLD_TRAPS: PolarColdTrapZone[] = [
   {
     id: "psr-shackleton",
-    name: "Shackleton (PSR)",
+    name: "Shackleton (Permanent shadow)",
     latDeg: -89.695,
     lonEastDeg: 126.371,
     radiusDeg: 0.75,
     areaKm2: 319,
-    note: "Southern polar cold trap (PGDA 69)",
+    note: "Southern polar cold trap",
   },
   {
     id: "psr-cabeus",

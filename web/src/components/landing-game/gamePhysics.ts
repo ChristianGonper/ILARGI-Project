@@ -70,7 +70,7 @@ export const FALLBACK_GAME_SITES: GameLandingSite[] = [
   {
     id: "game-shackleton",
     name: "Shackleton Crater Rim",
-    mission: "NASA PGDA 69 · South Pole",
+    mission: "South Pole · Crater Rim",
     latitudeDeg: -89.54,
     longitudeEastDeg: -155.73,
     orbitAltitudeKm: 105,

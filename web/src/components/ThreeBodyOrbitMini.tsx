@@ -30,12 +30,86 @@ const HELIO_SCALE = 1 / 12_000_000; // 150M km ≈ 12.5 unidades
 const MOON_EXAGGERATION = 42;
 const REAL_SCALE_EARTH_MOON = 1 / 50_000; // 384,400 km ≈ 7.69 unidades (1:1 real!)
 
-export function phaseLabelFromFraction(frac: number): string {
-  if (frac < 0.06) return "New Moon";
-  if (frac < 0.44) return "Crescent";
-  if (frac < 0.56) return "Quarter";
-  if (frac < 0.94) return "Gibbous / Full";
-  return "Full Moon";
+export type LunarPhaseKey =
+  "new_moon" | "first_quarter" | "full_moon" | "last_quarter";
+
+export const LUNAR_PHASES: {
+  key: LunarPhaseKey;
+  label: string;
+}[] = [
+  { key: "new_moon", label: "New Moon" },
+  { key: "first_quarter", label: "First Quarter" },
+  { key: "full_moon", label: "Full Moon" },
+  { key: "last_quarter", label: "Last Quarter" },
+];
+
+export function detectLunarPhase(
+  frames: EducationCycleFrame[],
+  hoursOffset: number,
+  currentFrame: EducationCycleFrame | null,
+): LunarPhaseKey {
+  const frac = currentFrame?.illumination_fraction ?? 0;
+  if (frac < 0.15) return "new_moon";
+  if (frac > 0.85) return "full_moon";
+
+  if (frames.length >= 2) {
+    let idx = frames.findIndex((f) => f.hours_from_start >= hoursOffset);
+    if (idx === -1) idx = frames.length - 1;
+    const prevIdx = Math.max(0, idx - 1);
+    const nextIdx = Math.min(frames.length - 1, idx + 1);
+    const delta =
+      frames[nextIdx].illumination_fraction -
+      frames[prevIdx].illumination_fraction;
+    return delta >= 0 ? "first_quarter" : "last_quarter";
+  }
+
+  return "first_quarter";
+}
+
+export function findPhaseFrameHours(
+  frames: EducationCycleFrame[],
+  phase: LunarPhaseKey,
+): number {
+  if (frames.length === 0) return 0;
+
+  if (phase === "new_moon") {
+    let best = frames[0];
+    for (const f of frames) {
+      if (f.illumination_fraction < best.illumination_fraction) best = f;
+    }
+    return best.hours_from_start;
+  }
+
+  if (phase === "full_moon") {
+    let best = frames[0];
+    for (const f of frames) {
+      if (f.illumination_fraction > best.illumination_fraction) best = f;
+    }
+    return best.hours_from_start;
+  }
+
+  const wantWaxing = phase === "first_quarter";
+  let bestFrame = frames[0];
+  let bestScore = Infinity;
+
+  for (let i = 0; i < frames.length; i++) {
+    const prev = frames[Math.max(0, i - 1)];
+    const next = frames[Math.min(frames.length - 1, i + 1)];
+    const delta = next.illumination_fraction - prev.illumination_fraction;
+    const isWaxing = delta >= 0;
+    if (isWaxing !== wantWaxing) continue;
+    const dist = Math.abs(frames[i].illumination_fraction - 0.5);
+    if (dist < bestScore) {
+      bestScore = dist;
+      bestFrame = frames[i];
+    }
+  }
+
+  return bestFrame.hours_from_start;
+}
+
+export function phaseLabelFromKey(key: LunarPhaseKey): string {
+  return LUNAR_PHASES.find((p) => p.key === key)?.label ?? "New Moon";
 }
 
 export function ThreeBodyOrbitMini({
@@ -79,7 +153,7 @@ export function ThreeBodyOrbitMini({
     scene.background = new THREE.Color("#060a12");
 
     const width = container.clientWidth || 440;
-    const height = container.clientHeight || 300;
+    const height = container.clientHeight || 380;
     const camera = new THREE.PerspectiveCamera(42, width / height, 0.05, 200);
     camera.position.set(11.5, 6.2, 13.5);
 
@@ -170,7 +244,7 @@ export function ThreeBodyOrbitMini({
     const moonLocator = new THREE.Mesh(
       new THREE.RingGeometry(0.14, 0.18, 24),
       new THREE.MeshBasicMaterial({
-        color: 0xf59e0b,
+        color: 0xcbd5e1,
         side: THREE.DoubleSide,
         transparent: true,
         opacity: 0.85,
@@ -192,7 +266,7 @@ export function ThreeBodyOrbitMini({
     const moonOrbitLine = new THREE.Line(
       new THREE.BufferGeometry(),
       new THREE.LineBasicMaterial({
-        color: 0xf59e0b,
+        color: 0xcbd5e1,
         transparent: true,
         opacity: 0.85,
       }),
@@ -368,18 +442,12 @@ export function ThreeBodyOrbitMini({
     window.dispatchEvent(new Event("resize"));
   }, [expanded]);
 
-  const dSE = currentFrame
-    ? Math.round(currentFrame.sun_earth_dist_km).toLocaleString("en-GB")
-    : "—";
   const dEM = currentFrame
     ? Math.round(currentFrame.earth_moon_dist_km).toLocaleString("en-GB")
     : "—";
   const dSM = currentFrame
     ? Math.round(currentFrame.sun_moon_dist_km).toLocaleString("en-GB")
     : "—";
-  const phasePct = currentFrame
-    ? Math.round(currentFrame.illumination_fraction * 100)
-    : 0;
 
   return (
     <div
@@ -387,13 +455,11 @@ export function ThreeBodyOrbitMini({
     >
       <div className="orbit-mini-head">
         <div>
-          <div className="eyebrow eyebrow-accent">
-            THREE-BODY VIEW · SUN · EARTH · MOON
-          </div>
+          <h2 className="edu-panel-title">Sun, Earth &amp; Moon Orbits</h2>
           <div className="orbit-mini-sub">
             {viewMode === "heliocentric"
-              ? "Sun, Earth and Moon · Lunar orbit enlarged for visibility"
-              : "Earth and Moon shown to scale"}
+              ? "Three-body orbital view · Moon orbit enlarged so you can follow it easily"
+              : "Earth and Moon shown to real physical scale"}
           </div>
         </div>
         <div className="orbit-mini-actions">
@@ -409,7 +475,7 @@ export function ThreeBodyOrbitMini({
             className={`btn-mini ${viewMode === "earth_moon_1to1" ? "active" : ""}`}
             onClick={() => setViewMode("earth_moon_1to1")}
           >
-            Earth & Moon to scale
+            Earth &amp; Moon to scale
           </button>
           <button
             type="button"
@@ -427,17 +493,10 @@ export function ThreeBodyOrbitMini({
 
       <div className="orbit-telemetry-bar">
         <span className="mono">
-          <strong className="tag-sun">Sun–Earth:</strong> {dSE} km
+          <strong className="tag-earth">Moon–Earth:</strong> {dEM} km
         </span>
         <span className="mono">
-          <strong className="tag-earth">Earth–Moon:</strong> {dEM} km
-        </span>
-        <span className="mono">
-          <strong className="tag-ok">Sun–Moon:</strong> {dSM} km
-        </span>
-        <span className="pill pill-muted">
-          Phase: {phasePct}% (
-          {phaseLabelFromFraction(currentFrame?.illumination_fraction ?? 0)})
+          <strong className="tag-sun">Moon–Sun:</strong> {dSM} km
         </span>
       </div>
     </div>
