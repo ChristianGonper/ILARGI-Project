@@ -40,7 +40,7 @@ def test_analyze_single_and_multipoint_payload():
             "points": [
                 {
                     "label": "P1",
-                    "site_name": "Polo Sur · Muestra LOLA Centro",
+                    "site_name": "South Pole · LOLA Sample Center",
                     "latitude_deg": -89.5,
                     "longitude_east_deg": 0.0,
                     "start_utc": "2026-04-02T15:00:00Z",

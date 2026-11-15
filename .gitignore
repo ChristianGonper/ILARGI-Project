@@ -12,7 +12,7 @@ data/kernels/
 .pytest_cache/
 .ruff_cache/
 node_modules/
-salidas/
+outputs/
 
 # Topographic products downloaded from NASA/PDS
 data/terrain/LDEM_80S_80MPP_ADJ.TIF

@@ -1,4 +1,4 @@
-"""Arranca el servidor web FastAPI de ILARGI con `uv run python main.py`."""
+"""Start the ILARGI FastAPI server with `uv run python main.py`."""
 
 from ilargi.api import serve
 

@@ -27,7 +27,7 @@ def test_historical_sites_have_valid_coordinates_and_unique_ids():
 
 def test_multiple_terrain_occluded_sunsets_and_longest_night_first():
     t0 = datetime(2026, 4, 2, 0, 0, tzinfo=UTC)
-    # 7 muestras separadas 1 h: Sol visible, baja (noche corta 2h), sube, baja (noche larga 3h)
+    # Hourly samples with two distinct dark intervals and an unbounded final interval.
     margins = [2.0, -1.0, -1.0, 2.0, -2.0, -2.0, -2.0]
     track = pd.DataFrame(
         [
@@ -83,7 +83,7 @@ def test_analyze_site_lola_and_ideal_fallback():
     start = datetime(2026, 4, 2, 15, 0, tzinfo=UTC)
     south = analyze_site(
         label="P1",
-        site_name="Polo Sur LOLA",
+        site_name="LOLA South Pole",
         latitude_deg=-89.5,
         longitude_east_deg=0.0,
         start_utc=start,
@@ -166,7 +166,7 @@ def test_analyze_site_computes_disc_visibility_and_eclipse():
     eclipse_start = datetime(2025, 3, 14, 6, 58, tzinfo=UTC)
     analysis = analyze_site(
         label="E1",
-        site_name="Centro Lunar",
+        site_name="Lunar Center",
         latitude_deg=0.0,
         longitude_east_deg=0.0,
         start_utc=eclipse_start,

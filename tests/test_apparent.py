@@ -23,9 +23,8 @@ EVIDENCE = (
     / "comparison-2026-11-14.json"
 )
 INSTANT = datetime(2026, 4, 2, 15, tzinfo=UTC)
-# Guardas de regresión, no una cota de exactitud. El 14 de noviembre de 2026 el
-# residuo ICRF fue de 2,5 m para la Tierra y 9,4 m para el Sol. En el cielo, la
-# mayor componente fue 0,0012 arcsec.
+# Regression thresholds, not accuracy bounds. Recorded 2026-11-14 residuals:
+# Earth 2.5 m, Sun 9.4 m in ICRF, and at most 0.0012 arcsec per sky component.
 VECTOR_TOLERANCE_KM = 0.02
 ANGLE_TOLERANCE_ARCSEC = 0.005
 RANGE_TOLERANCE_KM = 0.05

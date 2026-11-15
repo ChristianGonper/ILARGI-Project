@@ -17,3 +17,5 @@ The Python Plotly presentation layer was removed after verifying that only its o
 ## Web loading and styling
 
 Heavy views load through React lazy boundaries so the home screen does not initially require Three.js or Plotly. Plotly uses the official gl2d distribution at the existing version, supporting both scatter and scattergl traces. The stylesheet was split by surface while preserving cascade order. Tailwind is deferred: rewriting established selectors would add migration work without demonstrating a design benefit. Existing CSS tokens remain the design foundation.
+
+The landing game uses idealized circular-orbit geometry and an impulsive two-body transfer estimate. Its final braking speed, responsive controls and descent timing are gameplay parameters. They are separate from the site-visibility science engine and must not be interpreted as a flight trajectory solution.
