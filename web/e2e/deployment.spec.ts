@@ -7,11 +7,12 @@ test("public live API calculates a location outside the saved catalog", async ({
     !process.env.ILARGI_LIVE_CHECK,
     "Only run after connecting the public API.",
   );
-  await page.goto("/");
-  await expect(page.getByRole("status")).toContainText(
-    "Live scientific API connected",
-    { timeout: 30000 },
+  const health = page.waitForResponse(
+    (response) => response.url().endsWith("/api/health") && response.ok(),
   );
+  await page.goto("/");
+  await health;
+  await expect(page.getByRole("status")).toHaveCount(0);
   await page.getByRole("button", { name: /Mission analysis/ }).click();
   await page.getByLabel("Latitude (°)").fill("0.7");
   await page.getByLabel("Longitude east (°)").fill("23.5");
@@ -20,9 +21,7 @@ test("public live API calculates a location outside the saved catalog", async ({
     timeout: 35000,
   });
   await expect(page.locator(".error-banner")).toHaveCount(0);
-  await expect(page.getByRole("status")).toContainText(
-    "Live scientific API connected",
-  );
+  await expect(page.getByRole("status")).toHaveCount(0);
 });
 
 test("API outage retains multi-point analysis, plots and honest request boundaries", async ({
@@ -32,7 +31,12 @@ test("API outage retains multi-point analysis, plots and honest request boundari
   page.on("pageerror", (error) => errors.push(error.message));
   await page.route("**/api/**", (route) => route.abort());
   await page.goto("/");
-  await expect(page.getByRole("status")).toContainText("Saved scientific demo");
+  await expect(page.getByRole("status")).toContainText("exploring the demo");
+  await expect(page.locator(".home-intro").getByRole("status")).toBeVisible();
+  await expect(
+    page.getByRole("contentinfo").getByRole("link", { name: "Data sources" }),
+  ).toBeVisible();
+  await expect(page.locator(".home-wordmark svg")).toHaveCount(1);
   await expect(
     page.getByRole("button", { name: "Load demo settings" }),
   ).toBeEnabled();

@@ -1,7 +1,8 @@
 import { DataSourceNotice } from "./components/DataSourceNotice";
+import { DataSourcesLink } from "./components/DataSourcesLink";
 import { ViewportFrame } from "./components/ViewportFrame";
 import { lazy, useCallback, useEffect, useRef, useState } from "react";
-import { Home } from "lucide-react";
+import { Home, Moon } from "lucide-react";
 import {
   analyzePoints,
   fetchHealth,
@@ -280,16 +281,16 @@ export function App() {
 
   if (mode === "home") {
     return (
-      <>
-        <DataSourceNotice
-          onLoadDemo={loadDemo}
-          ready={historicalSites.length > 0}
-        />
-        <HomeScreen
-          health={health}
-          onSelectMode={(chosen) => setMode(chosen)}
-        />
-      </>
+      <HomeScreen
+        health={health}
+        demoNotice={
+          <DataSourceNotice
+            onLoadDemo={loadDemo}
+            ready={historicalSites.length > 0}
+          />
+        }
+        onSelectMode={(chosen) => setMode(chosen)}
+      />
     );
   }
 
@@ -309,7 +310,9 @@ export function App() {
             <Home size={13} />
             Start
           </button>
-          <span className="brand-title">ILARGI</span>
+          <span className="brand-title">
+            <Moon size={22} aria-hidden="true" /> ILARGI
+          </span>
           <div className="mode-switch-group" role="group" aria-label="Mode">
             <button
               type="button"
@@ -437,6 +440,9 @@ export function App() {
           )}
         </>
       )}
+      <footer className="workspace-footer">
+        <DataSourcesLink />
+      </footer>
     </div>
   );
 }

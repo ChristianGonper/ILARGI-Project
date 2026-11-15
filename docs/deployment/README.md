@@ -10,7 +10,7 @@ La web está publicada en **https://ilargi-jury.pages.dev/** y la API en Google 
 - Educación: 23 ubicaciones con sus ciclos, animación, vista Sol–Tierra–Luna, capa WEH y juego de aterrizaje. La interfaz agrupa algunos ejemplos polares del catálogo como ya hacía en local.
 - Respaldo científico: inicio **2026-04-02 15:00 UTC**, análisis de **720 h**, pasos de **60 min**, instrumento a **2 m**, azimut **0,25°**, DEM `auto`; educación **709 h**, pasos de **180 min**.
 - Las fechas, parámetros y coordenadas deben coincidir con el catálogo guardado. No se desplazan fechas ni se usa el punto más cercano. Una petición fuera del catálogo explica que necesita la API. «Load demo settings» compara el polo sur, Apollo 11 y Chang'e 4 en la cara oculta.
-- El aviso permanece visible si se han utilizado datos guardados, incluso si después vuelve la API. «Reconnect API» recarga la página y limpia resultados anteriores. El respaldo no garantiza acceso sin conexión a Internet: los archivos siguen alojados en Pages.
+- El aviso de demo aparece centrado junto a la introducción cuando se han utilizado datos guardados; no hay aviso durante la conexión ni cuando funciona la API. «Try again» recarga la página y limpia resultados anteriores. Las fuentes se consultan desde el pie de página. El respaldo no garantiza acceso sin conexión a Internet: los archivos siguen alojados en Pages.
 
 ## 1. Publicar la web primero
 
