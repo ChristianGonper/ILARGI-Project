@@ -62,7 +62,7 @@ Instalar Google Cloud CLI, iniciar sesión con `gcloud auth login` y elegir un p
 
 El script habilita Cloud Run, Cloud Build y Artifact Registry; crea `ilargi-runtime` sin roles de proyecto y hace un build remoto del Dockerfile. No requiere Docker Desktop local. El contenedor ejecuta Python 3.13 como usuario sin privilegios, con dependencias bloqueadas en `uv.lock`. Descarga y verifica por SHA-256 los kernels en el build; no descarga datos al arrancar ni contiene credenciales. Comprueba los kernels al iniciar, escucha en `0.0.0.0:$PORT` y habilita CORS únicamente para el origen indicado.
 
-Configuración inicial: **1 vCPU, 2 GiB, un worker, una petición concurrente por instancia, mínimo 0, máximo 2 instancias, timeout 120 s**. El motor también rechaza con 503 cálculos simultáneos dentro del mismo proceso, y limita el tamaño de los lotes. El frontend espera como máximo 8 s para catálogos y 25 s para cálculos antes de intentar el respaldo; el cálculo remoto puede seguir ejecutándose después de ese timeout.
+Configuración actual: **1 vCPU, 2 GiB, un worker, cuatro peticiones HTTP concurrentes por instancia, mínimo 0, máximo 2 instancias, timeout 180 s**. El motor rechaza con 503 cálculos simultáneos dentro del mismo proceso y limita el tamaño de los lotes; los metadatos pueden servirse mientras se calcula. El frontend espera como máximo 30 s para catálogos y 150 s para cálculos antes de intentar el respaldo; el cálculo remoto puede seguir ejecutándose después de ese timeout. Los resultados de las pruebas con DEM completos están en [terreno completo](full-terrain.md).
 
 El límite de instancias reduce la exposición al gasto, pero **no es un límite monetario**. Antes de publicar, configurar alertas de presupuesto en Google, comprobar vigencia y servicios cubiertos por los créditos, y revisar también costes de Cloud Build, Artifact Registry y tráfico. Los cold starts son aceptables porque existe el respaldo; mantener mínimo 0 fuera de una evaluación programada.
 
@@ -122,4 +122,4 @@ GitHub Actions valida Python, TypeScript, pruebas del navegador con la API caíd
 - [Cloud Run: límites de instancias](https://docs.cloud.google.com/run/docs/configuring/max-instances).
 - [Cloud Run: montajes Cloud Storage y memoria](https://docs.cloud.google.com/run/docs/configuring/services/cloud-storage-volume-mounts).
 
-La propuesta inicial de Hydrogen sirve de orientación. Se ha sustituido su configuración de dos workers y concurrencia 8 por una inicial más conservadora, y se aplaza el almacenamiento de DEM completos hasta medirlo. No se promete coste cero para los servicios de Google ni disponibilidad absoluta.
+La propuesta inicial de Hydrogen sirve de orientación. La configuración actual utiliza un worker y cuatro peticiones HTTP concurrentes, con un solo cálculo científico por proceso. Los DEM completos ya están disponibles y medidos mediante Cloud Storage. No se promete coste cero para los servicios de Google ni disponibilidad absoluta.
