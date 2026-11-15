@@ -1,0 +1,12 @@
+.git
+.venv
+node_modules
+web
+outputs
+__pycache__
+**/__pycache__
+data/kernels
+data/terrain/*.img
+data/terrain/LDEM_80S_80MPP_ADJ.TIF
+.env*
+**/.env*

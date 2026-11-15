@@ -1,22 +1,28 @@
-import { ArrowRight, Compass, Telescope } from "lucide-react";
+import { ArrowRight, Compass, Moon, Telescope } from "lucide-react";
+import type { ReactNode } from "react";
+import { DataSourcesLink } from "./DataSourcesLink";
 import type { AppMode, HealthResponse } from "../types";
 
 interface HomeScreenProps {
   health: HealthResponse | null;
+  demoNotice: ReactNode;
   onSelectMode: (mode: Exclude<AppMode, "home">) => void;
 }
 
-export function HomeScreen({ onSelectMode }: HomeScreenProps) {
+export function HomeScreen({ onSelectMode, demoNotice }: HomeScreenProps) {
   return (
     <div className="home-shell">
       <header className="home-topbar">
         <span className="home-wordmark">
-          <span aria-hidden="true">◐</span> ILARGI
+          <Moon size={24} aria-hidden="true" /> ILARGI
         </span>
         <span className="home-edition">
           A LUNAR EXPLORATION PROJECT <span> / </span> NASA SPACE APPS
         </span>
       </header>
+      <div className="home-expanded-name">
+        Interactive Lunar Analyzer for Radiance, Geometry, and Intervisibility
+      </div>
       <main className="home-main">
         <div className="home-intro">
           <div className="home-kicker">
@@ -30,6 +36,7 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
           <p>
             Explore the light, landscape and stories of our nearest neighbour.
           </p>
+          {demoNotice}
           <div className="home-coordinate">
             MOON <span> / </span> 384,400 KM FROM EARTH ON AVERAGE
           </div>
@@ -79,10 +86,9 @@ export function HomeScreen({ onSelectMode }: HomeScreenProps) {
         </section>
       </main>
       <footer className="home-footer">
-        <span>
-          ILARGI <i> / </i> INTERACTIVE LUNAR ANALYZER
-        </span>
+        <span>ILARGI</span>
         <span>BUILT FOR THE CURIOUS</span>
+        <DataSourcesLink />
       </footer>
     </div>
   );

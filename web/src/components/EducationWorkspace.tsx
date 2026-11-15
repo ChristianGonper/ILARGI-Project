@@ -168,6 +168,9 @@ export function EducationWorkspace() {
 
   useEffect(() => {
     let cancelled = false;
+    setCycleData(null);
+    setPlaying(false);
+    setHoursOffset(0);
     setLoadingCycle(true);
     setErrorMsg(null);
     void fetchEducationCycle({

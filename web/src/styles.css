@@ -4,6 +4,33 @@
 @import "./styles/landing-game.css";
 @import "./styles/observatory.css";
 
+@font-face {
+  font-family: "Vasca";
+  src: url("/fonts/Vasca.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.home-wordmark,
+.brand-title,
+.brand-sub,
+.home-expanded-name {
+  font-family: "Vasca", serif;
+  font-weight: 400;
+  letter-spacing: 0.025em;
+}
+
+.home-expanded-name {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 18px 0 0;
+  font-size: clamp(15px, 1.4vw, 21px);
+  line-height: 1.5;
+  color: #c5d5ae;
+}
+
 :focus-visible {
   outline: 2px solid var(--cyan);
   outline-offset: 3px;
@@ -210,4 +237,52 @@
   display: block;
   margin-top: 10px;
   white-space: normal;
+}
+
+.data-source-notice {
+  max-width: 600px;
+  margin: 1.5rem auto;
+  padding: 1rem 1.25rem;
+  text-align: center;
+  background: #1c241d;
+  color: #e1e8dc;
+  font-size: 0.8rem;
+  border: 1px solid #3e503e;
+  border-radius: 8px;
+}
+.data-source-notice p {
+  margin: 0 0 0.5rem;
+  font-size: inherit;
+  line-height: 1.5;
+  color: inherit;
+}
+.data-source-notice .demo-details {
+  font-size: 0.75rem;
+  color: #b4c0ac;
+}
+.demo-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+}
+.brand-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.home-wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.home-wordmark svg {
+  color: #d4e0b5;
+}
+.workspace-footer {
+  padding: 1.5rem 0;
+  text-align: center;
+}
+.data-sources-link {
+  color: inherit;
+  text-underline-offset: 0.2em;
 }

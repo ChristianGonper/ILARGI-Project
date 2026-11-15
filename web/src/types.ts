@@ -65,6 +65,7 @@ export interface ElementData {
 }
 
 export interface SiteAnalysisResult {
+  data_source?: "live" | "precomputed";
   label: string;
   site_name: string;
   latitude_deg: number;

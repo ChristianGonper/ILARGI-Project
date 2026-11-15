@@ -1,0 +1,6 @@
+# Generated scientific payloads: compact JSON, integrity checked by pytest.
+web/public/demo/
+web/public/sources.md
+web/dist/
+web/test-results/
+web/playwright-report/

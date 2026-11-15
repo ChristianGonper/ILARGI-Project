@@ -1,0 +1,14 @@
+**
+!Dockerfile
+!pyproject.toml
+!uv.lock
+!README.md
+!ilargi/
+!ilargi/**
+ilargi/__pycache__/
+!data/
+!data/materials/
+!data/materials/**
+!data/terrain/
+!data/terrain/*.tif
+!data/terrain/*.vrt

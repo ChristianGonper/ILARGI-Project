@@ -20,6 +20,7 @@ interface ComparisonPanelProps {
 function downloadComparisonCsv(results: SiteAnalysisResult[]) {
   const header = [
     "point",
+    "data_source",
     "site",
     "latitude_deg",
     "longitude_east_deg",
@@ -41,6 +42,7 @@ function downloadComparisonCsv(results: SiteAnalysisResult[]) {
   const lines = results.map((r) =>
     [
       esc(r.label),
+      esc(r.data_source ?? "live"),
       esc(r.site_name),
       r.latitude_deg,
       r.longitude_east_deg,

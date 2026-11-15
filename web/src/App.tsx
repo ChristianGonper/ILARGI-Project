@@ -1,6 +1,8 @@
+import { DataSourceNotice } from "./components/DataSourceNotice";
+import { DataSourcesLink } from "./components/DataSourcesLink";
 import { ViewportFrame } from "./components/ViewportFrame";
 import { lazy, useCallback, useEffect, useRef, useState } from "react";
-import { Home } from "lucide-react";
+import { Home, Moon } from "lucide-react";
 import {
   analyzePoints,
   fetchHealth,
@@ -139,6 +141,7 @@ export function App() {
         setComparedLabels((prev) => prev.filter((l) => valid.has(l)));
       } catch (err: unknown) {
         if (request !== analysisRequest.current) return;
+        setResults(null);
         setErrorMsg(
           err instanceof Error ? err.message : "Could not analyze locations",
         );
@@ -254,9 +257,40 @@ export function App() {
     }
   };
 
+  const loadDemo = () => {
+    const demoPoints = ["lola-center", "apollo-11", "change-4"]
+      .map((id) => historicalSites.find((site) => site.id === id))
+      .filter((site): site is HistoricalSite => site !== undefined)
+      .map((site, index) => makePointFromSite(index + 1, site));
+    const demoParams: AnalysisParams = {
+      durationHours: 720,
+      stepMinutes: 60,
+      instrumentHeightM: 2,
+      azimuthStepDeg: 0.25,
+      demMode: "auto",
+    };
+    if (demoPoints.length === 0) return;
+    setPoints(demoPoints);
+    setNextUid(4);
+    setParams(demoParams);
+    setFocusedIndex(0);
+    setPinMode(false);
+    setMode("pro");
+    void runAnalysis(demoPoints, demoParams);
+  };
+
   if (mode === "home") {
     return (
-      <HomeScreen health={health} onSelectMode={(chosen) => setMode(chosen)} />
+      <HomeScreen
+        health={health}
+        demoNotice={
+          <DataSourceNotice
+            onLoadDemo={loadDemo}
+            ready={historicalSites.length > 0}
+          />
+        }
+        onSelectMode={(chosen) => setMode(chosen)}
+      />
     );
   }
 
@@ -276,7 +310,9 @@ export function App() {
             <Home size={13} />
             Start
           </button>
-          <span className="brand-title">ILARGI</span>
+          <span className="brand-title">
+            <Moon size={22} aria-hidden="true" /> ILARGI
+          </span>
           <div className="mode-switch-group" role="group" aria-label="Mode">
             <button
               type="button"
@@ -300,6 +336,10 @@ export function App() {
         </div>
       </header>
 
+      <DataSourceNotice
+        onLoadDemo={loadDemo}
+        ready={historicalSites.length > 0}
+      />
       {mode === "education" ? (
         <EducationWorkspace />
       ) : (
@@ -400,6 +440,9 @@ export function App() {
           )}
         </>
       )}
+      <footer className="workspace-footer">
+        <DataSourcesLink />
+      </footer>
     </div>
   );
 }
