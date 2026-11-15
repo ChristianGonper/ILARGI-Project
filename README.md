@@ -65,6 +65,12 @@ Designed for engineering trade studies and illumination/communications planning 
 - **Finite-Disc & Eclipse Modeling:** Discretizes the Sun (`695,700 km`) and Earth (`6,371.0 km`) onto a `61 × 61` tangent-plane ray grid to compute `above_horizon_fraction`, `eclipsed_fraction`, and `direct_visible_fraction`.
 - **Visibility Spans, Geochemistry & Export:** Computes sunrise/sunset and Earthrise/Earthset crossings, continuous power/comms outage spans, LP-GRS 5° elemental abundances (`Al`, `Ca`, `FeO`, `Th`) + `0.5°` WEH concentrations, interactive Plotly sky/daily evolution charts, and CSV downloads.
 
+![Mission Analysis Workspace: 3D Pin, Azimuth–Elevation Horizon, and Visibility Series](docs/media/science_1.png)
+
+| Multi-Site Comparison Table (`P1` vs. `P2` + LP-GRS / WEH)     | Stacked Sky Track & Daily Evolution Charts (`P1` vs. `P2`)   |
+| -------------------------------------------------------------- | ------------------------------------------------------------ |
+| ![Mission Analysis Multi-Site Table](docs/media/science_2.png) | ![Mission Analysis Stacked Charts](docs/media/science_3.png) |
+
 ![Curved-Moon Ray Tracing and Finite-Disc Visibility](docs/diagrams/lunar_horizon_and_disc.png)
 
 ---
@@ -86,6 +92,7 @@ Live web screenshots from [ilargi.pages.dev](https://ilargi.pages.dev/) are stor
 - [`docs/media/home.png`](docs/media/home.png) — Observatory home screen and Experience 01 / 02 launcher
 - [`docs/media/education.png`](docs/media/education.png) — Education Mode with First Quarter lighting, WEH overlay, and 3-body orbit tracker
 - [`docs/media/game_phase_1.png`](docs/media/game_phase_1.png), [`docs/media/game_phase_2.png`](docs/media/game_phase_2.png), [`docs/media/game_phase_3.png`](docs/media/game_phase_3.png) — Full 3-phase Lunar Landing Game progression
+- [`docs/media/science_1.png`](docs/media/science_1.png), [`docs/media/science_2.png`](docs/media/science_2.png), [`docs/media/science_3.png`](docs/media/science_3.png) — Mission Analysis workspace: single-site horizon & finite-disc outputs, multi-site LP-GRS/WEH comparison table, and stacked sky/elevation charts
 
 > [!TIP]
 > **Adding Video Walkthroughs:** GitHub blocks `<iframe>` embeds in Markdown. For 1080p60 or narrated walkthroughs, upload the video to YouTube and link it through a clickable thumbnail (`[![Watch ILARGI Demo](docs/media/home.png)](https://youtu.be/VIDEO_ID)`), or drag-and-drop short compressed `.mp4` clips (`< 10 MB`) directly in GitHub's web editor so they play natively via GitHub CDN without bloating Git history.

@@ -179,6 +179,12 @@ sequenceDiagram
 - [`MoonViewport3D.tsx`](../web/src/components/MoonViewport3D.tsx) & `web/src/three/`: Renders the 8-samples/deg (`~3.8 km/px`) LOLA relief mesh (`lunarTerrain.ts`), coordinate conversions (`moonCoordinates.ts`), camera tweening (`moonNavigation.ts`), and mineral/WEH overlays.
 - [`OutputsPanel.tsx`](../web/src/components/OutputsPanel.tsx), [`ComparisonPanel.tsx`](../web/src/components/ComparisonPanel.tsx), [`SkyAzimuthPlot.tsx`](../web/src/components/SkyAzimuthPlot.tsx), [`DailyEvolutionPlot.tsx`](../web/src/components/DailyEvolutionPlot.tsx), and [`DiscVisibilityPanel.tsx`](../web/src/components/DiscVisibilityPanel.tsx): Interactive Plotly.js charts (with animated Sun/Earth sky markers over persistent trails), `61 × 61` finite-disc occlusion & eclipse inspector, dark-span & outage tables, and CSV export.
 
+![Mission Analysis Workspace UI](media/science_1.png)
+
+| Multi-Site Comparison Table (`ComparisonPanel`)  | Stacked Sky & Time-Series Charts (`SkyAzimuthPlot` + `DailyEvolutionPlot`) |
+| ------------------------------------------------ | -------------------------------------------------------------------------- |
+| ![Multi-Site Comparison UI](media/science_2.png) | ![Stacked Comparison Charts UI](media/science_3.png)                       |
+
 ### Styling layers (`web/src/styles.css`)
 
 `styles.css` loads five modular CSS files in deterministic cascade order—`foundation.css` (design tokens), `home.css`, `education.css`, `landing-game.css`, and `observatory.css`—followed by global focus-ring and `prefers-reduced-motion` accessibility rules.
