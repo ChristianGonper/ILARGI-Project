@@ -385,3 +385,51 @@
     height: 10px;
   }
 }
+
+/* A quiet entry point; guidance stays available on demand. */
+.home-main {
+  max-width: 960px;
+  padding-top: 5vh;
+}
+.home-hero {
+  text-align: center;
+  border: 0;
+  background: transparent;
+}
+.home-title {
+  font-size: clamp(3rem, 8vw, 6rem);
+  letter-spacing: 0.12em;
+}
+.home-lead {
+  margin-inline: auto;
+}
+.mode-guide {
+  margin-bottom: 20px;
+}
+.mode-guide summary,
+.spacecraft-guide summary {
+  cursor: pointer;
+  padding: 12px 0;
+  color: var(--text);
+}
+.spacecraft-guide {
+  padding: 20px;
+  line-height: 1.65;
+}
+.spacecraft-table-wrap {
+  overflow-x: auto;
+}
+.spacecraft-guide table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.spacecraft-guide th,
+.spacecraft-guide td {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.spacecraft-guide caption {
+  text-align: left;
+  padding: 8px;
+}

@@ -95,7 +95,7 @@ export function App() {
     durationHours: 720,
     stepMinutes: 60,
     instrumentHeightM: 2,
-    azimuthStepDeg: 1,
+    azimuthStepDeg: 0.25,
     demMode: "auto",
   });
 
@@ -287,27 +287,12 @@ export function App() {
               className={`mode-switch-btn ${mode === "pro" ? "active pro" : ""}`}
               onClick={() => setMode("pro")}
             >
-              PRO
+              Mission Analysis
             </button>
           </div>
           <span className="brand-sub">
             Interactive Lunar Analyzer for Radiance, Geometry, and
             Intervisibility
-          </span>
-        </div>
-        <div className="topbar-right">
-          {health?.dem.polar_80m && (
-            <span className="pill pill-cyan">LOLA 80m South Pole</span>
-          )}
-          {health?.dem.global_240m && (
-            <span className="pill pill-cyan">LOLA ≈237m Global</span>
-          )}
-          <span className="pill pill-muted">
-            {health?.frame ?? "MOON_ME_DE440_ME421"} ·{" "}
-            {health?.abcorr ?? "LT+S"}
-          </span>
-          <span className={`pill ${health ? "pill-ok" : "pill-muted"}`}>
-            {health ? `${health.kernels} · Connected` : "Connecting…"}
           </span>
         </div>
       </header>

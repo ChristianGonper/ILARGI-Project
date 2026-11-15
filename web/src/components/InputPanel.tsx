@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Check,
   Crosshair,
@@ -13,6 +13,40 @@ import type {
   MineralLayerMeta,
   PointDraft,
 } from "../types";
+
+function CoordinateInput({
+  value,
+  min,
+  max,
+  onValue,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  onValue: (value: number) => void;
+}) {
+  const [draft, setDraft] = useState(String(value));
+  useEffect(() => setDraft(String(value)), [value]);
+  return (
+    <input
+      type="number"
+      step="1"
+      min={min}
+      max={max}
+      value={draft}
+      onChange={(event) => {
+        setDraft(event.target.value);
+        if (
+          event.target.value !== "" &&
+          Number.isFinite(event.target.valueAsNumber)
+        ) {
+          onValue(Math.max(min, Math.min(max, event.target.valueAsNumber)));
+        }
+      }}
+      onBlur={() => setDraft(String(value))}
+    />
+  );
+}
 
 export const MAX_POINTS = 10;
 
@@ -134,43 +168,33 @@ export function InputPanel({
             <div className="field-grid-2">
               <label className="field">
                 <span>λ Latitude (°)</span>
-                <input
-                  type="number"
-                  step="0.001"
+                <CoordinateInput
+                  value={pt.latitudeDeg}
                   min={-89.999}
                   max={89.999}
-                  value={pt.latitudeDeg}
-                  onChange={(e) => {
-                    const v = parseFloat(e.target.value);
-                    if (!Number.isNaN(v)) {
-                      onChangePoint(idx, {
-                        latitudeDeg: Math.max(-89.999, Math.min(89.999, v)),
-                        presetId: "manual",
-                        siteName: "Manual coordinates",
-                      });
-                    }
-                  }}
+                  onValue={(value) =>
+                    onChangePoint(idx, {
+                      latitudeDeg: value,
+                      presetId: "manual",
+                      siteName: "Manual coordinates",
+                    })
+                  }
                 />
               </label>
 
               <label className="field">
                 <span>θ East longitude (°)</span>
-                <input
-                  type="number"
-                  step="0.001"
+                <CoordinateInput
+                  value={pt.longitudeEastDeg}
                   min={-180}
                   max={180}
-                  value={pt.longitudeEastDeg}
-                  onChange={(e) => {
-                    const v = parseFloat(e.target.value);
-                    if (!Number.isNaN(v)) {
-                      onChangePoint(idx, {
-                        longitudeEastDeg: Math.max(-180, Math.min(180, v)),
-                        presetId: "manual",
-                        siteName: "Manual coordinates",
-                      });
-                    }
-                  }}
+                  onValue={(value) =>
+                    onChangePoint(idx, {
+                      longitudeEastDeg: value,
+                      presetId: "manual",
+                      siteName: "Manual coordinates",
+                    })
+                  }
                 />
               </label>
             </div>
@@ -224,9 +248,7 @@ export function InputPanel({
           onClick={() => setShowParams((s) => !s)}
         >
           <SlidersHorizontal size={14} />
-          {showParams
-            ? "Hide LOLA / interval settings"
-            : "LOLA / interval settings"}
+          {showParams ? "Hide Analysis settings" : "Analysis settings"}
         </button>
 
         {showParams && (
@@ -272,28 +294,6 @@ export function InputPanel({
               </label>
             </div>
 
-            <label className="field">
-              <span>LOLA DEM coverage</span>
-              <select
-                value={params.demMode}
-                onChange={(e) =>
-                  onChangeParams({
-                    demMode: e.target.value as AnalysisParams["demMode"],
-                  })
-                }
-              >
-                <option value="auto">
-                  Automatic (80m South Pole / ≈237m global)
-                </option>
-                <option value="polar">South Pole completo (80 m/px)</option>
-                <option value="global">Whole Moon (≈237 m/px)</option>
-                <option value="sample20">
-                  Muestra local South Pole (20 m/px)
-                </option>
-                <option value="ideal">Ideal sphere (0°, no terrain)</option>
-              </select>
-            </label>
-
             <div className="field-grid-2">
               <label className="field">
                 <span>Height (m)</span>
@@ -313,21 +313,6 @@ export function InputPanel({
                   }
                 />
               </label>
-
-              <label className="field">
-                <span>Ray spacing (°)</span>
-                <select
-                  value={params.azimuthStepDeg}
-                  onChange={(e) =>
-                    onChangeParams({ azimuthStepDeg: Number(e.target.value) })
-                  }
-                >
-                  <option value={0.25}>0.25°</option>
-                  <option value={0.5}>0.5°</option>
-                  <option value={1.0}>1°</option>
-                  <option value={2.0}>2°</option>
-                </select>
-              </label>
             </div>
           </div>
         )}
@@ -336,48 +321,50 @@ export function InputPanel({
       <div className="minerals-section">
         <div className="eyebrow">Materials and WEH (3D overlay)</div>
         <div className="mineral-list">
-          {mineralElements.map((el) => {
-            const checked = selectedMinerals.includes(el.id);
-            return (
-              <label
-                key={el.id}
-                className={`mineral-item ${checked ? "checked" : ""}`}
-                title={
-                  el.available
-                    ? el.id === "WEH"
-                      ? "Estimated global WEH: stronger intensity means higher abundance"
-                      : `Show LP-GRS regions for ${el.label}`
-                    : (el.status ?? "No validated data yet")
-                }
-              >
-                <input
-                  type="checkbox"
-                  className="sr-only"
-                  checked={checked}
-                  onChange={() => onToggleMineral(el.id)}
-                />
-                <span
-                  className="mineral-check-box"
-                  style={
-                    checked
-                      ? {
-                          backgroundColor: el.color,
-                          borderColor: el.color,
-                        }
-                      : { borderColor: el.color }
+          {[...mineralElements]
+            .sort((a, b) => Number(b.id === "WEH") - Number(a.id === "WEH"))
+            .map((el) => {
+              const checked = selectedMinerals.includes(el.id);
+              return (
+                <label
+                  key={el.id}
+                  className={`mineral-item ${checked ? "checked" : ""}`}
+                  title={
+                    el.available
+                      ? el.id === "WEH"
+                        ? "Estimated global WEH: stronger intensity means higher abundance"
+                        : `Show LP-GRS regions for ${el.label}`
+                      : (el.status ?? "No validated data yet")
                   }
                 >
-                  {checked && (
-                    <Check size={12} strokeWidth={3} color="#0b101b" />
+                  <input
+                    type="checkbox"
+                    className="sr-only"
+                    checked={checked}
+                    onChange={() => onToggleMineral(el.id)}
+                  />
+                  <span
+                    className="mineral-check-box"
+                    style={
+                      checked
+                        ? {
+                            backgroundColor: el.color,
+                            borderColor: el.color,
+                          }
+                        : { borderColor: el.color }
+                    }
+                  >
+                    {checked && (
+                      <Check size={12} strokeWidth={3} color="#0b101b" />
+                    )}
+                  </span>
+                  <span className="mineral-label">{el.label}</span>
+                  {!el.available && (
+                    <span className="mineral-future-tag">no data</span>
                   )}
-                </span>
-                <span className="mineral-label">{el.label}</span>
-                {!el.available && (
-                  <span className="mineral-future-tag">no data</span>
-                )}
-              </label>
-            );
-          })}
+                </label>
+              );
+            })}
         </div>
         {selectedMinerals.includes("WEH") && (
           <p>

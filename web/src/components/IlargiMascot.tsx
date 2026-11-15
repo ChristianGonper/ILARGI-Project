@@ -75,9 +75,7 @@ export function IlargiMascot({
           <div className="ilargi-bubble-badges">
             <span className="pill pill-cyan">
               <Volume2 size={11} />{" "}
-              {bubbleMode === "fact"
-                ? `Did you know…? · ${activeFact.tag}`
-                : speakerMood}
+              {bubbleMode === "fact" ? `${activeFact.tag}` : speakerMood}
             </span>
           </div>
           {showFunFacts && (
@@ -106,7 +104,7 @@ export function IlargiMascot({
                 onClick={() => handleTriggerFact(1)}
               >
                 <Sparkles size={12} />
-                Did you know…? ({factIdx + 1}/{ILARGI_FUN_FACTS.length})
+                Explore ({factIdx + 1}/{ILARGI_FUN_FACTS.length})
                 <ChevronRight size={13} />
               </button>
             </div>

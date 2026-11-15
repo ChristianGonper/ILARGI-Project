@@ -396,8 +396,8 @@ export function ThreeBodyOrbitMini({
           </div>
           <div className="orbit-mini-sub">
             {viewMode === "heliocentric"
-              ? "DE440s ecliptic vectors · Lunar orbit enlarged for visibility"
-              : "Physical scale (Earth 6,371 km · Moon 1,737 km)"}
+              ? "Sun, Earth and Moon · Lunar orbit enlarged for visibility"
+              : "Earth and Moon shown to scale"}
           </div>
         </div>
         <div className="orbit-mini-actions">
