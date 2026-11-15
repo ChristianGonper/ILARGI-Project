@@ -31,30 +31,59 @@ The scientific model uses public NASA, NAIF/JPL, IAU, and peer-reviewed data alo
 
 ## Software dependencies
 
-### Backend (Python ≥ 3.13, pinned in `uv.lock`)
+All application and build dependencies are pinned via committed lockfiles (`uv.lock`, `package-lock.json`, and `web/package-lock.json`).
 
-| Package                                  | Role                                                  | Official reference                                                     |
-| ---------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------- |
-| `spiceypy`                               | Python bindings to NAIF CSPICE                        | [https://spiceypy.readthedocs.io/](https://spiceypy.readthedocs.io/)   |
-| `rasterio`                               | GeoTIFF / VRT raster I/O and resampling               | [https://rasterio.readthedocs.io/](https://rasterio.readthedocs.io/)   |
-| `pyproj`                                 | Lunar spherical CRS transformations (PROJ)            | [https://pyproj4.github.io/pyproj/](https://pyproj4.github.io/pyproj/) |
-| `numpy`                                  | Vectorized array geometry and numerical integration   | [https://numpy.org/](https://numpy.org/)                               |
-| `pandas`                                 | Time-series and LP-GRS tabular processing             | [https://pandas.pydata.org/](https://pandas.pydata.org/)               |
-| `scipy`                                  | Morphological dilation for static terrain export      | [https://scipy.org/](https://scipy.org/)                               |
-| `matplotlib`                             | Static terrain PNG rendering (`ilargi.terrain_image`) | [https://matplotlib.org/](https://matplotlib.org/)                     |
-| `fastapi` & `uvicorn`                    | REST API server and ASGI transport                    | [https://fastapi.tiangolo.com/](https://fastapi.tiangolo.com/)         |
-| `pydantic`                               | Request schema validation                             | [https://docs.pydantic.dev/](https://docs.pydantic.dev/)               |
-| `pytest`, `httpx2`, `ruff`, `pre-commit` | Development testing, linting, formatting, and hooks   | [https://docs.astral.sh/uv/](https://docs.astral.sh/uv/)               |
+### Backend runtime (Python `>=3.13`, `pyproject.toml` / `uv.lock`)
 
-### Frontend (TypeScript / Web, pinned in `web/package-lock.json`)
+| Package      | Specifier   | Locked    | Role in ILARGI                                                                                      | Official reference                                                     |
+| ------------ | ----------- | --------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `spiceypy`   | `>=8.4.0`   | `8.4.0`   | Python wrapper for NASA NAIF CSPICE (`MOON_ME_DE440_ME421`, `LT+S` apparent geometry, `UTC` → `ET`) | [https://spiceypy.readthedocs.io/](https://spiceypy.readthedocs.io/)   |
+| `rasterio`   | `>=1.5.2`   | `1.5.2`   | GDAL-backed GeoTIFF / PDS `.img` / `.vrt` elevation I/O, window reading, and resampling             | [https://rasterio.readthedocs.io/](https://rasterio.readthedocs.io/)   |
+| `pyproj`     | `>=3.8.0`   | `3.8.0`   | PROJ validation of spherical lunar CRS (`+R=1737400 m`, north-up meter grids)                       | [https://pyproj4.github.io/pyproj/](https://pyproj4.github.io/pyproj/) |
+| `numpy`      | `>=2.5.4`   | `2.5.4`   | Vectorized curved-Moon ray tracing, `61 × 61` finite-disc grids, `.npz`/`.bin.gz` array processing  | [https://numpy.org/](https://numpy.org/)                               |
+| `pandas`     | `>=3.1.1`   | `3.1.1`   | Time-series ephemeris tables and LP-GRS 5° equal-area geochemical lookups                           | [https://pandas.pydata.org/](https://pandas.pydata.org/)               |
+| `scipy`      | `>=1.18.1`  | `1.18.1`  | Morphological dilation (`binary_dilation`) in static terrain export (`ilargi.terrain_image`)        | [https://scipy.org/](https://scipy.org/)                               |
+| `matplotlib` | `>=3.11.2`  | `3.11.2`  | Static LOLA PNG elevation/hillshade maps (`ilargi.terrain_image`) & docs figures                    | [https://matplotlib.org/](https://matplotlib.org/)                     |
+| `fastapi`    | `>=0.163.0` | `0.163.0` | REST API routes (`/api/*`), explicit CORS middleware, process lock, and optional `web/dist` host    | [https://fastapi.tiangolo.com/](https://fastapi.tiangolo.com/)         |
+| `pydantic`   | `>=2.0,<3`  | `2.14.3`  | Request/response schema validation (`points`, date ranges, step budgets)                            | [https://docs.pydantic.dev/](https://docs.pydantic.dev/)               |
+| `uvicorn`    | `>=0.54.0`  | `0.54.0`  | ASGI server serving `ilargi.api:app` locally (`main.py`) and in Cloud Run (`Dockerfile`)            | [https://www.uvicorn.org/](https://www.uvicorn.org/)                   |
 
-| Package / asset            | Role                                                                         | Official reference                                                                                                                                           |
-| -------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `react` & `react-dom`      | UI framework (TypeScript, built with Vite)                                   | [https://react.dev/](https://react.dev/)                                                                                                                     |
-| `three`                    | Interactive 3D lunar globe, terrain LOD, and 3-body/lander scenes            | [https://threejs.org/](https://threejs.org/)                                                                                                                 |
-| `plotly.js-gl2d-dist-min`  | Official Plotly partial bundle (`scatter` & `scattergl`) for sky/disc charts | [https://plotly.com/javascript/](https://plotly.com/javascript/) and [partial bundle README](https://github.com/plotly/plotly.js/blob/master/dist/README.md) |
-| `lucide-react`             | UI iconography                                                               | [https://lucide.dev/](https://lucide.dev/)                                                                                                                   |
-| `Inter` & `JetBrains Mono` | Web typography loaded via Google Fonts in `web/index.html`                   | [https://fonts.google.com/](https://fonts.google.com/)                                                                                                       |
+### Backend development & quality assurance (`[dependency-groups].dev`)
+
+| Package      | Specifier  | Locked   | Role                                                          | Official reference                                             |
+| ------------ | ---------- | -------- | ------------------------------------------------------------- | -------------------------------------------------------------- |
+| `pytest`     | `>=9.2.0`  | `9.2.0`  | Scientific, API, CORS, batch-limit, and `/demo` SHA-256 tests | [https://docs.pytest.org/](https://docs.pytest.org/)           |
+| `httpx2`     | `>=2.0`    | `2.16.0` | HTTP client powering FastAPI `TestClient` integration tests   | [https://www.python-httpx.org/](https://www.python-httpx.org/) |
+| `ruff`       | `>=0.17.5` | `0.17.5` | Python linter and code formatter                              | [https://docs.astral.sh/ruff/](https://docs.astral.sh/ruff/)   |
+| `pre-commit` | `>=4.7.0`  | `4.7.0`  | Git hooks running `ruff` and `prettier` before commits        | [https://pre-commit.com/](https://pre-commit.com/)             |
+
+### Frontend runtime (`web/package.json` / `web/package-lock.json`)
+
+| Package / asset            | Specifier  | Locked    | Role                                                                            | Official reference                                                                                                                                           |
+| -------------------------- | ---------- | --------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `react` & `react-dom`      | `^19.1.0`  | `19.3.1`  | UI framework, workspace routing, and lazy-loaded scientific panels              | [https://react.dev/](https://react.dev/)                                                                                                                     |
+| `three`                    | `^0.176.0` | `0.176.0` | Interactive 3D lunar globe, relief mesh, Sun/Earth light, and Phase 1 lander    | [https://threejs.org/](https://threejs.org/)                                                                                                                 |
+| `plotly.js-gl2d-dist-min`  | `3.7.0`    | `3.7.0`   | Official Plotly partial bundle (`scatter` & `scattergl`) for sky/disc charts    | [https://plotly.com/javascript/](https://plotly.com/javascript/) and [partial bundle README](https://github.com/plotly/plotly.js/blob/master/dist/README.md) |
+| `lucide-react`             | `^0.511.0` | `0.511.0` | Observatory UI iconography                                                      | [https://lucide.dev/](https://lucide.dev/)                                                                                                                   |
+| `Inter` & `JetBrains Mono` | CDN CSS    | —         | UI & monospace telemetry typography loaded via Google Fonts in `web/index.html` | [https://fonts.google.com/](https://fonts.google.com/)                                                                                                       |
+
+### Frontend build, testing & root deployment tooling (`package.json` & `web/package.json`)
+
+| Package                                            | Location           | Specifier              | Locked               | Role                                                                |
+| -------------------------------------------------- | ------------------ | ---------------------- | -------------------- | ------------------------------------------------------------------- |
+| `typescript`                                       | `web/package.json` | `^5.8.3`               | `5.9.3`              | Static type-checking (`tsc -b`) across `web/src/` and `web/tests/`  |
+| `vite` & `@vitejs/plugin-react`                    | `web/package.json` | `^6.3.5` / `^4.4.1`    | `6.4.6` / `4.7.0`    | Dev server (`/api` proxy) and code-split production bundler         |
+| `tsx`                                              | `web/package.json` | `^4.23.15`             | `4.23.15`            | Node.js TypeScript runner for `web/tests/*.test.ts`                 |
+| `@playwright/test`                                 | `web/package.json` | `^1.65.1`              | `1.65.1`             | Headless Chromium E2E tests (`web/e2e/`) including offline fallback |
+| `@types/react`, `@types/react-dom`, `@types/three` | `web/package.json` | `^19.1.2` / `^0.176.0` | `19.3.0` / `0.176.0` | TypeScript ambient declarations                                     |
+| `prettier`                                         | `package.json`     | `3.10.1`               | `3.10.1`             | Formatter for TypeScript, CSS, HTML, YAML, JSON, and Markdown       |
+| `wrangler`                                         | `package.json`     | `^4.162.0`             | `4.162.0`            | Cloudflare Pages Direct Upload CLI (`deploy-pages.ps1` & CI)        |
+
+### Container & system runtime (`Dockerfile` & CI)
+
+- **Container base image:** `python:3.13-slim` with `ghcr.io/astral-sh/uv:0.9.20` (`uv sync --frozen --no-dev`).
+- **OS library:** Debian `libexpat1` (required by GDAL/rasterio for VRT/XML raster parsing).
+- **Frontend CI / build runtime:** `Node.js 22`.
 
 ## Additional reference links and design notes
 
