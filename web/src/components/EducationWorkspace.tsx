@@ -35,11 +35,11 @@ const CATEGORY_OPTIONS: {
   id: "all" | EducationCategory;
   label: string;
 }[] = [
-  { id: "all", label: "Todos" },
-  { id: "eternal_light", label: "Luz continua" },
-  { id: "psr", label: "Oscuridad (PSR)" },
+  { id: "all", label: "All" },
+  { id: "eternal_light", label: "Illuminated terrain" },
+  { id: "psr", label: "Shadow (PSR)" },
   { id: "landing", label: "Landing" },
-  { id: "mirror", label: "Espejos" },
+  { id: "mirror", label: "Reflectors" },
 ];
 
 const CATEGORY_BADGE_CLASS: Record<EducationCategory, string> = {
@@ -68,12 +68,10 @@ export function EducationWorkspace() {
   const [loadingCycle, setLoadingCycle] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Control de película del ciclo lunar completo (~29,53 días = 708,73 h)
   const [hoursOffset, setHoursOffset] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speedHoursPerSec, setSpeedHoursPerSec] = useState(36);
 
-  // Capas educativas: SOLO agua (materiales) + explicador del espejo de la Luna
   const [showWaterLayer, setShowWaterLayer] = useState(false);
   const [showMirrorGuide, setShowMirrorGuide] = useState(false);
   const [gameActive, setGameActive] = useState(false);
@@ -94,7 +92,7 @@ export function EducationWorkspace() {
         setErrorMsg(
           err instanceof Error
             ? err.message
-            : "No se pudieron cargar los puntos educativos",
+            : "Could not load educational locations",
         );
       });
   }, []);
@@ -128,7 +126,7 @@ export function EducationWorkspace() {
           setErrorMsg(
             err instanceof Error
               ? err.message
-              : "Error al calcular el ciclo lunar",
+              : "Could not calculate lunar cycle",
           );
         }
       })
@@ -143,7 +141,6 @@ export function EducationWorkspace() {
 
   const maxHours = cycleData?.duration_hours ?? 709.0;
 
-  // Bucle de reproducción fluida ("como si fuese una película")
   useEffect(() => {
     if (!playing || !cycleData) return;
     let rafId = 0;
@@ -187,10 +184,10 @@ export function EducationWorkspace() {
     setPinMode(false);
     const isPolar = Math.abs(latitudeDeg) >= 80;
     setIlargiOverride({
-      mood: "Punto personalizado",
+      mood: "Custom location",
       text: isPolar
-        ? `Has pinchado en una zona polar (${latitudeDeg.toFixed(1)}°, ${longitudeEastDeg.toFixed(1)}°E). ¡Fíjate cómo el Sol pasa rasante sobre el relieve durante todo el ciclo!`
-        : `Has elegido el punto (${latitudeDeg.toFixed(1)}°, ${longitudeEastDeg.toFixed(1)}°E). Dale a reproducir la película para ver cómo avanza la frontera entre el día y la noche lunar.`,
+        ? `You selected a polar location (${latitudeDeg.toFixed(1)}°, ${longitudeEastDeg.toFixed(1)}°E). Watch the low Sun move over the terrain during the cycle.`
+        : `You selected the location (${latitudeDeg.toFixed(1)}°, ${longitudeEastDeg.toFixed(1)}°E). Play the animation to follow the lunar day–night boundary.`,
     });
   };
 
@@ -199,8 +196,8 @@ export function EducationWorkspace() {
     setShowWaterLayer(next);
     if (next) {
       setIlargiOverride({
-        mood: "Hidrógeno equivalente en agua",
-        text: "La capa muestra WEH: una forma de expresar cuánto hidrógeno se ha estimado, como si formara agua. Los tonos más intensos indican más WEH, pero no confirman que haya agua o hielo. Los datos proceden de Lunar Prospector (Lawrence y colaboradores, 2022).",
+        mood: "Water-equivalent hydrogen",
+        text: "WEH expresses estimated hydrogen as an equivalent amount of water. Stronger intensity means higher WEH, without confirming water or ice. The source is Lunar Prospector data from Lawrence and colleagues (2022).",
       });
     } else {
       setIlargiOverride(null);
@@ -212,8 +209,8 @@ export function EducationWorkspace() {
     setShowMirrorGuide(next);
     if (next) {
       setIlargiOverride({
-        mood: "El Espejo de la Luna",
-        text: "¡Los espejos de la Luna son en realidad prismas en esquina de cubo! Devuelven cualquier rayo láser justo al mismo telescopio en la Tierra. Midiendo cuánto tarda en ir y volver (~2,5 s) descubrimos que la Luna se aleja 3,8 cm cada año.",
+        mood: "Lunar retroreflectors",
+        text: "Lunar retroreflectors use corner-cube prisms to return laser light toward its source. Round-trip timing helps measure the changing Earth–Moon distance.",
       });
     } else {
       setIlargiOverride(null);
@@ -229,8 +226,8 @@ export function EducationWorkspace() {
       };
     }
     return {
-      mood: "Guía lunar",
-      text: "Elige un punto de aterrizaje, un pico de luz continua o una zona en sombra permanente, y pulsa Reproducir para ver el ciclo completo de un día lunar.",
+      mood: "Lunar guide",
+      text: "Choose a landing site, illuminated ridge or polar shadow region, then press Play to follow a full lunar solar cycle.",
     };
   }, [ilargiOverride, selectedSite]);
 
@@ -251,12 +248,14 @@ export function EducationWorkspace() {
     <div className="edu-shell">
       <div className="panel edu-game-launch-bar">
         <div className="edu-game-launch-info">
-          <span className="pill pill-amber">MISIÓN INTERACTIVA · 3 FASES</span>
+          <span className="pill pill-amber">
+            INTERACTIVE MISSION · 3 PHASES
+          </span>
           <div>
-            <strong>Juego de Aterrizaje Lunar con ILARGI</strong>
+            <strong>Lunar landing game with ILARGI</strong>
             <div className="panel-sub">
-              Calcula la inclinación desde la parking orbit, programa la bajada
-              y pilota el aterrizador hasta el círculo objetivo.
+              Set the orbital inclination, plan the descent, and pilot the
+              lander toward the target.
             </div>
           </div>
         </div>
@@ -269,7 +268,7 @@ export function EducationWorkspace() {
           }}
         >
           <Rocket size={16} />
-          Iniciar Juego de Aterrizaje
+          Start landing game
         </button>
       </div>
 
@@ -287,13 +286,13 @@ export function EducationWorkspace() {
       )}
 
       <div className="edu-workspace-grid">
-        {/* PANEL IZQUIERDO: Selector de punto + Slider ciclo lunar debajo + Solo Agua + Espejo */}
+        {/* Location, timeline and educational layers */}
         <aside className="panel edu-sidebar">
           <div className="panel-header">
             <div>
-              <div className="eyebrow">1. SELECTOR DEL PUNTO</div>
+              <div className="eyebrow">1. CHOOSE A LOCATION</div>
               <div className="panel-sub">
-                Landing spots, luz continua, oscuridad (PGDA 69) y espejos
+                Landing sites, illuminated terrain, polar shadows and reflectors
               </div>
             </div>
           </div>
@@ -319,7 +318,7 @@ export function EducationWorkspace() {
                 const found = sites.find((s) => s.id === e.target.value);
                 if (found) handleSelectSite(found);
               }}
-              aria-label="Seleccionar lugar lunar"
+              aria-label="Select lunar location"
             >
               {manualCoords && (
                 <option value="__manual__">
@@ -348,11 +347,11 @@ export function EducationWorkspace() {
                       className={`pill ${CATEGORY_BADGE_CLASS[s.category]}`}
                     >
                       {s.category === "eternal_light"
-                        ? "Luz"
+                        ? "Light"
                         : s.category === "psr"
                           ? "PSR"
                           : s.category === "mirror"
-                            ? "Espejo"
+                            ? "Reflector"
                             : "Landing"}
                     </span>
                     <span className="edu-site-chip-name">{s.name}</span>
@@ -368,20 +367,20 @@ export function EducationWorkspace() {
             >
               <Crosshair size={14} />
               {pinMode
-                ? "Pin en globo: ACTIVO (haz clic en la Luna)"
-                : "Pin libre en globo 3D"}
+                ? "Globe pin: ACTIVE (click the Moon)"
+                : "Place a point on the globe"}
             </button>
           </div>
 
-          {/* SLIDER DEL CICLO COMPLETO LUNAR DIRECTAMENTE DEBAJO DEL SELECTOR */}
+          {/* Full-cycle timeline */}
           <div className="edu-movie-box">
             <div className="panel-header">
               <div>
                 <div className="eyebrow eyebrow-accent">
-                  2. PELÍCULA · CICLO COMPLETO LUNAR
+                  2. ANIMATION · FULL LUNAR CYCLE
                 </div>
                 <div className="panel-sub">
-                  1 día lunar completo ≈ 29,53 días terrestres (709 h)
+                  1 lunar solar day ≈ 29.53 Earth days (709 h)
                 </div>
               </div>
               {loadingCycle && <span className="pill pill-cyan">SPICE…</span>}
@@ -396,14 +395,14 @@ export function EducationWorkspace() {
                   setPlaying((p) => !p);
                   if (!playing) {
                     setIlargiOverride({
-                      mood: "Película solar en marcha",
-                      text: "¡Observa cómo avanza la luz solar sobre los cráteres! Puedes girar el globo lunar libremente con el ratón mientras la película sigue proyectando el día y la noche lunar.",
+                      mood: "Solar animation playing",
+                      text: "Watch sunlight move over the craters. Rotate the globe with your mouse while the animation continues.",
                     });
                   }
                 }}
               >
                 {playing ? <Pause size={15} /> : <Play size={15} />}
-                {playing ? "Pausar película" : "Reproducir película"}
+                {playing ? "Pause animation" : "Play animation"}
               </button>
 
               <button
@@ -413,7 +412,7 @@ export function EducationWorkspace() {
                   setPlaying(false);
                   setHoursOffset(0);
                 }}
-                title="Volver al inicio del ciclo"
+                title="Return to cycle start"
               >
                 <RotateCcw size={14} />
               </button>
@@ -422,11 +421,11 @@ export function EducationWorkspace() {
                 className="edu-speed-select"
                 value={speedHoursPerSec}
                 onChange={(e) => setSpeedHoursPerSec(Number(e.target.value))}
-                aria-label="Velocidad de la película"
+                aria-label="Animation speed"
               >
-                <option value={12}>1× lento</option>
+                <option value={12}>1× slow</option>
                 <option value={36}>3× normal</option>
-                <option value={72}>6× rápido</option>
+                <option value={72}>6× fast</option>
                 <option value={144}>12× turbo</option>
               </select>
             </div>
@@ -434,12 +433,10 @@ export function EducationWorkspace() {
             <label className="edu-slider-label">
               <div className="edu-slider-meta">
                 <span className="mono">
-                  Día {lunarDaysElapsed.toFixed(1)} / 29,5 (
+                  Day {lunarDaysElapsed.toFixed(1)} / 29.5 (
                   {Math.round(hoursOffset)} h)
                 </span>
-                <span className="mono">
-                  {lunarDayPct.toFixed(0)}% del ciclo
-                </span>
+                <span className="mono">{lunarDayPct.toFixed(0)}% of cycle</span>
               </div>
               <input
                 type="range"
@@ -458,24 +455,24 @@ export function EducationWorkspace() {
             {currentFrame && (
               <div className="edu-live-telemetry">
                 <div className="edu-live-row">
-                  <span className="muted-note">Instante UTC</span>
+                  <span className="muted-note">UTC instant</span>
                   <span className="mono">
                     {formatUtcShort(currentFrame.utc)}
                   </span>
                 </div>
                 <div className="edu-live-row">
-                  <span className="muted-note">Sol en este punto</span>
+                  <span className="muted-note">Sun at this location</span>
                   <span
                     className={`pill ${currentFrame.sun_visible ? "pill-amber" : "pill-muted"}`}
                   >
                     <Sun size={11} />{" "}
                     {currentFrame.sun_visible
-                      ? `Iluminado (${currentFrame.sun_elevation_deg.toFixed(1)}°)`
-                      : `En sombra (${currentFrame.sun_elevation_deg.toFixed(1)}°)`}
+                      ? `Sunlit (${currentFrame.sun_elevation_deg.toFixed(1)}°)`
+                      : `In shadow (${currentFrame.sun_elevation_deg.toFixed(1)}°)`}
                   </span>
                 </div>
                 <div className="edu-live-row">
-                  <span className="muted-note">Fase lunar (desde Tierra)</span>
+                  <span className="muted-note">Lunar phase (from Earth)</span>
                   <span className="mono">
                     {Math.round(currentFrame.illumination_fraction * 100)}% ·{" "}
                     {phaseLabelFromFraction(currentFrame.illumination_fraction)}
@@ -485,7 +482,7 @@ export function EducationWorkspace() {
             )}
 
             <label className="field edu-date-field">
-              <span>Fecha inicio simulación (UTC)</span>
+              <span>Simulation start date (UTC)</span>
               <input
                 type="date"
                 min="1972-01-01"
@@ -496,16 +493,16 @@ export function EducationWorkspace() {
             </label>
           </div>
 
-          {/* MATERIALES: SOLO AGUA + EXPLICACIÓN ESPEJO DE LA LUNA */}
+          {/* WEH and laser reflector explanations */}
           <div className="edu-extras-box">
-            <div className="eyebrow">3. WEH Y FENÓMENOS LUNARES</div>
+            <div className="eyebrow">3. WEH AND LUNAR PHENOMENA</div>
             <button
               type="button"
               className={`btn-secondary edu-feature-btn ${showWaterLayer ? "active" : ""}`}
               onClick={handleToggleWater}
             >
               <Droplets size={15} className="tag-earth" />
-              <span>Hidrógeno equivalente en agua (WEH)</span>
+              <span>Water-equivalent hydrogen (WEH)</span>
               <span className="pill pill-cyan">
                 {showWaterLayer ? "ON" : "OFF"}
               </span>
@@ -517,7 +514,7 @@ export function EducationWorkspace() {
               onClick={handleToggleMirrorGuide}
             >
               <Sparkles size={15} className="tag-ok" />
-              <span>¿Qué es el Espejo de la Luna?</span>
+              <span>How do lunar reflectors work?</span>
               <span className="pill pill-ok">LRRR</span>
             </button>
 
@@ -528,12 +525,12 @@ export function EducationWorkspace() {
               className="edu-pgda-link"
             >
               <Info size={13} />
-              Datos PSR / Luz continua: NASA PGDA LOLA 69
+              Polar illumination and shadow: NASA PGDA LOLA 69
             </a>
           </div>
         </aside>
 
-        {/* ZONA PRINCIPAL: Globo 3D + Miniventana 3 Cuerpos SIMULTÁNEOS + Mascota ILARGI */}
+        {/* Globe, three-body view and guide */}
         <section className="edu-stage">
           <div className="edu-dual-viewports">
             <div className="panel edu-globe-panel">
@@ -568,7 +565,7 @@ export function EducationWorkspace() {
                       type="button"
                       className="btn-icon"
                       onClick={() => setShowMirrorGuide(false)}
-                      title="Cerrar explicación"
+                      title="Close explanation"
                     >
                       <X size={14} />
                     </button>
@@ -580,7 +577,7 @@ export function EducationWorkspace() {
                     ))}
                   </ul>
                   <div className="edu-discoveries">
-                    <strong>¿Qué descubrimos gracias a ellos?</strong>
+                    <strong>What can we learn from them?</strong>
                     <ul>
                       {LUNAR_MIRROR_GUIDE.discoveries.map((d) => (
                         <li key={d}>{d}</li>
@@ -594,13 +591,14 @@ export function EducationWorkspace() {
                     <div>
                       <div className="eyebrow">
                         {manualCoords
-                          ? "COORDENADA MANUAL"
-                          : (selectedSite?.category_label ?? "FICHA DEL LUGAR")}
+                          ? "MANUAL COORDINATES"
+                          : (selectedSite?.category_label ??
+                            "LOCATION DETAILS")}
                       </div>
                       <h3 className="edu-site-title">
                         {manualCoords
-                          ? `Punto (${manualCoords.latitudeDeg.toFixed(2)}°, ${manualCoords.longitudeEastDeg.toFixed(2)}°E)`
-                          : (selectedSite?.name ?? "Selecciona un punto")}
+                          ? `Location (${manualCoords.latitudeDeg.toFixed(2)}°, ${manualCoords.longitudeEastDeg.toFixed(2)}°E)`
+                          : (selectedSite?.name ?? "Select a location")}
                       </h3>
                     </div>
                     {selectedSite && !manualCoords && (
@@ -615,25 +613,24 @@ export function EducationWorkspace() {
                   {selectedSite && !manualCoords ? (
                     <div className="edu-site-facts">
                       <div>
-                        <strong className="tag-sun">Luz solar:</strong>{" "}
+                        <strong className="tag-sun">Sunlight:</strong>{" "}
                         {selectedSite.illumination_note}
                       </div>
                       <div>
-                        <strong className="tag-earth">Tierra:</strong>{" "}
+                        <strong className="tag-earth">Earth:</strong>{" "}
                         {selectedSite.earth_visibility_note}
                       </div>
                       <div>
-                        <strong className="tag-ok">Agua (H₂O):</strong>{" "}
+                        <strong className="tag-ok">Water (H₂O):</strong>{" "}
                         {selectedSite.water_note}
                       </div>
                     </div>
                   ) : (
                     <p className="edu-card-p">
-                      Coordenadas seleccionadas directamente sobre la esfera
-                      lunar. Usa la película del ciclo lunar para observar cómo
-                      varía la elevación solar y activa la capa de{" "}
-                      <strong>WEH</strong> para explorar el hidrógeno estimado
-                      polares.
+                      The coordinates were selected on the lunar globe. Play the
+                      cycle to inspect changing solar elevation, and enable{" "}
+                      <strong>WEH</strong> to explore estimated hydrogen
+                      abundance.
                     </p>
                   )}
                 </div>

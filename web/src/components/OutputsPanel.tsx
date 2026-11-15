@@ -34,7 +34,7 @@ function downloadSeriesCsv(result: SiteAnalysisResult) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `ilargi-${result.label.toLowerCase()}-serie.csv`;
+  a.download = `ilargi-${result.label.toLowerCase()}-series.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -51,14 +51,14 @@ export function OutputsPanel({ result, onClose }: OutputsPanelProps) {
             λ={result.latitude_deg.toFixed(3)}° · θ=
             {result.longitude_east_deg.toFixed(3)}°E
             {result.ground_elevation_m !== null
-              ? ` · cota ${result.ground_elevation_m.toFixed(1)} m`
-              : " · esfera ref. 1 737,4 km"}
+              ? ` · elevation ${result.ground_elevation_m.toFixed(1)} m`
+              : " · reference sphere 1,737.4 km"}
           </div>
           <div className="mono-sub">
-            Inicio {formatUtcShort(result.start_utc)} · ventana{" "}
+            Start {formatUtcShort(result.start_utc)} · window{" "}
             {result.duration_hours} h
             {result.horizon_mode === "lola"
-              ? ` · tangente ${result.search_radius_km.toFixed(1)} km`
+              ? ` · tangent ${result.search_radius_km.toFixed(1)} km`
               : ""}
           </div>
         </div>
@@ -72,7 +72,7 @@ export function OutputsPanel({ result, onClose }: OutputsPanelProps) {
             type="button"
             className="btn-icon"
             onClick={onClose}
-            title="Cerrar panel de resultados"
+            title="Close results panel"
           >
             <X size={15} />
           </button>
@@ -83,17 +83,9 @@ export function OutputsPanel({ result, onClose }: OutputsPanelProps) {
         <SkyAzimuthPlot result={result} height={290} />
       </div>
 
-      {result.horizon_mode === "lola" && (
-        <p className="panel-sub">
-          Visibility and events are estimates from sampled terrain. Where
-          horizon data is missing, the calculation uses an ideal 0° horizon;
-          incomplete terrain coverage can also miss obstacles. The CSV
-          identifies the horizon source for each sample.
-        </p>
-      )}
       <div className="kpi-grid">
         <div className="kpi-box">
-          <div className="kpi-label">Visibilidad Sol</div>
+          <div className="kpi-label">Sun visibility</div>
           <div className="kpi-value kpi-sun">
             {result.visibility.sun_pct.toFixed(1)}%
           </div>
@@ -102,7 +94,7 @@ export function OutputsPanel({ result, onClose }: OutputsPanelProps) {
           </div>
         </div>
         <div className="kpi-box">
-          <div className="kpi-label">Visibilidad Tierra</div>
+          <div className="kpi-label">Earth visibility</div>
           <div className="kpi-value kpi-earth">
             {result.visibility.earth_pct.toFixed(1)}%
           </div>
@@ -112,12 +104,12 @@ export function OutputsPanel({ result, onClose }: OutputsPanelProps) {
           </div>
         </div>
         <div className="kpi-box">
-          <div className="kpi-label">Conjunta</div>
+          <div className="kpi-label">Simultaneous</div>
           <div className="kpi-value kpi-ok">
             {result.visibility.both_pct.toFixed(1)}%
           </div>
           <div className="kpi-sub">
-            {result.visibility.both_hours.toFixed(1)} h simultáneas
+            {result.visibility.both_hours.toFixed(1)} h simultaneous
           </div>
         </div>
       </div>
@@ -149,26 +141,26 @@ export function OutputsPanel({ result, onClose }: OutputsPanelProps) {
         </div>
 
         <div className="telemetry-item">
-          <div className="telemetry-label">
-            Duración de las noches (sombras de luz)
-          </div>
+          <div className="telemetry-label">Dark intervals</div>
           {result.nights.longest === null ? (
             <div className="telemetry-row mono">
-              Sin noche solar en el periodo evaluado (100% iluminado)
+              No center-based dark interval detected in this window
             </div>
           ) : (
             <>
               <div className="telemetry-row">
-                <strong>Noche más larga:</strong>{" "}
+                <strong>Longest dark interval:</strong>{" "}
                 <span className="mono">
                   {formatShadowSpan(result.nights.longest)}
                 </span>
               </div>
               <div className="telemetry-row">
-                <strong>Otras noches ({result.nights.others.length}):</strong>{" "}
+                <strong>
+                  Other dark intervals ({result.nights.others.length}):
+                </strong>{" "}
                 <span className="mono">
                   {result.nights.others.length === 0
-                    ? "Ninguna adicional"
+                    ? "No additional intervals"
                     : result.nights.others.map(formatShadowSpan).join(" · ")}
                 </span>
               </div>
@@ -177,7 +169,8 @@ export function OutputsPanel({ result, onClose }: OutputsPanelProps) {
           {result.nights.earth_outages.length > 0 && (
             <div className="telemetry-row">
               <strong>
-                Oclusiones de Tierra ({result.nights.earth_outages.length}):
+                Earth occultation intervals (
+                {result.nights.earth_outages.length}):
               </strong>{" "}
               <span className="mono">
                 {result.nights.earth_outages.map(formatShadowSpan).join(" · ")}
@@ -188,7 +181,7 @@ export function OutputsPanel({ result, onClose }: OutputsPanelProps) {
 
         <div className="telemetry-item">
           <div className="telemetry-label">
-            Ángulo de incidencia solar (normal local)
+            Solar incidence angle (local normal)
           </div>
           <div className="telemetry-row mono">
             {formatIncidenceSummary(result)}
@@ -196,7 +189,7 @@ export function OutputsPanel({ result, onClose }: OutputsPanelProps) {
         </div>
 
         <div className="telemetry-item">
-          <div className="telemetry-label">Minerales, Agua y Temperatura</div>
+          <div className="telemetry-label">Elements, water and temperature</div>
           <div className="telemetry-row">
             <strong>Elements:</strong>{" "}
             <span className="mono">{formatMaterialsSummary(result)}</span>
@@ -214,7 +207,7 @@ export function OutputsPanel({ result, onClose }: OutputsPanelProps) {
         onClick={() => downloadSeriesCsv(result)}
       >
         <Download size={14} />
-        Exportar serie CSV ({result.label})
+        Export series CSV ({result.label})
       </button>
     </aside>
   );

@@ -46,7 +46,7 @@ function DailyEvolutionPlotCanvas({
         {
           x: result.series.sun.map((s) => s.utc),
           y: result.series.sun.map((s) => s.horizon_deg),
-          name: "Horizonte → Sol",
+          name: "Horizon → Sun",
           type: "scatter",
           mode: "lines",
           line: { color: "#FB7185", width: 1.4, dash: "dot" },
@@ -54,7 +54,7 @@ function DailyEvolutionPlotCanvas({
         {
           x: result.series.earth.map((s) => s.utc),
           y: result.series.earth.map((s) => s.horizon_deg),
-          name: "Horizonte → Tierra",
+          name: "Horizon → Earth",
           type: "scatter",
           mode: "lines",
           line: { color: "#10B981", width: 1.4, dash: "dot" },

@@ -9,7 +9,7 @@ export class LunarHeightField {
     readonly height = 1440,
   ) {
     if (values.length !== width * height)
-      throw new Error("Tamaño incorrecto del DEM lunar");
+      throw new Error("Invalid lunar DEM size");
   }
 
   elevation(latitude: number, longitude: number): number {
@@ -50,7 +50,7 @@ export async function loadLunarHeightField(
 ): Promise<LunarHeightField> {
   const response = await fetch("/textures/moon_height.bin.gz", { signal });
   if (!response.ok || !response.body)
-    throw new Error("No se pudo cargar el relieve LOLA");
+    throw new Error("Could not load LOLA terrain");
   const buffer = await new Response(
     response.body.pipeThrough(new DecompressionStream("gzip")),
   ).arrayBuffer();

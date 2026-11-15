@@ -11,17 +11,15 @@ interface ThreeBodyOrbitMiniProps {
 
 type OrbitViewMode = "heliocentric" | "earth_moon_1to1";
 
-// Oblicuidad de la eclíptica J2000 (~23.4393°) para alinear la eclíptica al plano horizontal XZ.
 const OBLIQUITY_RAD = THREE.MathUtils.degToRad(23.439291);
 const COS_OBL = Math.cos(OBLIQUITY_RAD);
 const SIN_OBL = Math.sin(OBLIQUITY_RAD);
 
 function j2000ToEclipticThree(v: [number, number, number]): THREE.Vector3 {
-  // Rotación -obliquity alrededor de X:
   // x' = x
   // y_ecl = y*cos + z*sin
   // z_ecl = -y*sin + z*cos
-  // En Three.js: +X = x', +Y = z_ecl (Norte eclíptico), +Z = -y_ecl
+
   const x = v[0];
   const yEcl = v[1] * COS_OBL + v[2] * SIN_OBL;
   const zEcl = -v[1] * SIN_OBL + v[2] * COS_OBL;
@@ -29,15 +27,15 @@ function j2000ToEclipticThree(v: [number, number, number]): THREE.Vector3 {
 }
 
 const HELIO_SCALE = 1 / 12_000_000; // 150M km ≈ 12.5 unidades
-const MOON_EXAGGERATION = 42; // Visibilidad clara de la órbita lunar alrededor de la Tierra
+const MOON_EXAGGERATION = 42;
 const REAL_SCALE_EARTH_MOON = 1 / 50_000; // 384,400 km ≈ 7.69 unidades (1:1 real!)
 
 export function phaseLabelFromFraction(frac: number): string {
-  if (frac < 0.06) return "Luna Nueva";
-  if (frac < 0.44) return "Creciente";
-  if (frac < 0.56) return "Cuarto";
-  if (frac < 0.94) return "Gibosa / Llena";
-  return "Luna Llena";
+  if (frac < 0.06) return "New Moon";
+  if (frac < 0.44) return "Crescent";
+  if (frac < 0.56) return "Quarter";
+  if (frac < 0.94) return "Gibbous / Full";
+  return "Full Moon";
 }
 
 export function ThreeBodyOrbitMini({
@@ -64,7 +62,6 @@ export function ThreeBodyOrbitMini({
     dirSunLight: THREE.DirectionalLight;
   } | null>(null);
 
-  // Cerrar vista ampliada con Escape
   useEffect(() => {
     if (!expanded) return;
     const onKey = (ev: KeyboardEvent) => {
@@ -97,7 +94,6 @@ export function ThreeBodyOrbitMini({
     controls.minDistance = 1.2;
     controls.maxDistance = 55;
 
-    // Rejilla eclíptica tenue
     const grid = new THREE.GridHelper(32, 24, 0x1e293b, 0x0f172a);
     grid.position.y = -0.02;
     scene.add(grid);
@@ -133,7 +129,7 @@ export function ThreeBodyOrbitMini({
     dirSunLight.visible = false;
     scene.add(dirSunLight);
 
-    // Sol
+    // Sun
     const sunMesh = new THREE.Mesh(
       new THREE.SphereGeometry(0.62, 28, 28),
       new THREE.MeshBasicMaterial({ color: 0xfbbf24 }),
@@ -150,7 +146,7 @@ export function ThreeBodyOrbitMini({
     );
     scene.add(sunHalo);
 
-    // Tierra + grupo local Tierra-Luna
+    // Earth and local Earth–Moon group
     const earthGroup = new THREE.Group();
     scene.add(earthGroup);
 
@@ -165,7 +161,7 @@ export function ThreeBodyOrbitMini({
     );
     earthGroup.add(earthMesh);
 
-    // Luna
+    // Moon
     const moonMesh = new THREE.Mesh(
       new THREE.SphereGeometry(0.11, 24, 24),
       new THREE.MeshStandardMaterial({
@@ -175,7 +171,6 @@ export function ThreeBodyOrbitMini({
     );
     earthGroup.add(moonMesh);
 
-    // Anillo marcador para modo 1:1 real (donde el radio real de la Luna es ~0.035 u.)
     const moonLocator = new THREE.Mesh(
       new THREE.RingGeometry(0.14, 0.18, 24),
       new THREE.MeshBasicMaterial({
@@ -188,7 +183,6 @@ export function ThreeBodyOrbitMini({
     moonLocator.rotation.x = Math.PI / 2;
     earthGroup.add(moonLocator);
 
-    // Órbita de la Tierra alrededor del Sol
     const earthOrbitLine = new THREE.Line(
       new THREE.BufferGeometry(),
       new THREE.LineBasicMaterial({
@@ -199,7 +193,6 @@ export function ThreeBodyOrbitMini({
     );
     scene.add(earthOrbitLine);
 
-    // Órbita de la Luna alrededor de la Tierra
     const moonOrbitLine = new THREE.Line(
       new THREE.BufferGeometry(),
       new THREE.LineBasicMaterial({
@@ -210,7 +203,6 @@ export function ThreeBodyOrbitMini({
     );
     earthGroup.add(moonOrbitLine);
 
-    // Flecha de dirección solar para el modo 1:1 Tierra-Luna
     const sunDirArrow = new THREE.ArrowHelper(
       new THREE.Vector3(1, 0, 0),
       new THREE.Vector3(0, 0, 0),
@@ -269,7 +261,6 @@ export function ThreeBodyOrbitMini({
     };
   }, []);
 
-  // Reconstruir curvas orbitales SPICE cuando llegan frames o cambia viewMode.
   useEffect(() => {
     const refs = sceneRefs.current;
     if (!refs || frames.length === 0) return;
@@ -304,7 +295,7 @@ export function ThreeBodyOrbitMini({
         moonPts,
       );
 
-      // Enfocar vista entre Sol y Tierra
+      // Center the view between Sun and Earth
       const midEarth = earthPts[Math.floor(earthPts.length / 2)];
       refs.controls.target.copy(midEarth.clone().multiplyScalar(0.55));
       refs.camera.position.set(
@@ -314,7 +305,7 @@ export function ThreeBodyOrbitMini({
       );
       refs.controls.update();
     } else {
-      // Escala real 1:1 Tierra-Luna
+      // Physical Earth–Moon scale
       refs.sunMesh.visible = false;
       refs.sunHalo.visible = false;
       refs.earthOrbitLine.visible = false;
@@ -345,7 +336,6 @@ export function ThreeBodyOrbitMini({
     }
   }, [frames, viewMode]);
 
-  // Actualizar posiciones instantáneas al mover el slider o reproducir la película.
   useEffect(() => {
     const refs = sceneRefs.current;
     if (!refs || !currentFrame) return;
@@ -376,7 +366,6 @@ export function ThreeBodyOrbitMini({
     }
   }, [currentFrame, viewMode]);
 
-  // Reajustar tamaño del canvas al expandir/contraer
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -384,13 +373,13 @@ export function ThreeBodyOrbitMini({
   }, [expanded]);
 
   const dSE = currentFrame
-    ? Math.round(currentFrame.sun_earth_dist_km).toLocaleString("es-ES")
+    ? Math.round(currentFrame.sun_earth_dist_km).toLocaleString("en-GB")
     : "—";
   const dEM = currentFrame
-    ? Math.round(currentFrame.earth_moon_dist_km).toLocaleString("es-ES")
+    ? Math.round(currentFrame.earth_moon_dist_km).toLocaleString("en-GB")
     : "—";
   const dSM = currentFrame
-    ? Math.round(currentFrame.sun_moon_dist_km).toLocaleString("es-ES")
+    ? Math.round(currentFrame.sun_moon_dist_km).toLocaleString("en-GB")
     : "—";
   const phasePct = currentFrame
     ? Math.round(currentFrame.illumination_fraction * 100)
@@ -403,12 +392,12 @@ export function ThreeBodyOrbitMini({
       <div className="orbit-mini-head">
         <div>
           <div className="eyebrow eyebrow-accent">
-            ÓRBITAS 3 CUERPOS · SOL · TIERRA · LUNA
+            THREE-BODY VIEW · SUN · EARTH · MOON
           </div>
           <div className="orbit-mini-sub">
             {viewMode === "heliocentric"
-              ? "Vectores DE440s en eclíptica · Órbita lunar ampliada para visibilidad"
-              : "Escala proporcional real 1:1 (Tierra 6.371 km · Luna 1.737 km)"}
+              ? "DE440s ecliptic vectors · Lunar orbit enlarged for visibility"
+              : "Physical scale (Earth 6,371 km · Moon 1,737 km)"}
           </div>
         </div>
         <div className="orbit-mini-actions">
@@ -417,23 +406,23 @@ export function ThreeBodyOrbitMini({
             className={`btn-mini ${viewMode === "heliocentric" ? "active" : ""}`}
             onClick={() => setViewMode("heliocentric")}
           >
-            3 Cuerpos
+            3 Bodies
           </button>
           <button
             type="button"
             className={`btn-mini ${viewMode === "earth_moon_1to1" ? "active" : ""}`}
             onClick={() => setViewMode("earth_moon_1to1")}
           >
-            Tierra–Luna 1:1
+            Earth–Moon 1:1
           </button>
           <button
             type="button"
             className="btn-mini orbit-expand-btn"
             onClick={() => setExpanded((v) => !v)}
-            title={expanded ? "Reducir a miniventana" : "Ampliar simulación"}
+            title={expanded ? "Collapse view" : "Expand simulation"}
           >
             {expanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-            {expanded ? "Reducir" : "Ampliar"}
+            {expanded ? "Collapse" : "Expand"}
           </button>
         </div>
       </div>
@@ -442,16 +431,16 @@ export function ThreeBodyOrbitMini({
 
       <div className="orbit-telemetry-bar">
         <span className="mono">
-          <strong className="tag-sun">Sol–Tierra:</strong> {dSE} km
+          <strong className="tag-sun">Sun–Earth:</strong> {dSE} km
         </span>
         <span className="mono">
-          <strong className="tag-earth">Tierra–Luna:</strong> {dEM} km
+          <strong className="tag-earth">Earth–Moon:</strong> {dEM} km
         </span>
         <span className="mono">
-          <strong className="tag-ok">Sol–Luna:</strong> {dSM} km
+          <strong className="tag-ok">Sun–Moon:</strong> {dSM} km
         </span>
         <span className="pill pill-muted">
-          Fase: {phasePct}% (
+          Phase: {phasePct}% (
           {phaseLabelFromFraction(currentFrame?.illumination_fraction ?? 0)})
         </span>
       </div>

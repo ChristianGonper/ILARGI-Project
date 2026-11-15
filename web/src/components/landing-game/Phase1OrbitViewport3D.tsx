@@ -73,7 +73,7 @@ function makeSpacecraftMesh(): THREE.Group {
   );
   group.add(body);
 
-  // Paneles solares
+  // Solar panels
   const wingGeo = new THREE.BoxGeometry(0.11, 0.008, 0.025);
   const wingMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
   const wings = new THREE.Mesh(wingGeo, wingMat);

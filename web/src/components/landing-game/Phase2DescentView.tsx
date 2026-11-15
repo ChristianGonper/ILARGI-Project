@@ -327,7 +327,7 @@ export function Phase2DescentView({
             </strong>
             <small>
               {validated
-                ? `Bajar ${mechanics.descentDeltaKm} km · ΔV ${mechanics.totalDescentDeltaVMs} m/s`
+                ? `Descend ${mechanics.descentDeltaKm} km · ΔV ${mechanics.totalDescentDeltaVMs} m/s`
                 : "First check the altitude subtraction above"}
             </small>
           </span>

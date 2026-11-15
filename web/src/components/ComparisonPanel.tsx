@@ -19,22 +19,22 @@ interface ComparisonPanelProps {
 
 function downloadComparisonCsv(results: SiteAnalysisResult[]) {
   const header = [
-    "punto",
-    "emplazamiento",
-    "latitud_deg",
-    "longitud_este_deg",
-    "inicio_utc",
-    "horizonte",
-    "sol_pct",
-    "tierra_pct",
-    "conjunta_pct",
+    "point",
+    "site",
+    "latitude_deg",
+    "longitude_east_deg",
+    "start_utc",
+    "horizon",
+    "sun_pct",
+    "earth_pct",
+    "simultaneous_pct",
     "sunsets",
     "earthsets",
-    "noche_mas_larga_h",
-    "otras_noches",
-    "incidencia_solar",
-    "minerales_y_agua",
-    "temperatura",
+    "longest_dark_interval_h",
+    "other_dark_intervals",
+    "solar_incidence",
+    "elements_and_water",
+    "temperature",
   ].join(",");
 
   const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
@@ -65,7 +65,7 @@ function downloadComparisonCsv(results: SiteAnalysisResult[]) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "ilargi-comparativa.csv";
+  a.download = "ilargi-comparison.csv";
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -83,15 +83,11 @@ export function ComparisonPanel({
       <div className="comp-header">
         <div>
           <div className="eyebrow eyebrow-accent">
-            COMP · TABLA COMPARATIVA ({results.length} EMPLAZAMIENTOS)
+            COMP · SITE COMPARISON ({results.length} LOCATIONS)
           </div>
           <div className="panel-sub">
-            Pulsa el botón de gráfico al final de cada fila para mostrar y
-            apilar los diagramas Acimut vs Elevación debajo.
-          </div>
-          <div className="panel-sub">
-            Visibility and events are estimates. Terrain coverage may be
-            partial; missing horizon samples use an ideal 0° horizon.
+            Use the plot button at the end of each row to display its
+            azimuth–elevation diagram below.
           </div>
         </div>
         <div className="comp-actions">
@@ -101,7 +97,7 @@ export function ComparisonPanel({
             onClick={() => downloadComparisonCsv(results)}
           >
             <Download size={14} />
-            CSV comparativa
+            Comparison CSV
           </button>
           {comparedLabels.length > 0 && (
             <button
@@ -110,7 +106,7 @@ export function ComparisonPanel({
               onClick={onClearPlots}
             >
               <Trash2 size={14} />
-              Limpiar plots ({comparedLabels.length})
+              Clear plots ({comparedLabels.length})
             </button>
           )}
         </div>
@@ -120,14 +116,14 @@ export function ComparisonPanel({
         <table className="comp-table">
           <thead>
             <tr>
-              <th>Punto / Coords</th>
-              <th>Visibilidad (Sol · Tierra · Ambos)</th>
+              <th>Site / Coordinates</th>
+              <th>Visibility (Sun · Earth · Both)</th>
               <th>Sunset / Earthset</th>
-              <th>Noches (Más larga · Otras)</th>
-              <th>Incidencia solar</th>
-              <th>Minerales y Agua</th>
-              <th>Horizonte / Temp.</th>
-              <th className="col-action">Acimut–Elev.</th>
+              <th>Dark intervals (Longest · Others)</th>
+              <th>Solar incidence</th>
+              <th>Elements and WEH</th>
+              <th>Horizon / Temperature</th>
+              <th className="col-action">Azimuth–Elevation</th>
             </tr>
           </thead>
           <tbody>
@@ -149,17 +145,17 @@ export function ComparisonPanel({
                   </td>
                   <td className="mono">
                     <div>
-                      <span className="tag-sun">Sol:</span>{" "}
+                      <span className="tag-sun">Sun:</span>{" "}
                       <strong>{r.visibility.sun_pct.toFixed(1)}%</strong> (
                       {r.visibility.sun_hours.toFixed(1)} h)
                     </div>
                     <div>
-                      <span className="tag-earth">Tierra:</span>{" "}
+                      <span className="tag-earth">Earth:</span>{" "}
                       <strong>{r.visibility.earth_pct.toFixed(1)}%</strong> (
                       {r.visibility.earth_hours.toFixed(1)} h)
                     </div>
                     <div>
-                      <span className="tag-ok">Ambos:</span>{" "}
+                      <span className="tag-ok">Both:</span>{" "}
                       <strong>{r.visibility.both_pct.toFixed(1)}%</strong>
                     </div>
                   </td>
@@ -179,17 +175,17 @@ export function ComparisonPanel({
                   </td>
                   <td className="mono cell-wrap">
                     {r.nights.longest === null ? (
-                      <span>Sin noches (100% luz)</span>
+                      <span>No dark intervals detected</span>
                     ) : (
                       <>
                         <div>
-                          <strong>Máx:</strong>{" "}
+                          <strong>Max:</strong>{" "}
                           {formatShadowSpan(r.nights.longest)}
                         </div>
                         <div>
-                          <strong>Otras ({r.nights.others.length}):</strong>{" "}
+                          <strong>Others ({r.nights.others.length}):</strong>{" "}
                           {r.nights.others.length === 0
-                            ? "Ninguna"
+                            ? "None"
                             : r.nights.others
                                 .map((n) => `${n.duration_hours.toFixed(1)}h`)
                                 .join(", ")}
@@ -222,10 +218,10 @@ export function ComparisonPanel({
                       type="button"
                       className={`btn-plot-toggle ${isOpen ? "open" : ""}`}
                       onClick={() => onTogglePlot(r.label)}
-                      aria-label={`Ver gráfico Acimut vs Elevación de ${r.label}`}
+                      aria-label={`View azimuth–elevation plot for ${r.label}`}
                     >
                       {isOpen ? <X size={15} /> : <LineChart size={15} />}
-                      <span>{isOpen ? "Ocultar" : "Gráfico"}</span>
+                      <span>{isOpen ? "Hide" : "Plot"}</span>
                     </button>
                   </td>
                 </tr>
@@ -253,7 +249,7 @@ export function ComparisonPanel({
                     <span className="mono-sub">
                       (λ={r.latitude_deg.toFixed(3)}°, θ=
                       {r.longitude_east_deg.toFixed(3)}°E · {r.horizon_label} ·
-                      Sol {r.visibility.sun_pct.toFixed(1)}% · Tierra{" "}
+                      Sun {r.visibility.sun_pct.toFixed(1)}% · Earth{" "}
                       {r.visibility.earth_pct.toFixed(1)}%)
                     </span>
                   </div>
@@ -261,7 +257,7 @@ export function ComparisonPanel({
                     type="button"
                     className="btn-icon"
                     onClick={() => onTogglePlot(r.label)}
-                    title={`Ocultar gráfico de ${r.label}`}
+                    title={`Hide plot for ${r.label}`}
                   >
                     <X size={15} />
                   </button>

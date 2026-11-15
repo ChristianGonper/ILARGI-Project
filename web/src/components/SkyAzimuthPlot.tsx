@@ -110,7 +110,7 @@ function SkyAzimuthPlotCanvas({
       marker: { size: 3.5 },
       line: { color: "#F59E0B", width: 2 },
       hovertemplate:
-        "%{customdata}<br>Relative azimuth: %{x:.2f}°<br>Elevación: %{y:.2f}°<extra>Sun</extra>",
+        "%{customdata}<br>Relative azimuth: %{x:.2f}°<br>Elevation: %{y:.2f}°<extra>Sun</extra>",
     });
 
     const earthTrack = buildTrackWithBreaks(result.series.earth, centerDeg);
@@ -125,7 +125,7 @@ function SkyAzimuthPlotCanvas({
       marker: { size: 3.5 },
       line: { color: "#38BDF8", width: 2 },
       hovertemplate:
-        "%{customdata}<br>Relative azimuth: %{x:.2f}°<br>Elevación: %{y:.2f}°<extra>Earth</extra>",
+        "%{customdata}<br>Relative azimuth: %{x:.2f}°<br>Elevation: %{y:.2f}°<extra>Earth</extra>",
     });
 
     if (!isIdeal) {
@@ -143,7 +143,7 @@ function SkyAzimuthPlotCanvas({
     traces.push({
       x: hOrder.map((p) => p.rel),
       y: hOrder.map((p) => p.el),
-      name: isIdeal ? "Horizonte ideal (0°)" : "Horizonte LOLA",
+      name: isIdeal ? "Ideal horizon (0°)" : "LOLA horizon",
       legendrank: 1,
       type: "scatter",
       mode: "lines",
@@ -151,7 +151,7 @@ function SkyAzimuthPlotCanvas({
       fill: isIdeal ? undefined : "tonexty",
       fillcolor: isIdeal ? undefined : "rgba(249, 115, 22, 0.28)",
       hovertemplate:
-        "Relative azimuth: %{x:.1f}°<br>Horizonte: %{y:.2f}°<extra></extra>",
+        "Relative azimuth: %{x:.1f}°<br>Horizon: %{y:.2f}°<extra></extra>",
     });
 
     const truncPts = hOrder.filter((p) => p.trunc && p.el !== null);
@@ -159,7 +159,7 @@ function SkyAzimuthPlotCanvas({
       traces.push({
         x: truncPts.map((p) => p.rel),
         y: truncPts.map((p) => p.el),
-        name: "Terreno interrumpido",
+        name: "Interrupted terrain",
         legendrank: 4,
         type: "scatter",
         mode: "markers",
@@ -197,7 +197,7 @@ function SkyAzimuthPlotCanvas({
         },
       ],
       xaxis: {
-        title: `Azimut relativo al centro (${centerDeg.toFixed(1)}°) (°)`,
+        title: `Azimuth relative to center (${centerDeg.toFixed(1)}°) (°)`,
         range: [-180, 180],
         gridcolor: "#26334D",
         zerolinecolor: "#26334D",

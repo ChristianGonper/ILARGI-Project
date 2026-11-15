@@ -164,10 +164,6 @@ export interface MaterialsOverlayResponse {
   regions: MaterialRegionOverlay[];
 }
 
-/**
- * Contrato de adaptador para el visor lunar 3D.
- * Permite intercambiar Three.js por CesiumJS (o combinarlos) sin cambiar el resto de la app.
- */
 export interface MoonViewport3DProps {
   historicalSites: HistoricalSite[];
   activePoints: PointDraft[];
