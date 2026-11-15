@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import {
-  LUNAR_RADIUS_KM,
   latLonToThreeVector,
   threeVectorToLatLon,
 } from "../three/moonCoordinates";
@@ -614,12 +613,10 @@ export function EducationMoonViewport3D({
     <div className="moon-viewport-shell edu-moon-shell">
       <div className="moon-hud-top">
         <div className="moon-hud-pills">
-          <span className="pill pill-muted">
-            3D LUNAR GLOBE · R={LUNAR_RADIUS_KM.toFixed(1)} km · Free rotation
-          </span>
+          <span className="pill pill-muted">Explore the Moon</span>
           {showWaterLayer && (
             <span className="pill pill-cyan">
-              Global WEH · stronger intensity = higher abundance
+              WEH: brighter areas contain more hydrogen
             </span>
           )}
           {(showMirrorLaser || selectedSite?.category === "mirror") && (

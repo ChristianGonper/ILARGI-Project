@@ -37,8 +37,8 @@ def main(archive: Path) -> None:
         ROOT / "data/materials/lawrence2022_hydrogen.npz", hydrogen=hydrogen
     )
 
-    # El alfa representa intervalos uniformes de 0–120 ppm H; el norte va arriba.
-    alpha = np.rint(255 * (0.12 + 0.58 * np.clip(hydrogen[::-1] / 120, 0, 1))).astype(
+    # Emphasize concentrations without geographic masks or an artificial background.
+    alpha = np.rint(255 * 0.85 * np.clip(hydrogen[::-1] / 120, 0, 1) ** 3).astype(
         np.uint8
     )
     rgba = np.empty((360, 720, 4), dtype=np.uint8)

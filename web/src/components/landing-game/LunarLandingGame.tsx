@@ -1,9 +1,9 @@
+import { SpacecraftPreview } from "../SpacecraftPreview";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   ArrowRight,
   CheckCircle2,
-  Crosshair,
   Orbit,
   RotateCcw,
 } from "lucide-react";
@@ -19,7 +19,6 @@ import {
 import { Phase1OrbitViewport3D } from "./Phase1OrbitViewport3D";
 import { Phase2DescentView } from "./Phase2DescentView";
 import { Phase3LandingCanvas } from "./Phase3LandingCanvas";
-import { SuperCalculator } from "./SuperCalculator";
 
 interface LunarLandingGameProps {
   educationSites: EducationSite[];
@@ -62,7 +61,7 @@ export function LunarLandingGame({
     text: string;
   }>({
     mood: "Phase 1 · Parking Orbit",
-    text: "Welcome aboard. Your lander starts in an equatorial parking orbit. Choose a landing site and enter its latitude and longitude in the calculator.",
+    text: "Welcome aboard. Your lander starts in an equatorial parking orbit. Choose a landing site and calculate the orbit needed to reach it.",
   });
 
   const handleIlargiSpeak = useCallback((mood: string, text: string) => {
@@ -118,7 +117,7 @@ export function LunarLandingGame({
     setPinMode(false);
     handleIlargiSpeak(
       "Phase 1 · Parking Orbit",
-      `Target set to ${siteToUse.name} (Lat ${siteToUse.latitudeDeg.toFixed(2)}°, Lon ${siteToUse.longitudeEastDeg.toFixed(2)}°E). Start from an equatorial parking orbit (i = 0°). Enter the coordinates in the calculator to find the required inclination.`,
+      `Target set to ${siteToUse.name} (Lat ${siteToUse.latitudeDeg.toFixed(2)}°, Lon ${siteToUse.longitudeEastDeg.toFixed(2)}°E). Start from an equatorial parking orbit (i = 0°). Calculate the required orbital inclination.`,
     );
   };
 
@@ -228,11 +227,12 @@ export function LunarLandingGame({
                   1. CHOOSE A LANDING SITE
                 </div>
                 <div className="panel-sub">
-                  Read the latitude and longitude on the lunar surface
+                  Select a destination for your mission
                 </div>
               </div>
             </div>
 
+            <SpacecraftPreview />
             <div className="phase1-site-list">
               {gameSites.map((s) => {
                 const active = selectedSite.id === s.id;
@@ -249,17 +249,6 @@ export function LunarLandingGame({
                 );
               })}
             </div>
-
-            <button
-              type="button"
-              className={`btn-secondary btn-compact ${pinMode ? "active" : ""}`}
-              onClick={() => setPinMode((v) => !v)}
-            >
-              <Crosshair size={14} />
-              {pinMode
-                ? "3D pin active (click the Moon)"
-                : "Choose a location on the Moon"}
-            </button>
 
             <div className="phase1-target-readout">
               <div className="eyebrow">SURFACE COORDINATES</div>
@@ -280,22 +269,19 @@ export function LunarLandingGame({
             </div>
 
             {/* SUPERCALCULADORA CON TECLADO */}
-            <SuperCalculator
-              targetLatitudeDeg={selectedSite.latitudeDeg}
-              targetLongitudeDeg={selectedSite.longitudeEastDeg}
-              orbitAltitudeKm={selectedSite.orbitAltitudeKm}
-              solvedInclination={solvedInclination}
-              onCalculated={(solution) => {
-                setSolvedInclination(solution);
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => {
+                setSolvedInclination(targetSolutionPreview);
                 handleIlargiSpeak(
                   "Orbital inclination",
-                  `The calculator gives inclination i = ${solution.requiredInclinationDeg.toFixed(2)}°. Inclination is the angle between the orbit and lunar equator. Apply it to make the ground track reach the target latitude.`,
+                  `To reach ${selectedSite.name}, tilt the orbit to ${targetSolutionPreview.requiredInclinationDeg.toFixed(2)} degrees.`,
                 );
               }}
-              onErrorFeedback={(msg) =>
-                handleIlargiSpeak("Check coordinates", msg)
-              }
-            />
+            >
+              Calculate my orbit
+            </button>
 
             {solvedInclination && !groundTrackAligned && (
               <button

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import {
-  LUNAR_RADIUS_KM,
   latLonToMoonMeKm,
   latLonToThreeVector,
   threeVectorToLatLon,
@@ -171,7 +170,7 @@ export function MoonViewport3D({
 }: MoonViewport3DProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [tooltip, setTooltip] = useState<HoverTooltip | null>(null);
-  const [terrainStatus, setTerrainStatus] = useState("Loading LOLA terrain…");
+  const [terrainStatus, setTerrainStatus] = useState("Loading lunar surface…");
   const [cameraPreset, setCameraPreset] = useState<"south" | "nearside">(
     "south",
   );
@@ -362,7 +361,7 @@ export function MoonViewport3D({
         moonMesh.visible = false;
         overlayMesh.visible = false;
         sphereMat.bumpScale = 0.001;
-        setTerrainStatus("LOLA terrain · Physical scale · Scroll to zoom");
+        setTerrainStatus("Scroll to explore the surface");
       })
       .catch(() => {
         if (!disposed)
@@ -757,9 +756,7 @@ export function MoonViewport3D({
     <div className="moon-viewport-shell">
       <div className="moon-hud-top">
         <div className="moon-hud-pills">
-          <span className="pill pill-muted">
-            THREE.JS · MOON_ME (R={LUNAR_RADIUS_KM.toFixed(1)} km)
-          </span>
+          <span className="pill pill-muted">Lunar surface</span>
           <span className="pill pill-cyan">80° S · LOLA / LP-GRS</span>
         </div>
         <div className="moon-camera-btns">

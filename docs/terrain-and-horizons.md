@@ -4,7 +4,7 @@ At each azimuth the engine samples terrain along spherical arcs, transforms into
 
 The scientific observer is placed at DEM elevation plus instrument height. Heights are meters relative to a 1,737,400 m sphere. DEMs must have a compatible spherical lunar CRS, projected coordinates in meters, square north-up pixels, and supported vertical units/scales. Files without explicit vertical units follow the included products' meter-height contract. Invalid metadata is rejected. Missing coverage is a separate condition that permits selection of another candidate or an ideal horizon.
 
-The engine can combine a fine nearby DEM with a coarser distant DEM. Search bounds use assumed lunar minimum/maximum terrain elevations and the elevation already found in each direction. Reaching such a bound does not validate unsampled terrain between rays. The API defaults to 1° azimuth spacing; temporal steps are multiples of ten minutes, with the final requested instant always included.
+The engine can combine a fine nearby DEM with a coarser distant DEM. Search bounds use assumed lunar minimum/maximum terrain elevations and the elevation already found in each direction. Reaching such a bound does not validate unsampled terrain between rays. The API defaults to 0.25° azimuth spacing; temporal steps are multiples of ten minutes, with the final requested instant always included.
 
 ## Coverage and interpretation
 

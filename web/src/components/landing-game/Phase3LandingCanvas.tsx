@@ -55,7 +55,7 @@ function buildCraterField(): CraterFeature[] {
     const y = (rand() - 0.5) * 900;
 
     const d0 = Math.hypot(x, y);
-    const maxR = d0 < 28 ? 3.5 : 32;
+    const maxR = d0 < 28 ? 2.5 : 14;
     const r = 2 + Math.pow(rand(), 1.7) * maxR;
     craters.push({ x, y, r, depth: 0.35 + rand() * 0.55 });
   }
@@ -110,6 +110,8 @@ export function Phase3LandingCanvas({
   onRestartMission,
   onExitToEducation,
 }: Phase3LandingCanvasProps) {
+  const [started, setStarted] = useState(false);
+  const startedRef = useRef(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const moonTileRef = useRef<HTMLCanvasElement | null>(null);
   const keysRef = useRef<{
@@ -167,6 +169,15 @@ export function Phase3LandingCanvas({
   }, []);
 
   const resetPhase3 = useCallback(() => {
+    startedRef.current = false;
+    setStarted(false);
+    keysRef.current = {
+      up: false,
+      down: false,
+      left: false,
+      right: false,
+      space: false,
+    };
     const angle = Math.PI * 0.78;
     const radius = 112;
     simRef.current = {
@@ -267,7 +278,7 @@ export function Phase3LandingCanvas({
       const s = simRef.current;
       const keys = keysRef.current;
 
-      if (s.outcome === "playing") {
+      if (s.outcome === "playing" && startedRef.current) {
         const latAccel = 30.0;
         let ax = 0;
         let ay = 0;
@@ -427,13 +438,13 @@ export function Phase3LandingCanvas({
 
         ctx.beginPath();
         ctx.arc(sx, sy, sr, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(9, 13, 22, ${0.24 + c.depth * 0.22})`;
+        ctx.fillStyle = `rgba(9, 13, 22, ${0.1 + c.depth * 0.1})`;
         ctx.fill();
 
         ctx.beginPath();
         ctx.arc(sx - sr * 0.07, sy - sr * 0.07, sr, 0, Math.PI * 2);
         ctx.strokeStyle = "rgba(226, 232, 240, 0.22)";
-        ctx.lineWidth = Math.max(1, sr * 0.08);
+        ctx.lineWidth = Math.max(0.7, sr * 0.035);
         ctx.stroke();
       }
 
@@ -592,7 +603,7 @@ export function Phase3LandingCanvas({
         [0, h, 1, -1],
         [w, h, -1, -1],
       ];
-      const legReach = Math.min(w, h) * 0.14;
+      const legReach = Math.min(w, h) * 0.055;
       for (const [ox, oy, sxDir, syDir] of corners) {
         const px = ox + sxDir * legReach;
         const py = oy + syDir * legReach;
@@ -620,7 +631,7 @@ export function Phase3LandingCanvas({
         ctx.stroke();
 
         ctx.beginPath();
-        ctx.arc(px, py, 14, 0, Math.PI * 2);
+        ctx.arc(px, py, 7, 0, Math.PI * 2);
         ctx.fillStyle = "#1e293b";
         ctx.fill();
         ctx.strokeStyle = "#94a3b8";
@@ -705,7 +716,7 @@ export function Phase3LandingCanvas({
             <span
               className={`pill mono ${Math.abs(hud.vzMs) <= SAFE_LANDING_SPEED_MS ? "pill-ok" : "pill-amber"}`}
             >
-              V. vertical: {hud.vzMs.toFixed(1)} m/s
+              Vertical speed: {hud.vzMs.toFixed(1)} m/s
             </span>
           </div>
         </div>
@@ -713,6 +724,60 @@ export function Phase3LandingCanvas({
         <div className="phase3-canvas-wrap">
           <canvas ref={canvasRef} className="phase3-canvas" />
 
+          <div className="landing-flight-readout" aria-live="off">
+            <strong>
+              {Math.round(hud.altM)} <small>m to surface</small>
+            </strong>
+            <span>
+              {Math.abs(hud.vzMs).toFixed(1)} m/s{" "}
+              {hud.vzMs < 0 ? "descending" : "ascending"}
+            </span>
+            <b
+              className={
+                Math.abs(hud.vzMs) <= SAFE_LANDING_SPEED_MS
+                  ? "tag-ok"
+                  : "tag-sun"
+              }
+            >
+              {Math.abs(hud.vzMs) > SAFE_LANDING_SPEED_MS
+                ? "Hold SPACE to brake"
+                : "Gentle descent"}
+            </b>
+          </div>
+          {!started && (
+            <div className="phase3-outcome-overlay">
+              <div className="phase3-outcome-card">
+                <h3>Prepare for landing</h3>
+                <p>
+                  Guide the X into the landing circle using the arrow keys or
+                  WASD. Hold SPACE (or the brake button) to slow your descent.
+                </p>
+                <p>
+                  Touch down within {TARGET_CIRCLE_RADIUS_M} m of the centre at
+                  no more than{" "}
+                  <strong>{SAFE_LANDING_SPEED_MS} m/s vertical speed</strong>.
+                  Start braking early and keep watching your height.
+                </p>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={() => {
+                    keysRef.current = {
+                      up: false,
+                      down: false,
+                      left: false,
+                      right: false,
+                      space: false,
+                    };
+                    startedRef.current = true;
+                    setStarted(true);
+                  }}
+                >
+                  Ready — begin descent
+                </button>
+              </div>
+            </div>
+          )}
           {hud.outcome !== "playing" && (
             <div className="phase3-outcome-overlay">
               <div
@@ -771,11 +836,11 @@ export function Phase3LandingCanvas({
           <div className="edu-legend-items">
             <span className="legend-dot-item">
               <i style={{ background: "#F43F5E" }} /> Your X (projected
-              touchdown ahora)
+              touchdown)
             </span>
             <span className="legend-dot-item">
               <i style={{ background: "#38BDF8" }} /> Guide arrows (grow as you
-              acercarte)
+              approach)
             </span>
             <span className="legend-dot-item">
               <i style={{ background: "#10B981" }} /> Final landing circle

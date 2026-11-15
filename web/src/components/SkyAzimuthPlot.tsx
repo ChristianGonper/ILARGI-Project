@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import Plotly from "plotly.js-gl2d-dist-min";
+import { animateTracks } from "./animateTracks";
 import type { SiteAnalysisResult, SkySample } from "../types";
 import { PlotFullscreenShell } from "./PlotFullscreenShell";
 
@@ -213,14 +213,7 @@ function SkyAzimuthPlotCanvas({
       hovermode: "closest",
     };
 
-    void Plotly.react(root, traces, layout, {
-      responsive: true,
-      displaylogo: false,
-    });
-
-    return () => {
-      Plotly.purge(root);
-    };
+    return animateTracks(root, traces, layout);
   }, [result, height]);
 
   return <div ref={elRef} style={{ width: "100%", height }} />;
@@ -230,6 +223,7 @@ export function SkyAzimuthPlot({ result, height = 300 }: SkyAzimuthPlotProps) {
   const subtitle = `${result.label} · ${result.site_name} (λ=${result.latitude_deg.toFixed(3)}°, θ=${result.longitude_east_deg.toFixed(3)}°E · ${result.horizon_label})`;
   return (
     <PlotFullscreenShell
+      replay
       title="Azimuth–elevation diagram (Horizon · Sun · Earth)"
       subtitle={subtitle}
       height={height}

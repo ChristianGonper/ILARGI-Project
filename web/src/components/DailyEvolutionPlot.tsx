@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import Plotly from "plotly.js-gl2d-dist-min";
+import { animateTracks } from "./animateTracks";
 import type { SiteAnalysisResult } from "../types";
 import { PlotFullscreenShell } from "./PlotFullscreenShell";
 
@@ -81,11 +81,25 @@ function DailyEvolutionPlotCanvas({
       },
       xaxis: {
         title: "Time (UTC)",
+        range: [
+          result.start_utc,
+          result.series.sun[result.series.sun.length - 1]?.utc ??
+            result.start_utc,
+        ],
         gridcolor: "#26334D",
         tickfont: { color: "#94A3B8" },
       },
       yaxis: {
         title: "Elevation (°)",
+        range: (() => {
+          const values = [...result.series.sun, ...result.series.earth]
+            .flatMap((s) => [s.elevation_deg, s.horizon_deg])
+            .filter((v): v is number => v !== null && Number.isFinite(v));
+          const low = Math.min(...values);
+          const high = Math.max(...values);
+          const pad = Math.max(1, (high - low) * 0.08);
+          return [low - pad, high + pad];
+        })(),
         gridcolor: "#26334D",
         zerolinecolor: "#475569",
         tickfont: { color: "#94A3B8" },
@@ -93,14 +107,7 @@ function DailyEvolutionPlotCanvas({
       hovermode: "x unified",
     };
 
-    void Plotly.react(root, traces, layout, {
-      responsive: true,
-      displaylogo: false,
-    });
-
-    return () => {
-      Plotly.purge(root);
-    };
+    return animateTracks(root, traces, layout);
   }, [result, height]);
 
   return <div ref={elRef} style={{ width: "100%", height }} />;
@@ -113,6 +120,7 @@ export function DailyEvolutionPlot({
   const subtitle = `${result.label} · ${result.site_name} (λ=${result.latitude_deg.toFixed(3)}°, θ=${result.longitude_east_deg.toFixed(3)}°E · ${result.horizon_label})`;
   return (
     <PlotFullscreenShell
+      replay
       title="Elevation over time (UTC)"
       subtitle={subtitle}
       height={height}

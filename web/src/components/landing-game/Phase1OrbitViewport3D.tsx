@@ -1,3 +1,4 @@
+import { makeLander } from "../../three/spacecraft";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
@@ -54,44 +55,8 @@ function makeSurfaceCoordSprite(
   const tex = new THREE.CanvasTexture(canvas);
   const mat = new THREE.SpriteMaterial({ map: tex, depthTest: false });
   const sprite = new THREE.Sprite(mat);
-  sprite.scale.set(0.72, 0.19, 1);
+  sprite.scale.set(0.48, 0.13, 1);
   return sprite;
-}
-
-function makeSpacecraftMesh(): THREE.Group {
-  const group = new THREE.Group();
-
-  const body = new THREE.Mesh(
-    new THREE.OctahedronGeometry(0.032, 0),
-    new THREE.MeshStandardMaterial({
-      color: 0xfbbf24,
-      emissive: 0x92400e,
-      emissiveIntensity: 0.45,
-      metalness: 0.6,
-      roughness: 0.3,
-    }),
-  );
-  group.add(body);
-
-  // Solar panels
-  const wingGeo = new THREE.BoxGeometry(0.11, 0.008, 0.025);
-  const wingMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
-  const wings = new THREE.Mesh(wingGeo, wingMat);
-  group.add(wings);
-
-  const halo = new THREE.Mesh(
-    new THREE.RingGeometry(0.048, 0.058, 24),
-    new THREE.MeshBasicMaterial({
-      color: 0xfbbf24,
-      side: THREE.DoubleSide,
-      transparent: true,
-      opacity: 0.85,
-    }),
-  );
-  halo.rotation.x = Math.PI / 2;
-  group.add(halo);
-
-  return group;
 }
 
 export function Phase1OrbitViewport3D({
@@ -107,7 +72,7 @@ export function Phase1OrbitViewport3D({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [cameraPreset, setCameraPreset] = useState<
     "target" | "global" | "south"
-  >("target");
+  >("global");
 
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
@@ -151,7 +116,7 @@ export function Phase1OrbitViewport3D({
     const width = container.clientWidth || 600;
     const height = container.clientHeight || 440;
     const camera = new THREE.PerspectiveCamera(39, width / height, 0.1, 100);
-    camera.position.set(1.3, -1.6, 2.2);
+    camera.position.set(0.5, 0.7, 4.2);
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -296,7 +261,8 @@ export function Phase1OrbitViewport3D({
     groundTrackLineRef.current = groundTrackLine;
     scene.add(groundTrackLine);
 
-    const spacecraft = makeSpacecraftMesh();
+    const spacecraft = makeLander();
+    spacecraft.scale.setScalar(0.065);
     spacecraftRef.current = spacecraft;
     scene.add(spacecraft);
 
@@ -441,8 +407,8 @@ export function Phase1OrbitViewport3D({
     const trackMat = groundTrackLine.material as THREE.LineBasicMaterial;
     const orbitMat = orbitLine.material as THREE.LineBasicMaterial;
     if (groundTrackAligned) {
-      trackMat.color.setHex(0x10b981);
-      orbitMat.color.setHex(0x10b981);
+      trackMat.color.setHex(0xc4b5fd);
+      orbitMat.color.setHex(0x38bdf8);
     } else {
       trackMat.color.setHex(0xf59e0b);
       orbitMat.color.setHex(0x38bdf8);
@@ -483,11 +449,11 @@ export function Phase1OrbitViewport3D({
       1.022,
     );
     const normal = pos.clone().normalize();
-    const accentHex = groundTrackAligned ? "#10B981" : "#F43F5E";
-    const accentNum = groundTrackAligned ? 0x10b981 : 0xf43f5e;
+    const accentHex = groundTrackAligned ? "#C4B5FD" : "#F43F5E";
+    const accentNum = groundTrackAligned ? 0xc4b5fd : 0xf43f5e;
 
     const ring = new THREE.Mesh(
-      new THREE.RingGeometry(0.042, 0.06, 32),
+      new THREE.RingGeometry(0.024, 0.036, 32),
       new THREE.MeshBasicMaterial({
         color: accentNum,
         side: THREE.DoubleSide,
@@ -517,12 +483,38 @@ export function Phase1OrbitViewport3D({
       const camDir = normal
         .add(new THREE.Vector3(0.28, 0.22, 0.28))
         .normalize();
-      cameraRef.current.position.copy(camDir.multiplyScalar(2.7));
+      cameraRef.current.position.copy(camDir.multiplyScalar(3.6));
       controlsRef.current.target.set(0, 0, 0);
       controlsRef.current.update();
     }
   }, [selectedSite, cameraPreset]);
 
+  useEffect(() => {
+    if (!groundTrackAligned) return;
+    const camera = cameraRef.current;
+    const controls = controlsRef.current;
+    if (!camera || !controls) return;
+    const start = camera.position.clone();
+    const end = latLonToThreeVector(
+      selectedSite.latitudeDeg,
+      selectedSite.longitudeEastDeg,
+      1,
+    )
+      .normalize()
+      .add(new THREE.Vector3(0.3, 0.25, 0.3))
+      .normalize()
+      .multiplyScalar(3.6);
+    const began = performance.now();
+    let frame = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - began) / 1200);
+      camera.position.lerpVectors(start, end, t * t * (3 - 2 * t));
+      controls.update();
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [groundTrackAligned, selectedSite]);
   const moveCamera = (preset: "target" | "global" | "south") => {
     setCameraPreset(preset);
     const camera = cameraRef.current;
@@ -537,11 +529,11 @@ export function Phase1OrbitViewport3D({
         .normalize()
         .add(new THREE.Vector3(0.28, 0.22, 0.28))
         .normalize();
-      camera.position.copy(dir.multiplyScalar(2.7));
+      camera.position.copy(dir.multiplyScalar(3.6));
     } else if (preset === "south") {
       camera.position.set(0.9, -2.15, 1.65);
     } else {
-      camera.position.set(0.4, 0.55, 3.05);
+      camera.position.set(0.5, 0.7, 4.2);
     }
     controls.target.set(0, 0, 0);
     controls.update();
@@ -600,7 +592,7 @@ export function Phase1OrbitViewport3D({
           <span className="legend-dot-item">
             <i
               style={{
-                background: groundTrackAligned ? "#10B981" : "#F59E0B",
+                background: groundTrackAligned ? "#C4B5FD" : "#F59E0B",
               }}
             />{" "}
             Surface ground track
@@ -610,9 +602,7 @@ export function Phase1OrbitViewport3D({
           </span>
         </div>
         <span className="pill pill-muted">
-          {pinMode
-            ? "Pin mode active: click the Moon"
-            : "Drag to rotate · Shift+click to choose a location"}
+          {pinMode ? "Pin mode active: click the Moon" : "Drag to rotate"}
         </span>
       </div>
     </div>

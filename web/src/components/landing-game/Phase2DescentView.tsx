@@ -358,9 +358,12 @@ export function Phase2DescentView({
             aria-label="Orbital descent illustration toward the lunar surface"
           >
             <defs>
+              <clipPath id="descentSurfaceClip">
+                <path d="M -20 330 Q 320 245 660 330 Z" />
+              </clipPath>
               <radialGradient id="moonHorizonGrad" cx="50%" cy="130%" r="90%">
-                <stop offset="0%" stopColor="#64748b" />
-                <stop offset="45%" stopColor="#334155" />
+                <stop offset="0%" stopColor="#b7b5ae" />
+                <stop offset="45%" stopColor="#565b65" />
                 <stop offset="100%" stopColor="#0f172a" />
               </radialGradient>
               <linearGradient id="trajGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -419,6 +422,16 @@ export function Phase2DescentView({
               strokeWidth="1.5"
             />
 
+            <image
+              href="/textures/moon_color.jpg"
+              x="-20"
+              y="245"
+              width="680"
+              height="150"
+              preserveAspectRatio="xMidYMid slice"
+              opacity="0.45"
+              clipPath="url(#descentSurfaceClip)"
+            />
             <ellipse
               cx="190"
               cy="296"
@@ -442,12 +455,12 @@ export function Phase2DescentView({
             <circle
               cx="550"
               cy="282"
-              r="11"
+              r="7"
               fill="rgba(16, 185, 129, 0.16)"
               stroke="#10b981"
               strokeWidth="2"
             />
-            <circle cx="550" cy="282" r="3" fill="#10b981" />
+            <circle cx="550" cy="282" r="2" fill="#c4b5fd" />
             <text
               x="550"
               y="309"

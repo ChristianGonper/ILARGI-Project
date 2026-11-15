@@ -104,7 +104,7 @@ class AnalyzeRequest(BaseModel):
     duration_hours: float = Field(default=720.0, gt=0.0, le=2160.0)
     step_minutes: int = Field(default=60, ge=10, le=1440)
     instrument_height_m: float = Field(default=2.0, ge=0.0, le=1000.0)
-    azimuth_step_deg: float = Field(default=1.0, gt=0.0, le=10.0)
+    azimuth_step_deg: float = Field(default=0.25, gt=0.0, le=10.0)
     dem_mode: Literal["auto", "polar", "global", "sample20", "sample80", "ideal"] = (
         "auto"
     )

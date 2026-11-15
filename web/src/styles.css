@@ -18,3 +18,195 @@
     scroll-behavior: auto !important;
   }
 }
+
+[hidden] {
+  display: none !important;
+}
+.workspace-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+.viewport-frame {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+  padding-top: 44px;
+}
+.viewport-expand {
+  position: absolute;
+  right: 8px;
+  top: 4px;
+  z-index: 4;
+}
+.viewport-expanded {
+  position: fixed;
+  inset: 12px;
+  width: auto;
+  z-index: 1100;
+  padding: 58px 16px 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg);
+  box-shadow: 0 0 0 20px #050914e8;
+  overflow: auto;
+}
+.viewport-expanded .moon-canvas-container {
+  height: calc(100dvh - 220px);
+  min-height: 300px;
+}
+.viewport-expanded .moon-viewport-shell {
+  min-height: 0;
+}
+.result-context {
+  font-size: 12px;
+  margin-top: 8px;
+}
+.result-context summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+.outputs-panel .panel-header {
+  align-items: flex-start;
+}
+.outputs-panel .telemetry-list {
+  display: grid;
+  gap: 12px;
+}
+.outputs-panel .telemetry-item {
+  padding: 16px;
+  background: #0b101b80;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  line-height: 1.7;
+}
+.outputs-panel .telemetry-row {
+  margin-top: 8px;
+}
+.disc-controls {
+  padding: 16px;
+  background: linear-gradient(135deg, #152b3d, #111a2c);
+  border: 1px solid #30516b;
+  border-radius: 12px;
+}
+.disc-playback {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0;
+}
+.disc-metrics-row {
+  display: grid;
+  gap: 8px;
+  line-height: 1.7;
+}
+.disc-grid {
+  gap: 14px;
+}
+.edu-dual-viewports {
+  grid-template-columns: minmax(0, 1.5fr) minmax(300px, 0.8fr);
+}
+.edu-moon-canvas {
+  height: 570px;
+}
+.edu-mascot-dock {
+  grid-column: 1 / -1;
+  padding: 14px;
+}
+.edu-workspace-grid {
+  row-gap: 16px;
+}
+.edu-site-select-wrap select {
+  min-height: 48px;
+  font-size: 14px;
+}
+.edu-info-card {
+  line-height: 1.7;
+}
+.edu-site-facts > div {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.spacecraft-guide > summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  font-size: 20px;
+  font-weight: 600;
+}
+.spacecraft-guide table {
+  font-size: 13px;
+}
+.spacecraft-guide tbody tr:nth-child(odd) {
+  background: #ffffff04;
+}
+.spacecraft-preview {
+  margin: 8px 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: radial-gradient(ellipse at center, #26425b80, transparent 70%);
+}
+.spacecraft-preview > div {
+  height: 200px;
+  touch-action: none;
+}
+.spacecraft-preview figcaption {
+  text-align: center;
+  color: var(--muted);
+  font-size: 11px;
+  padding: 8px;
+}
+.spacecraft-guide .spacecraft-preview {
+  max-width: 360px;
+  margin-inline: auto;
+}
+.landing-flight-readout {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  display: grid;
+  gap: 5px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  background: #081222d9;
+  pointer-events: none;
+}
+.landing-flight-readout strong {
+  font-size: clamp(24px, 4vw, 42px);
+}
+.landing-flight-readout small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.phase3-outcome-card p {
+  line-height: 1.7;
+}
+@media (max-width: 1020px) {
+  .edu-dual-viewports {
+    grid-template-columns: 1fr;
+  }
+  .edu-moon-canvas {
+    height: 440px;
+  }
+}
+@media (max-width: 600px) {
+  .viewport-expanded {
+    inset: 0;
+    border-radius: 0;
+  }
+  .landing-flight-readout {
+    top: 8px;
+    left: 8px;
+    padding: 8px;
+  }
+}
+
+.phase2-control-card > .panel-header {
+  display: block;
+}
+.phase2-control-card > .panel-header > .pill {
+  display: block;
+  margin-top: 10px;
+  white-space: normal;
+}

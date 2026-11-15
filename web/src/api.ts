@@ -170,8 +170,8 @@ export async function analyzePoints(
     duration_hours: params.durationHours,
     step_minutes: params.stepMinutes,
     instrument_height_m: params.instrumentHeightM,
-    azimuth_step_deg: params.azimuthStepDeg,
-    dem_mode: params.demMode,
+    azimuth_step_deg: 0.25,
+    dem_mode: "auto",
   };
   const res = await fetch("/api/analyze", {
     method: "POST",
@@ -229,5 +229,8 @@ export function formatMaterialsSummary(r: SiteAnalysisResult): string {
     return `${sym}: ${el.value.toFixed(2)} ${unit} (${el.category})`;
   });
   parts.push(`WEH: ${mat.water_status}`);
-  return parts.join(" · ");
+  return (
+    parts.join(" \u00b7 ") +
+    " | Regional estimates: LP-GRS resolution ~5 degrees (~152 km at the equator); WEH grid 0.5 degrees, footprint ~50 km. Not point measurements or confirmed mineral deposits."
+  );
 }

@@ -83,3 +83,7 @@ Current packaged asset checksums:
 
 - `moon_color.jpg`: SHA-256 `7b967431bde23105ac79da9e458c16d4e6e21df1d27f0bd351fb67fa7f3287e9`
 - `moon_bump.jpg`: SHA-256 `c05290cb685f9028c40612f88154ac4cf985cb359a5377556bd2d0c9bf7456f5`
+
+## Educational spacecraft model
+
+The interactive lander is an original schematic model built from Three.js primitives in `web/src/three/spacecraft.ts`. It is reused in the orbit and the small rotatable previews; no external model license is required. It does not reproduce a verified IM-1 CAD model. The descent surface uses the existing lunar color texture documented above.

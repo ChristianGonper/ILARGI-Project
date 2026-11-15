@@ -1,3 +1,4 @@
+import { ViewportFrame } from "./components/ViewportFrame";
 import { lazy, useCallback, useEffect, useRef, useState } from "react";
 import { Home } from "lucide-react";
 import {
@@ -70,6 +71,7 @@ function makeManualPoint(uid: number, lat = -89.5, lon = 0): PointDraft {
 
 export function App() {
   const analysisRequest = useRef(0);
+  const [resultsHidden, setResultsHidden] = useState(false);
   const [mode, setMode] = useState<AppMode>("home");
   const [health, setHealth] = useState<HealthResponse | null>(null);
   const [historicalSites, setHistoricalSites] = useState<HistoricalSite[]>([]);
@@ -95,7 +97,7 @@ export function App() {
     durationHours: 720,
     stepMinutes: 60,
     instrumentHeightM: 2,
-    azimuthStepDeg: 1,
+    azimuthStepDeg: 0.25,
     demMode: "auto",
   });
 
@@ -132,6 +134,7 @@ export function App() {
         const res = await analyzePoints(targetPoints, activeParams);
         if (request !== analysisRequest.current) return;
         setResults(res);
+        setResultsHidden(false);
         const valid = new Set(res.map((r) => r.label));
         setComparedLabels((prev) => prev.filter((l) => valid.has(l)));
       } catch (err: unknown) {
@@ -287,27 +290,12 @@ export function App() {
               className={`mode-switch-btn ${mode === "pro" ? "active pro" : ""}`}
               onClick={() => setMode("pro")}
             >
-              PRO
+              Mission Analysis
             </button>
           </div>
           <span className="brand-sub">
             Interactive Lunar Analyzer for Radiance, Geometry, and
             Intervisibility
-          </span>
-        </div>
-        <div className="topbar-right">
-          {health?.dem.polar_80m && (
-            <span className="pill pill-cyan">LOLA 80m South Pole</span>
-          )}
-          {health?.dem.global_240m && (
-            <span className="pill pill-cyan">LOLA ≈237m Global</span>
-          )}
-          <span className="pill pill-muted">
-            {health?.frame ?? "MOON_ME_DE440_ME421"} ·{" "}
-            {health?.abcorr ?? "LT+S"}
-          </span>
-          <span className={`pill ${health ? "pill-ok" : "pill-muted"}`}>
-            {health ? `${health.kernels} · Connected` : "Connecting…"}
           </span>
         </div>
       </header>
@@ -329,8 +317,21 @@ export function App() {
             </div>
           )}
 
+          {singleResult && (
+            <div className="workspace-toolbar">
+              <button
+                className="btn-secondary"
+                type="button"
+                onClick={() => setResultsHidden(!resultsHidden)}
+              >
+                {resultsHidden
+                  ? "Show analysis results"
+                  : "Hide results to enlarge Moon"}
+              </button>
+            </div>
+          )}
           <main
-            className={`workspace-grid ${singleResult ? "with-outputs" : "globe-wide"}`}
+            className={`workspace-grid ${singleResult && !resultsHidden ? "with-outputs" : "globe-wide"}`}
           >
             <InputPanel
               points={points}
@@ -359,23 +360,26 @@ export function App() {
             />
 
             <section className="panel moon-panel">
-              <MoonViewport3D
-                historicalSites={historicalSites}
-                activePoints={points}
-                focusedIndex={singleResult ? 0 : focusedIndex}
-                pinMode={pinMode}
-                mineralOverlay={mineralOverlay}
-                selectedMinerals={selectedMinerals}
-                onSelectHistoricalSite={handleGlobeHistoricalClick}
-                onSelectActivePoint={(idx) => setFocusedIndex(idx)}
-                onSurfacePick={handleSurfacePick}
-              />
+              <ViewportFrame>
+                <MoonViewport3D
+                  historicalSites={historicalSites}
+                  activePoints={points}
+                  focusedIndex={singleResult ? 0 : focusedIndex}
+                  pinMode={pinMode}
+                  mineralOverlay={mineralOverlay}
+                  selectedMinerals={selectedMinerals}
+                  onSelectHistoricalSite={handleGlobeHistoricalClick}
+                  onSelectActivePoint={(idx) => setFocusedIndex(idx)}
+                  onSurfacePick={handleSurfacePick}
+                />
+              </ViewportFrame>
             </section>
 
             {singleResult && (
               <OutputsPanel
                 result={singleResult}
-                onClose={() => setResults(null)}
+                hidden={resultsHidden}
+                onClose={() => setResultsHidden(true)}
               />
             )}
           </main>

@@ -1,3 +1,4 @@
+import { ViewportFrame } from "./ViewportFrame";
 import { useEffect, useMemo, useState } from "react";
 import {
   Crosshair,
@@ -17,6 +18,7 @@ import {
   formatUtcShort,
   interpolateEducationFrame,
 } from "../api";
+import { SpacecraftGuide } from "./SpacecraftGuide";
 import { LUNAR_MIRROR_GUIDE } from "../data/educationFacts";
 import type {
   EducationCategory,
@@ -30,7 +32,6 @@ import {
   ThreeBodyOrbitMini,
   phaseLabelFromFraction,
 } from "./ThreeBodyOrbitMini";
-
 const CATEGORY_OPTIONS: {
   id: "all" | EducationCategory;
   label: string;
@@ -41,14 +42,12 @@ const CATEGORY_OPTIONS: {
   { id: "landing", label: "Landing" },
   { id: "mirror", label: "Reflectors" },
 ];
-
 const CATEGORY_BADGE_CLASS: Record<EducationCategory, string> = {
   eternal_light: "pill-amber",
   psr: "pill-cyan",
   landing: "pill-violet",
   mirror: "pill-ok",
 };
-
 export function EducationWorkspace() {
   const [sites, setSites] = useState<EducationSite[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<
@@ -60,18 +59,15 @@ export function EducationWorkspace() {
     longitudeEastDeg: number;
   } | null>(null);
   const [pinMode, setPinMode] = useState(false);
-
   const [startDate, setStartDate] = useState("2026-04-02");
   const [cycleData, setCycleData] = useState<EducationCycleResponse | null>(
     null,
   );
   const [loadingCycle, setLoadingCycle] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
   const [hoursOffset, setHoursOffset] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [speedHoursPerSec, setSpeedHoursPerSec] = useState(36);
-
   const [showWaterLayer, setShowWaterLayer] = useState(false);
   const [showMirrorGuide, setShowMirrorGuide] = useState(false);
   const [gameActive, setGameActive] = useState(false);
@@ -79,10 +75,19 @@ export function EducationWorkspace() {
     mood: string;
     text: string;
   } | null>(null);
-
   useEffect(() => {
     void fetchEducationSites()
       .then((list) => {
+        // One high-illumination and one shadow example per hemisphere.
+        const seen = new Set<string>();
+        list = list.filter((site) => {
+          if (site.category !== "eternal_light" && site.category !== "psr")
+            return true;
+          const key = `${site.category}-${site.latitude_deg < 0 ? "south" : "north"}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
         setSites(list);
         if (list.length > 0) {
           setSelectedSite(list[0]);
@@ -96,14 +101,12 @@ export function EducationWorkspace() {
         );
       });
   }, []);
-
   const activeLat =
     manualCoords?.latitudeDeg ?? selectedSite?.latitude_deg ?? -89.45;
   const activeLon =
     manualCoords?.longitudeEastDeg ??
     selectedSite?.longitude_east_deg ??
     -137.31;
-
   useEffect(() => {
     let cancelled = false;
     setLoadingCycle(true);
@@ -133,14 +136,11 @@ export function EducationWorkspace() {
       .finally(() => {
         if (!cancelled) setLoadingCycle(false);
       });
-
     return () => {
       cancelled = true;
     };
   }, [activeLat, activeLon, startDate]);
-
   const maxHours = cycleData?.duration_hours ?? 709.0;
-
   useEffect(() => {
     if (!playing || !cycleData) return;
     let rafId = 0;
@@ -157,17 +157,14 @@ export function EducationWorkspace() {
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
   }, [playing, cycleData, speedHoursPerSec, maxHours]);
-
   const currentFrame = useMemo(() => {
     if (!cycleData) return null;
     return interpolateEducationFrame(cycleData.frames, hoursOffset);
   }, [cycleData, hoursOffset]);
-
   const filteredSites = useMemo(() => {
     if (categoryFilter === "all") return sites;
     return sites.filter((s) => s.category === categoryFilter);
   }, [sites, categoryFilter]);
-
   const handleSelectSite = (site: EducationSite) => {
     setManualCoords(null);
     setSelectedSite(site);
@@ -178,7 +175,6 @@ export function EducationWorkspace() {
       text: site.ilargi_story,
     });
   };
-
   const handleSurfacePick = (latitudeDeg: number, longitudeEastDeg: number) => {
     setManualCoords({ latitudeDeg, longitudeEastDeg });
     setPinMode(false);
@@ -190,20 +186,18 @@ export function EducationWorkspace() {
         : `You selected the location (${latitudeDeg.toFixed(1)}°, ${longitudeEastDeg.toFixed(1)}°E). Play the animation to follow the lunar day–night boundary.`,
     });
   };
-
   const handleToggleWater = () => {
     const next = !showWaterLayer;
     setShowWaterLayer(next);
     if (next) {
       setIlargiOverride({
         mood: "Water-equivalent hydrogen",
-        text: "WEH expresses estimated hydrogen as an equivalent amount of water. Stronger intensity means higher WEH, without confirming water or ice. The source is Lunar Prospector data from Lawrence and colleagues (2022).",
+        text: "WEH expresses estimated hydrogen as an equivalent amount of water. Stronger intensity means higher WEH, without confirming water or ice. The display emphasizes higher concentrations using a nonlinear opacity scale (0-120 ppm hydrogen). Each measurement covers roughly 50 km; it cannot locate individual ice deposits.",
       });
     } else {
       setIlargiOverride(null);
     }
   };
-
   const handleToggleMirrorGuide = () => {
     const next = !showMirrorGuide;
     setShowMirrorGuide(next);
@@ -216,7 +210,6 @@ export function EducationWorkspace() {
       setIlargiOverride(null);
     }
   };
-
   const ilargiDisplay = useMemo(() => {
     if (ilargiOverride) return ilargiOverride;
     if (selectedSite) {
@@ -230,10 +223,8 @@ export function EducationWorkspace() {
       text: "Choose a landing site, illuminated ridge or polar shadow region, then press Play to follow a full lunar solar cycle.",
     };
   }, [ilargiOverride, selectedSite]);
-
   const lunarDaysElapsed = hoursOffset / 24.0;
   const lunarDayPct = Math.min(100, (hoursOffset / 708.734) * 100);
-
   if (gameActive) {
     return (
       <LunarLandingGame
@@ -243,19 +234,16 @@ export function EducationWorkspace() {
       />
     );
   }
-
   return (
     <div className="edu-shell">
       <div className="panel edu-game-launch-bar">
         <div className="edu-game-launch-info">
-          <span className="pill pill-amber">
-            INTERACTIVE MISSION · 3 PHASES
-          </span>
+          <span className="pill pill-amber">YOUR LUNAR MISSION</span>
           <div>
             <strong>Lunar landing game with ILARGI</strong>
             <div className="panel-sub">
-              Set the orbital inclination, plan the descent, and pilot the
-              lander toward the target.
+              Choose your destination and guide the lander to a gentle
+              touchdown.
             </div>
           </div>
         </div>
@@ -271,7 +259,6 @@ export function EducationWorkspace() {
           Start landing game
         </button>
       </div>
-
       {errorMsg && (
         <div className="error-banner" role="alert">
           <span>{errorMsg}</span>
@@ -284,8 +271,14 @@ export function EducationWorkspace() {
           </button>
         </div>
       )}
-
       <div className="edu-workspace-grid">
+        <div className="panel edu-mascot-dock">
+          <IlargiMascot
+            speakerMood={ilargiDisplay.mood}
+            message={ilargiDisplay.text}
+            showFunFacts
+          />
+        </div>
         {/* Location, timeline and educational layers */}
         <aside className="panel edu-sidebar">
           <div className="panel-header">
@@ -296,7 +289,6 @@ export function EducationWorkspace() {
               </div>
             </div>
           </div>
-
           <div className="edu-cat-tabs" role="tablist">
             {CATEGORY_OPTIONS.map((cat) => (
               <button
@@ -309,7 +301,6 @@ export function EducationWorkspace() {
               </button>
             ))}
           </div>
-
           <div className="edu-site-select-wrap">
             <select
               className="input-select"
@@ -326,40 +317,25 @@ export function EducationWorkspace() {
                   {manualCoords.longitudeEastDeg.toFixed(2)}°E)
                 </option>
               )}
-              {filteredSites.map((s) => (
-                <option key={s.id} value={s.id}>
-                  [{s.category_label}] {s.name}
-                </option>
-              ))}
+              {CATEGORY_OPTIONS.filter((category) => category.id !== "all").map(
+                (category) => {
+                  const matches = filteredSites.filter(
+                    (site) => site.category === category.id,
+                  );
+                  return (
+                    matches.length > 0 && (
+                      <optgroup key={category.id} label={category.label}>
+                        {matches.map((site) => (
+                          <option key={site.id} value={site.id}>
+                            {site.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )
+                  );
+                },
+              )}
             </select>
-
-            <div className="edu-site-quick-list">
-              {filteredSites.map((s) => {
-                const active = !manualCoords && selectedSite?.id === s.id;
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    className={`edu-site-chip ${active ? "active" : ""}`}
-                    onClick={() => handleSelectSite(s)}
-                  >
-                    <span
-                      className={`pill ${CATEGORY_BADGE_CLASS[s.category]}`}
-                    >
-                      {s.category === "eternal_light"
-                        ? "Light"
-                        : s.category === "psr"
-                          ? "PSR"
-                          : s.category === "mirror"
-                            ? "Reflector"
-                            : "Landing"}
-                    </span>
-                    <span className="edu-site-chip-name">{s.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-
             <button
               type="button"
               className={`btn-secondary btn-compact ${pinMode ? "active" : ""}`}
@@ -371,7 +347,6 @@ export function EducationWorkspace() {
                 : "Place a point on the globe"}
             </button>
           </div>
-
           {/* Full-cycle timeline */}
           <div className="edu-movie-box">
             <div className="panel-header">
@@ -383,9 +358,8 @@ export function EducationWorkspace() {
                   1 lunar solar day ≈ 29.53 Earth days (709 h)
                 </div>
               </div>
-              {loadingCycle && <span className="pill pill-cyan">SPICE…</span>}
+              {loadingCycle && <span className="pill pill-cyan">Loading…</span>}
             </div>
-
             <div className="edu-movie-controls">
               <button
                 type="button"
@@ -404,7 +378,6 @@ export function EducationWorkspace() {
                 {playing ? <Pause size={15} /> : <Play size={15} />}
                 {playing ? "Pause animation" : "Play animation"}
               </button>
-
               <button
                 type="button"
                 className="btn-secondary btn-compact"
@@ -416,7 +389,6 @@ export function EducationWorkspace() {
               >
                 <RotateCcw size={14} />
               </button>
-
               <select
                 className="edu-speed-select"
                 value={speedHoursPerSec}
@@ -429,7 +401,6 @@ export function EducationWorkspace() {
                 <option value={144}>12× turbo</option>
               </select>
             </div>
-
             <label className="edu-slider-label">
               <div className="edu-slider-meta">
                 <span className="mono">
@@ -451,7 +422,6 @@ export function EducationWorkspace() {
                 }}
               />
             </label>
-
             {currentFrame && (
               <div className="edu-live-telemetry">
                 <div className="edu-live-row">
@@ -480,7 +450,6 @@ export function EducationWorkspace() {
                 </div>
               </div>
             )}
-
             <label className="field edu-date-field">
               <span>Simulation start date (UTC)</span>
               <input
@@ -492,7 +461,6 @@ export function EducationWorkspace() {
               />
             </label>
           </div>
-
           {/* WEH and laser reflector explanations */}
           <div className="edu-extras-box">
             <div className="eyebrow">3. WEH AND LUNAR PHENOMENA</div>
@@ -507,7 +475,6 @@ export function EducationWorkspace() {
                 {showWaterLayer ? "ON" : "OFF"}
               </span>
             </button>
-
             <button
               type="button"
               className={`btn-secondary edu-feature-btn ${showMirrorGuide ? "active" : ""}`}
@@ -517,7 +484,6 @@ export function EducationWorkspace() {
               <span>How do lunar reflectors work?</span>
               <span className="pill pill-ok">LRRR</span>
             </button>
-
             <a
               href="https://pgda.gsfc.nasa.gov/products/69"
               target="_blank"
@@ -529,30 +495,29 @@ export function EducationWorkspace() {
             </a>
           </div>
         </aside>
-
         {/* Globe, three-body view and guide */}
         <section className="edu-stage">
           <div className="edu-dual-viewports">
             <div className="panel edu-globe-panel">
-              <EducationMoonViewport3D
-                sites={sites}
-                selectedSite={selectedSite}
-                manualCoords={manualCoords}
-                currentFrame={currentFrame}
-                showWaterLayer={showWaterLayer}
-                showMirrorLaser={showMirrorGuide}
-                pinMode={pinMode}
-                onSelectSite={handleSelectSite}
-                onSurfacePick={handleSurfacePick}
-              />
+              <ViewportFrame>
+                <EducationMoonViewport3D
+                  sites={sites}
+                  selectedSite={selectedSite}
+                  manualCoords={manualCoords}
+                  currentFrame={currentFrame}
+                  showWaterLayer={showWaterLayer}
+                  showMirrorLaser={showMirrorGuide}
+                  pinMode={pinMode}
+                  onSelectSite={handleSelectSite}
+                  onSurfacePick={handleSurfacePick}
+                />
+              </ViewportFrame>
             </div>
-
             <div className="edu-right-stack">
               <ThreeBodyOrbitMini
                 frames={cycleData?.frames ?? []}
                 currentFrame={currentFrame}
               />
-
               {showMirrorGuide ? (
                 <div className="panel edu-info-card edu-mirror-card">
                   <div className="panel-header">
@@ -609,7 +574,6 @@ export function EducationWorkspace() {
                       </span>
                     )}
                   </div>
-
                   {selectedSite && !manualCoords ? (
                     <div className="edu-site-facts">
                       <div>
@@ -637,14 +601,7 @@ export function EducationWorkspace() {
               )}
             </div>
           </div>
-
-          <div className="panel edu-mascot-dock">
-            <IlargiMascot
-              speakerMood={ilargiDisplay.mood}
-              message={ilargiDisplay.text}
-              showFunFacts
-            />
-          </div>
+          <SpacecraftGuide />
         </section>
       </div>
     </div>
