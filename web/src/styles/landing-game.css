@@ -824,4 +824,19 @@
 
 .game-mascot-dock {
   margin-top: 0;
+  border-color: rgba(56, 189, 248, 0.45);
+  padding: 10px 14px;
+}
+
+.game-mascot-dock .ilargi-avatar-stage {
+  width: 88px;
+  height: 88px;
+}
+
+.game-mascot-dock .ilargi-avatar-img {
+  width: 72px;
+}
+
+.game-mascot-dock .ilargi-bubble-tail {
+  top: 34px;
 }
