@@ -135,6 +135,7 @@ export function Phase3LandingCanvas({
     vx: 2.0,
     vy: -1.4,
     vz: -9.5,
+    brakeHeld: 0,
     outcome: "playing" as "playing" | "won" | "missed" | "hard_landing",
     finalErrorM: 0,
     finalSpeedMs: 0,
@@ -187,6 +188,7 @@ export function Phase3LandingCanvas({
       vx: 1.5,
       vy: -1.1,
       vz: -9.5,
+      brakeHeld: 0,
       outcome: "playing",
       finalErrorM: 0,
       finalSpeedMs: 0,
@@ -304,9 +306,12 @@ export function Phase3LandingCanvas({
         s.landerY += s.vy * dt;
 
         if (keys.space) {
-          s.vz += 16.5 * dt;
-          s.vz = Math.min(s.vz, 7.5);
+          s.brakeHeld += dt;
+          // Ease toward a hover first; only a sustained hold commands ascent.
+          const targetSpeed = s.brakeHeld > 4 ? 1.2 : -0.25;
+          s.vz += (targetSpeed - s.vz) * (1 - Math.exp(-1.5 * dt));
         } else {
+          s.brakeHeld = 0;
           s.vz += (BASE_DESCENT_SPEED_MS - s.vz) * 1.35 * dt;
         }
 

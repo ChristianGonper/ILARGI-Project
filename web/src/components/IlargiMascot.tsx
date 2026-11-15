@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Sparkles, Volume2 } from "lucide-react";
 import { ILARGI_FUN_FACTS } from "../data/educationFacts";
 
@@ -15,12 +15,18 @@ export function IlargiMascot({
   compact = false,
   showFunFacts = true,
 }: IlargiMascotProps) {
-  const [factIdx, setFactIdx] = useState(0);
+  const [factIdx, setFactIdx] = useState(() =>
+    Math.floor(Math.random() * ILARGI_FUN_FACTS.length),
+  );
   const [speaking, setSpeaking] = useState(true);
-  const [bubbleMode, setBubbleMode] = useState<"guide" | "fact">("guide");
+  const [bubbleMode, setBubbleMode] = useState<"guide" | "fact">(
+    showFunFacts ? "fact" : "guide",
+  );
+  const initialMessage = useRef(true);
 
   useEffect(() => {
-    setBubbleMode("guide");
+    if (initialMessage.current) initialMessage.current = false;
+    else setBubbleMode("guide");
     setSpeaking(true);
     const timer = window.setTimeout(() => setSpeaking(false), 2600);
     return () => window.clearTimeout(timer);
@@ -116,7 +122,18 @@ export function IlargiMascot({
             <strong>{activeFact.question}</strong>
           </p>
         )}
-        <p className="ilargi-bubble-text">{shownText}</p>
+        {showFunFacts ? (
+          <button
+            type="button"
+            className="ilargi-fact-next"
+            onClick={() => handleTriggerFact(1)}
+            aria-label="Next lunar discovery"
+          >
+            {shownText} <span aria-hidden="true"> →</span>
+          </button>
+        ) : (
+          <p className="ilargi-bubble-text">{shownText}</p>
+        )}
       </div>
     </div>
   );

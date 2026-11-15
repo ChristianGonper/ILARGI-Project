@@ -284,6 +284,20 @@ summary:focus-visible {
   border-color: #596a55;
   background: #20291f;
 }
+.ilargi-fact-next {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  line-height: 1.5;
+  cursor: pointer;
+}
+.ilargi-fact-next span {
+  color: var(--amber);
+}
 .ilargi-bubble-tail {
   border-color: #596a55;
 }
