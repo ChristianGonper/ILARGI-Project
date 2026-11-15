@@ -99,7 +99,7 @@ def render_terrain_png(
         shade = LightSource(azdeg=315, altdeg=45).hillshade(
             filled, vert_exag=2, dx=pixel_m, dy=pixel_m
         )
-        # El relleno temporal no debe crear sombras falsas alrededor de huecos.
+        # Temporary gap-fill must not cast fake shadows around missing pixels.
         shade = np.ma.array(shade, mask=binary_dilation(~valid, iterations=1))
         ax.imshow(
             shade,
@@ -119,7 +119,7 @@ def render_terrain_png(
             s=100,
             linewidths=2,
             color="red",
-            label="Emplazamiento",
+            label="Site",
         )
         ax.legend(loc="upper right")
     color_label = "Height above the lunar sphere (m)"

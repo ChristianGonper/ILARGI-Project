@@ -159,7 +159,7 @@ export function LunarLandingGame({
 
   return (
     <div className="game-shell">
-      {/* BARRA SUPERIOR DE MISIÓN Y PROGRESO DE LAS 3 FASES */}
+      {/* Top mission bar and 3-phase progress */}
       <div className="panel game-topbar">
         <div className="game-topbar-left">
           <button
@@ -217,7 +217,7 @@ export function LunarLandingGame({
         </button>
       </div>
 
-      {/* CONTENIDO DE LA FASE ACTIVA */}
+      {/* Active phase content */}
       {phase === 1 && (
         <div className="phase1-grid">
           <aside className="panel phase1-sidebar">
@@ -268,7 +268,7 @@ export function LunarLandingGame({
               </div>
             </div>
 
-            {/* SUPERCALCULADORA CON TECLADO */}
+            {/* Orbital calculation trigger */}
             <button
               type="button"
               className="btn-primary"
@@ -344,7 +344,7 @@ export function LunarLandingGame({
         />
       )}
 
-      {/* MASCOTA ILARGI GUIANDO EL JUEGO EN TODO MOMENTO */}
+      {/* ILARGI mascot guiding the game */}
       <div className="panel edu-mascot-dock game-mascot-dock">
         <IlargiMascot
           speakerMood={ilargiState.mood}

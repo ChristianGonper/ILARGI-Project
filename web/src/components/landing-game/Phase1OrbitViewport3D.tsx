@@ -149,7 +149,7 @@ export function Phase1OrbitViewport3D({
     sunLight.position.set(4, 2, 3.5);
     scene.add(sunLight);
 
-    // Estrellas
+    // Stars
     const starPos = new Float32Array(400 * 3);
     for (let i = 0; i < 400; i++) {
       const r = 14 + Math.random() * 14;
@@ -173,7 +173,7 @@ export function Phase1OrbitViewport3D({
       ),
     );
 
-    // Esfera lunar
+    // Lunar sphere
     const sphereGeo = new THREE.SphereGeometry(1.0, 96, 72);
     sphereGeo.rotateY(-Math.PI / 2);
     const sphereMat = new THREE.MeshStandardMaterial({
@@ -224,7 +224,7 @@ export function Phase1OrbitViewport3D({
         ),
       );
     };
-    addLatRing(0, 0x94a3b8, 0.45); // Ecuador
+    addLatRing(0, 0x94a3b8, 0.45); // Equator
     addLatRing(-30, 0x334155, 0.25);
     addLatRing(-60, 0x334155, 0.25);
     addLatRing(30, 0x334155, 0.25);

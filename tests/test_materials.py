@@ -14,7 +14,7 @@ def test_polar_values_and_boundaries():
     assert pole.Th == pytest.approx(0.79171)
     assert region_at(data, -87.5, 0).id == 5
     assert region_at(data, -80, 180).id == 9
-    assert region_at(data, -79.9, 0) is not None  # Celda que cruza 80° S.
+    assert region_at(data, -79.9, 0) is not None  # Cell straddling 80° S.
     assert set(data.Al_category) == {"Low", "Medium", "High"}
 
 

@@ -200,8 +200,8 @@ export function SuperCalculator({
                 </span>
               </div>
               <div className="supercalc-result-sub mono">
-                Node Ω: {solvedInclination.ascendingNodeDeg.toFixed(1)}°E · ΔV
-                plano: {solvedInclination.planeChangeDeltaVMs} m/s
+                Node Ω: {solvedInclination.ascendingNodeDeg.toFixed(1)}°E ·
+                Plane-change ΔV: {solvedInclination.planeChangeDeltaVMs} m/s
               </div>
             </div>
           ) : statusType === "error" && statusMsg ? (

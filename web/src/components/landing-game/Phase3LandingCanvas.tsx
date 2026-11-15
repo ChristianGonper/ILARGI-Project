@@ -77,24 +77,24 @@ function buildSeamlessMoonTile(img: HTMLImageElement): HTMLCanvasElement {
   const sw = Math.min(img.width - sx, Math.floor(img.width * 0.275));
   const sh = Math.min(img.height - sy, Math.floor(img.height * 0.55));
 
-  // Cuadrante superior izquierdo (normal)
+  // Top-left quadrant (normal)
   octx.drawImage(img, sx, sy, sw, sh, 0, 0, tileSize, tileSize);
 
-  // Cuadrante superior derecho (espejo X)
+  // Top-right quadrant (X mirror)
   octx.save();
   octx.translate(tileSize * 2, 0);
   octx.scale(-1, 1);
   octx.drawImage(img, sx, sy, sw, sh, 0, 0, tileSize, tileSize);
   octx.restore();
 
-  // Cuadrante inferior izquierdo (espejo Y)
+  // Bottom-left quadrant (Y mirror)
   octx.save();
   octx.translate(0, tileSize * 2);
   octx.scale(1, -1);
   octx.drawImage(img, sx, sy, sw, sh, 0, 0, tileSize, tileSize);
   octx.restore();
 
-  // Cuadrante inferior derecho (espejo X+Y)
+  // Bottom-right quadrant (X+Y mirror)
   octx.save();
   octx.translate(tileSize * 2, tileSize * 2);
   octx.scale(-1, -1);
@@ -483,7 +483,7 @@ export function Phase3LandingCanvas({
       ctx.lineWidth = alignedInCircle ? 3.5 : 2.5;
       ctx.stroke();
 
-      // Anillo interior + etiqueta
+      // Inner ring + label
       ctx.beginPath();
       ctx.arc(
         targetScreenX,
@@ -507,7 +507,7 @@ export function Phase3LandingCanvas({
         targetScreenY + targetRadiusPx + 16,
       );
 
-      // 4. FLECHAS DIRECCIONALES QUE AUMENTAN DE TAMAÑO SEGÚN SE VA ACERCANDO
+      // 4. Directional arrows that grow larger as the lander gets closer
 
       if (distM > 10) {
         const dx = 0 - s.landerX;
@@ -586,7 +586,7 @@ export function Phase3LandingCanvas({
       ctx.fillText("YOUR X", 0, -xSize - 10);
       ctx.restore();
 
-      // 6. RESPLANDOR DE PROPULSOR SI PULSA ESPACIO (freno / subida)
+      // 6. Thruster glow when Space is pressed (brake / climb)
       if (keys.space && s.outcome === "playing") {
         const thrustGrad = ctx.createRadialGradient(
           cx,
