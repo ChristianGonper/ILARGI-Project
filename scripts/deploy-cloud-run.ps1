@@ -10,12 +10,16 @@ if ($origin.Scheme -ne 'https' -or $origin.AbsolutePath -ne '/' -or $origin.Quer
     throw 'FrontendOrigin must be an HTTPS origin, e.g. https://ilargi.pages.dev'
 }
 $FrontendOrigin = $origin.GetLeftPart([System.UriPartial]::Authority)
-if (-not (Get-Command gcloud -ErrorAction SilentlyContinue)) { throw 'Install Google Cloud CLI and run gcloud auth login first.' }
+$repoRoot = Split-Path $PSScriptRoot -Parent
+$gcloudCommand = (Get-Command gcloud -ErrorAction SilentlyContinue).Source
+if (-not $gcloudCommand) {
+    $gcloudCommand = Join-Path $repoRoot 'outputs/tools/google-cloud-sdk/bin/gcloud.cmd'
+    if (-not (Test-Path -LiteralPath $gcloudCommand)) { throw 'Install Google Cloud CLI and run gcloud auth login first.' }
+}
 function Invoke-Gcloud {
-    & gcloud @args
+    & $gcloudCommand @args
     if ($LASTEXITCODE -ne 0) { throw "gcloud failed: $($args[0])" }
 }
-$repoRoot = Split-Path $PSScriptRoot -Parent
 Push-Location $repoRoot
 try {
     Invoke-Gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com --project $ProjectId
