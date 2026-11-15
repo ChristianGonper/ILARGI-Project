@@ -1,14 +1,15 @@
 # Project
 
-Este proyecto es ILARGI, (Interactive Lunar Analyzer for Radiance, Geometry, and Intervisibility), trabajo en un hackathon de NASA Space Apps sobre Lunar Landing Site Navigator. Tienes más detalles conceptuales del proyecto en [NASA-Space Apps Info](/NASA%20-%20Space%20Apps%20Info%20-%20Christian.md)
+ILARGI (Interactive Lunar Analyzer for Radiance, Geometry, and Intervisibility) is a NASA Space Apps hackathon prototype. Read [the project concept](docs/project-concept.md) and [development guide](docs/development.md).
 
-# Git management
+# Development
 
-Usa mensajes en inglés sin prefijo estilo fix(engine), y usa frases descriptivas de lo que se incluye en el commit. Haz commits según vayas trabajando, siguiendo prácticas adecuadas
+- Use uv for Python dependency management and commands.
+- Use Ruff for Python linting and formatting.
+- Use Prettier for supported web and documentation files.
+- Keep identifiers, comments, documentation and interface text in English.
+- Preserve source provenance and scientific limitations in documentation.
 
-Si empiezas a trabajar en una nueva rama o WorkTree, crea directamente una PR y trabaja en ella.
+# Git
 
-# Herramientas y comprobaciones
-
-- Usa Ruff para comprobación y formateo Python
-- Usa Prettier para formatear sus archivos correspondientes.
+Use descriptive English commit messages without category prefixes. Commit coherent increments. When starting a new branch or worktree, create a pull request and work through it.
