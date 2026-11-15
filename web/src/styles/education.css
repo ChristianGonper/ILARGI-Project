@@ -1,0 +1,363 @@
+/* --- Education Workspace --- */
+.edu-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.edu-workspace-grid {
+  display: grid;
+  grid-template-columns: 336px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+@media (max-width: 1180px) {
+  .edu-workspace-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.edu-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.edu-cat-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.edu-site-select-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.edu-site-quick-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  max-height: 165px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.edu-site-chip {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  text-align: left;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 8px;
+  color: var(--silver);
+  cursor: pointer;
+  font-size: 11.5px;
+  transition: border-color 0.15s ease;
+}
+
+.edu-site-chip:hover {
+  border-color: var(--muted);
+}
+
+.edu-site-chip.active {
+  border-color: var(--cyan);
+  background: var(--elevated);
+  color: var(--text);
+}
+
+.edu-site-chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.edu-movie-box {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.edu-movie-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.edu-play-btn {
+  flex: 1;
+  height: 32px;
+}
+
+.edu-speed-select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  height: 32px;
+  padding: 0 7px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11.5px;
+}
+
+.edu-slider-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.edu-slider-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--cyan);
+}
+
+.edu-live-telemetry {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.edu-live-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 11.5px;
+}
+
+.edu-date-field {
+  margin-top: 2px;
+}
+
+.edu-extras-box {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.edu-feature-btn {
+  width: 100%;
+  justify-content: space-between;
+  height: auto;
+  min-height: 36px;
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.edu-pgda-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--cyan);
+  font-size: 11.5px;
+  text-decoration: none;
+}
+
+.edu-pgda-link:hover {
+  text-decoration: underline;
+}
+
+.edu-stage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.edu-dual-viewports {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(340px, 0.9fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+@media (max-width: 1020px) {
+  .edu-dual-viewports {
+    grid-template-columns: 1fr;
+  }
+}
+
+.edu-globe-panel {
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.edu-moon-shell {
+  flex: 1;
+}
+
+.edu-moon-canvas {
+  height: 490px;
+}
+
+.edu-legend-bar {
+  flex-wrap: wrap;
+}
+
+.edu-legend-items {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.legend-dot-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--silver);
+  font-size: 11px;
+}
+
+.legend-dot-item i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.edu-right-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* --- 3-Body Orbit Mini-Window (Expandable half-screen view) --- */
+.orbit-mini-shell {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.orbit-mini-docked {
+  height: 356px;
+}
+
+.orbit-mini-expanded {
+  position: fixed;
+  inset: 18px;
+  z-index: 1050;
+  border-color: var(--cyan);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.78);
+}
+
+.orbit-mini-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.orbit-mini-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.orbit-mini-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.orbit-expand-btn {
+  border-color: rgba(56, 189, 248, 0.55);
+  color: var(--cyan);
+}
+
+.orbit-canvas-container {
+  flex: 1;
+  min-height: 200px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #060a12;
+}
+
+.orbit-telemetry-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: var(--silver);
+}
+
+.edu-info-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.edu-mirror-card {
+  border-color: var(--emerald);
+}
+
+.edu-site-title {
+  margin: 3px 0 0;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.edu-site-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--silver);
+}
+
+.edu-card-p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--silver);
+}
+
+.edu-card-list,
+.edu-discoveries ul {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 11.5px;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.edu-discoveries {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.edu-mascot-dock {
+  border-color: rgba(56, 189, 248, 0.45);
+}
