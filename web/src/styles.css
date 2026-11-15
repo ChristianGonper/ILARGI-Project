@@ -211,3 +211,21 @@
   margin-top: 10px;
   white-space: normal;
 }
+
+.data-source-notice {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  background: #182b32;
+  color: #edf7fa;
+  font-size: 0.8rem;
+  border-bottom: 1px solid #42616c;
+}
+.data-source-notice span {
+  flex: 1;
+}
+.data-source-notice a {
+  color: #9fe5f5;
+}

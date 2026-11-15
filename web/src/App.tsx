@@ -1,3 +1,4 @@
+import { DataSourceNotice } from "./components/DataSourceNotice";
 import { ViewportFrame } from "./components/ViewportFrame";
 import { lazy, useCallback, useEffect, useRef, useState } from "react";
 import { Home } from "lucide-react";
@@ -139,6 +140,7 @@ export function App() {
         setComparedLabels((prev) => prev.filter((l) => valid.has(l)));
       } catch (err: unknown) {
         if (request !== analysisRequest.current) return;
+        setResults(null);
         setErrorMsg(
           err instanceof Error ? err.message : "Could not analyze locations",
         );
@@ -254,9 +256,39 @@ export function App() {
     }
   };
 
+  const loadDemo = () => {
+    const demoPoints = historicalSites
+      .slice(0, 3)
+      .map((site, index) => makePointFromSite(index + 1, site));
+    const demoParams: AnalysisParams = {
+      durationHours: 720,
+      stepMinutes: 60,
+      instrumentHeightM: 2,
+      azimuthStepDeg: 0.25,
+      demMode: "auto",
+    };
+    if (demoPoints.length === 0) return;
+    setPoints(demoPoints);
+    setNextUid(4);
+    setParams(demoParams);
+    setFocusedIndex(0);
+    setPinMode(false);
+    setMode("pro");
+    void runAnalysis(demoPoints, demoParams);
+  };
+
   if (mode === "home") {
     return (
-      <HomeScreen health={health} onSelectMode={(chosen) => setMode(chosen)} />
+      <>
+        <DataSourceNotice
+          onLoadDemo={loadDemo}
+          ready={historicalSites.length > 0}
+        />
+        <HomeScreen
+          health={health}
+          onSelectMode={(chosen) => setMode(chosen)}
+        />
+      </>
     );
   }
 
@@ -300,6 +332,10 @@ export function App() {
         </div>
       </header>
 
+      <DataSourceNotice
+        onLoadDemo={loadDemo}
+        ready={historicalSites.length > 0}
+      />
       {mode === "education" ? (
         <EducationWorkspace />
       ) : (

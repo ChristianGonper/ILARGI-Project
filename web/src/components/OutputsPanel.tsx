@@ -19,7 +19,7 @@ interface OutputsPanelProps {
 
 function downloadSeriesCsv(result: SiteAnalysisResult) {
   const header =
-    "body,utc,azimuth_deg,elevation_deg,horizon_deg,horizon_source,margin_deg,visible,range_km,angular_radius_deg,above_horizon_fraction,eclipsed_fraction,direct_visible_fraction\n";
+    "data_source,body,utc,azimuth_deg,elevation_deg,horizon_deg,horizon_source,margin_deg,visible,range_km,angular_radius_deg,above_horizon_fraction,eclipsed_fraction,direct_visible_fraction\n";
   const fmtOpt = (v: number | null) => (v === null ? "" : String(v));
   const rows = [
     ...result.series.sun.map(
@@ -30,7 +30,9 @@ function downloadSeriesCsv(result: SiteAnalysisResult) {
       (s) =>
         `EARTH,${s.utc},${s.azimuth_deg},${s.elevation_deg},${s.horizon_deg},${s.horizon_source},${s.margin_deg},${s.visible},${s.range_km},${s.angular_radius_deg},${fmtOpt(s.above_horizon_fraction)},${fmtOpt(s.eclipsed_fraction)},${fmtOpt(s.direct_visible_fraction)}`,
     ),
-  ].join("\n");
+  ]
+    .map((row) => `${result.data_source ?? "live"},${row}`)
+    .join("\n");
   const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

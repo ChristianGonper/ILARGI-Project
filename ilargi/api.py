@@ -1,5 +1,8 @@
 """FastAPI transport for the ILARGI scientific engine."""
 
+import asyncio
+import os
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from functools import lru_cache
 from pathlib import Path
@@ -11,7 +14,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from spiceypy.utils.exceptions import SpiceyError
 
 from ilargi.analysis import (
@@ -19,6 +22,7 @@ from ilargi.analysis import (
     dem_availability,
 )
 from ilargi.education import compute_education_cycle
+from ilargi.ephemeris import load_kernels
 from ilargi.materials import load_regions
 from ilargi.models import SiteAnalysis
 from ilargi.sites import EDUCATION_SITES, HISTORICAL_SITES
@@ -108,6 +112,17 @@ class AnalyzeRequest(BaseModel):
     dem_mode: Literal["auto", "polar", "global", "sample20", "sample80", "ideal"] = (
         "auto"
     )
+
+    @model_validator(mode="after")
+    def limit_work(self):
+        if (
+            len(self.points) * (self.duration_hours * 60 / self.step_minutes + 1)
+            > 25000
+        ):
+            raise ValueError("Limit exceeded: at most 25,000 time samples per batch.")
+        if self.azimuth_step_deg < 0.25:
+            raise ValueError("Minimum azimuth step is 0.25 degrees on the public API.")
+        return self
 
 
 class EducationCycleRequest(BaseModel):
@@ -272,14 +287,36 @@ def _serialize_analysis(analysis: SiteAnalysis) -> dict:
 
 
 def create_app() -> FastAPI:
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        load_kernels()
+        yield
+
     app = FastAPI(
         title="ILARGI Scientific API",
         description="Interactive Lunar Analyzer for Radiance, Geometry, and Intervisibility",
         version="0.2.0",
+        lifespan=lifespan,
     )
+    # One calculation per process bounds DEM memory and SPICE contention.
+    calculation_lock = asyncio.Lock()
+
+    async def run_calculation(callback):
+        if calculation_lock.locked():
+            raise HTTPException(
+                status_code=503, detail="Calculation busy; retry shortly."
+            )
+        async with calculation_lock:
+            return await run_in_threadpool(callback)
+
+    origins = os.environ.get("ILARGI_CORS_ORIGINS")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[
+            origin.strip() for origin in origins.split(",") if origin.strip()
+        ]
+        if origins is not None
+        else [
             "http://localhost:5173",
             "http://127.0.0.1:5173",
             "http://localhost:8000",
@@ -352,7 +389,7 @@ def create_app() -> FastAPI:
             return out
 
         try:
-            results = await run_in_threadpool(_run_batch)
+            results = await run_calculation(_run_batch)
         except (ValueError, OSError, SpiceyError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         return {"results": results}
@@ -394,7 +431,7 @@ def create_app() -> FastAPI:
             )
 
         try:
-            return await run_in_threadpool(_run)
+            return await run_calculation(_run)
         except (ValueError, OSError, SpiceyError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 

@@ -22,3 +22,11 @@ data/terrain/*.part
 # Frontend build
 web/dist/
 *.tsbuildinfo
+
+# Browser checks and deployment configuration
+web/test-results/
+web/playwright-report/
+.env
+.env.*
+!.env.example
+!web/.env.example

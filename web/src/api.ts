@@ -1,3 +1,4 @@
+import { requestData } from "./dataSource";
 import type {
   AnalysisParams,
   EducationCycleFrame,
@@ -12,29 +13,11 @@ import type {
   VisibilityEvent,
 } from "./types";
 
-export async function fetchHealth(): Promise<HealthResponse> {
-  const res = await fetch("/api/health");
-  if (!res.ok) {
-    throw new Error(`Request failed for /api/health (${res.status})`);
-  }
-  return res.json() as Promise<HealthResponse>;
-}
-
-export async function fetchHistoricalSites(): Promise<HistoricalSite[]> {
-  const res = await fetch("/api/sites");
-  if (!res.ok) {
-    throw new Error(`Request failed for /api/sites (${res.status})`);
-  }
-  return res.json() as Promise<HistoricalSite[]>;
-}
-
-export async function fetchEducationSites(): Promise<EducationSite[]> {
-  const res = await fetch("/api/education/sites");
-  if (!res.ok) {
-    throw new Error(`Request failed for /api/education/sites (${res.status})`);
-  }
-  return res.json() as Promise<EducationSite[]>;
-}
+export const fetchHealth = () => requestData<HealthResponse>("/api/health");
+export const fetchHistoricalSites = () =>
+  requestData<HistoricalSite[]>("/api/sites");
+export const fetchEducationSites = () =>
+  requestData<EducationSite[]>("/api/education/sites");
 
 export async function fetchEducationCycle(params: {
   latitudeDeg: number;
@@ -44,24 +27,13 @@ export async function fetchEducationCycle(params: {
   durationHours?: number;
   stepMinutes?: number;
 }): Promise<EducationCycleResponse> {
-  const res = await fetch("/api/education/cycle", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      latitude_deg: params.latitudeDeg,
-      longitude_east_deg: params.longitudeEastDeg,
-      start_utc: `${params.startDate}T${params.startTime}:00Z`,
-      duration_hours: params.durationHours ?? 709.0,
-      step_minutes: params.stepMinutes ?? 180,
-    }),
+  return requestData<EducationCycleResponse>("/api/education/cycle", {
+    latitude_deg: params.latitudeDeg,
+    longitude_east_deg: params.longitudeEastDeg,
+    start_utc: `${params.startDate}T${params.startTime}:00Z`,
+    duration_hours: params.durationHours ?? 709.0,
+    step_minutes: params.stepMinutes ?? 180,
   });
-  if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { detail?: string };
-    throw new Error(
-      body.detail ?? `Request failed for /api/education/cycle (${res.status})`,
-    );
-  }
-  return res.json() as Promise<EducationCycleResponse>;
 }
 
 function lerpVec3(
@@ -145,15 +117,8 @@ export function interpolateEducationFrame(
   };
 }
 
-export async function fetchMaterialsOverlay(): Promise<MaterialsOverlayResponse> {
-  const res = await fetch("/api/materials-overlay");
-  if (!res.ok) {
-    throw new Error(
-      `Request failed for /api/materials-overlay (${res.status})`,
-    );
-  }
-  return res.json() as Promise<MaterialsOverlayResponse>;
-}
+export const fetchMaterialsOverlay = () =>
+  requestData<MaterialsOverlayResponse>("/api/materials-overlay");
 
 export async function analyzePoints(
   points: PointDraft[],
@@ -173,19 +138,14 @@ export async function analyzePoints(
     azimuth_step_deg: 0.25,
     dem_mode: "auto",
   };
-  const res = await fetch("/api/analyze", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { detail?: string };
-    throw new Error(
-      body.detail ?? `Request failed for /api/analyze (${res.status})`,
-    );
-  }
-  const data = (await res.json()) as { results: SiteAnalysisResult[] };
-  return data.results;
+  const data = await requestData<{ results: SiteAnalysisResult[] }>(
+    "/api/analyze",
+    payload,
+  );
+  return data.results.map((result) => ({
+    ...result,
+    data_source: result.data_source ?? "live",
+  }));
 }
 
 export function formatUtcShort(iso: string): string {
