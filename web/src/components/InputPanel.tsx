@@ -14,6 +14,27 @@ import type {
   PointDraft,
 } from "../types";
 
+export function clampCoordinate(
+  value: number,
+  min: number,
+  max: number,
+): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+export function coordinateStepBounds(
+  min: number,
+  max: number,
+): {
+  stepMin: number;
+  stepMax: number;
+} {
+  return {
+    stepMin: Math.floor(min),
+    stepMax: Math.ceil(max),
+  };
+}
+
 function CoordinateInput({
   value,
   min,
@@ -26,21 +47,28 @@ function CoordinateInput({
   onValue: (value: number) => void;
 }) {
   const [draft, setDraft] = useState(String(value));
-  useEffect(() => setDraft(String(value)), [value]);
+  const { stepMin, stepMax } = coordinateStepBounds(min, max);
+  useEffect(() => {
+    setDraft((prev) =>
+      prev.trim() !== "" && Number(prev) === value ? prev : String(value),
+    );
+  }, [value]);
   return (
     <input
       type="number"
       step="1"
-      min={min}
-      max={max}
+      min={stepMin}
+      max={stepMax}
       value={draft}
       onChange={(event) => {
-        setDraft(event.target.value);
-        if (
-          event.target.value !== "" &&
-          Number.isFinite(event.target.valueAsNumber)
-        ) {
-          onValue(Math.max(min, Math.min(max, event.target.valueAsNumber)));
+        const raw = event.target.value;
+        const parsed = event.target.valueAsNumber;
+        if (raw !== "" && Number.isFinite(parsed)) {
+          const clamped = clampCoordinate(parsed, min, max);
+          setDraft(clamped === parsed ? raw : String(clamped));
+          onValue(clamped);
+        } else {
+          setDraft(raw);
         }
       }}
       onBlur={() => setDraft(String(value))}
