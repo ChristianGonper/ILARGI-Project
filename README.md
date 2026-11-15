@@ -13,11 +13,27 @@
 
 ---
 
+## Table of Contents
+
+- [What ILARGI Does](#what-ilargi-does)
+  - [Experience 01: Education Mode and Lunar Landing Game](#experience-01-education-mode-and-lunar-landing-game)
+  - [Experience 02: Mission Analysis](#experience-02-mission-analysis)
+- [System and Hybrid Cloud Architecture](#system-and-hybrid-cloud-architecture)
+- [Screenshots and Demo Media](#screenshots-and-demo-media)
+- [Repository Overview](#repository-overview)
+- [Code Dependencies](#code-dependencies)
+- [Run Locally from Original Sources](#run-locally-from-original-sources)
+- [Hybrid Cloud Deployment](#hybrid-cloud-deployment)
+- [Verification and Utilities](#verification-and-utilities)
+- [Documentation Index](#documentation-index)
+
+---
+
 ## What ILARGI Does
 
 ILARGI serves two complementary audiences from a unified 3D lunar observatory while keeping scientific modeling strictly separated from display approximations:
 
-### Experience 01 — Education Mode & Lunar Landing Game
+### Experience 01: Education Mode and Lunar Landing Game
 
 Designed for students, outreach, and intuitive conceptual exploration:
 
@@ -31,7 +47,7 @@ Designed for students, outreach, and intuitive conceptual exploration:
 
 ![Lunar Landing Game 3-Phase Mechanics & Envelope](docs/diagrams/landing_game_mechanics.png)
 
-### Experience 02 — Mission Analysis (Technical Site Explorer)
+### Experience 02: Mission Analysis
 
 Designed for engineering trade studies and illumination/communications planning across **1 to 10 lunar sites simultaneously**:
 
@@ -44,7 +60,7 @@ Designed for engineering trade studies and illumination/communications planning 
 
 ---
 
-## System & Hybrid Cloud Architecture
+## System and Hybrid Cloud Architecture
 
 The diagram below shows how authoritative NASA/NAIF/PDS datasets, the Python scientific engine on Google Cloud Run, the `dataSource.ts` resilient router, and the React/Three.js frontend on Cloudflare Pages interact at runtime. Colors distinguish external sources, live backend calculation, edge UI, resilient static fallback, and client-side simulation/guards.
 
@@ -54,23 +70,24 @@ For deeper module-by-module walkthroughs, API schemas, and frame transformation 
 
 ---
 
-## Visual Showcase & Screenshot Checklist
+## Screenshots and Demo Media
 
-Before final submission, capture clean screenshots (or short `.mp4` clips) of the running app at **https://ilargi.pages.dev/** and place them under `docs/media/` using these suggested targets:
+Application screenshots and showcase media live under `docs/media/`. Recommended captures from [ilargi.pages.dev](https://ilargi.pages.dev/) for visual documentation:
 
-| Planned Asset Path                | View / Mode to Capture             | What Should Be Visible                                                               |
-| --------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------ |
-| `docs/media/home-observatory.png` | Home Landing View                  | ILARGI hero observatory card, live/fallback status, and Experience 01 / 02 selectors |
-| `docs/media/education-cycle.png`  | Education Mode (`Experience 01`)   | 3D Moon illuminated at First/Full Quarter, WEH overlay active, and 3-body orbit card |
-| `docs/media/landing-game.png`     | Lunar Landing Game (`Phase 1 / 3`) | Tilted 3D parking orbit + calculator keypad or Phase 3 downward crater landing HUD   |
-| `docs/media/mission-analysis.png` | Mission Analysis (`Experience 02`) | Multi-site 3D pins, Plotly sky/elevation track, and `61 × 61` finite-disc inspector  |
+| Asset Path                           | Application View                   | Key Elements Highlighted                                                             |
+| ------------------------------------ | ---------------------------------- | ------------------------------------------------------------------------------------ |
+| `docs/media/home-observatory.png`    | Home Landing View                  | ILARGI hero observatory card, live/fallback status, and Experience 01 / 02 selectors |
+| `docs/media/education-cycle.png`     | Education Mode (`Experience 01`)   | 3D Moon illuminated at First/Full Quarter, WEH overlay active, and 3-body orbit card |
+| `docs/media/landing-game-phase1.png` | Lunar Landing Game (`Phase 1`)     | Tilted 3D parking orbit crossing target coordinates and spacecraft keypad            |
+| `docs/media/landing-game-phase3.png` | Lunar Landing Game (`Phase 3`)     | Downward crater terrain view, `15 m` landing ring, and vertical braking HUD          |
+| `docs/media/mission-analysis.png`    | Mission Analysis (`Experience 02`) | Multi-site 3D pins, Plotly sky/elevation track, and `61 × 61` finite-disc inspector  |
 
 > [!TIP]
-> **Embedding Screenshots & Video on GitHub:** Once screenshots are saved to `docs/media/`, embed them right here using `![Caption](docs/media/filename.png)`. For demo videos (`>10 MB`), either drag-and-drop a compressed H.264 `.mp4` directly into GitHub's web markdown editor (hosted on GitHub's CDN without bloating Git history) or upload to YouTube and link a clickable thumbnail badge (`[![Demo Video](docs/media/thumbnail.png)](https://youtu.be/YOUR_ID)`).
+> **Embedding Media on GitHub:** Store screenshots under `docs/media/` and embed them with `![Caption](docs/media/filename.png)`. For longer walkthrough videos (1080p60 or narrated demos), upload to YouTube and embed a clickable thumbnail link (`[![Watch ILARGI Demo](docs/media/home-observatory.png)](https://youtu.be/VIDEO_ID)`), or drag-and-drop short compressed `.mp4` clips (`< 10 MB`) directly in GitHub's markdown editor to host them via GitHub CDN without bloating Git history.
 
 ---
 
-## Repository & Codebase Overview
+## Repository Overview
 
 | Path                    | Purpose                                                                                                |
 | ----------------------- | ------------------------------------------------------------------------------------------------------ |
@@ -87,7 +104,7 @@ Before final submission, capture clean screenshots (or short `.mp4` clips) of th
 
 ---
 
-## Code Dependencies & Technology Stack
+## Code Dependencies
 
 All software dependencies are explicitly locked in [`uv.lock`](uv.lock), [`package-lock.json`](package-lock.json), and [`web/package-lock.json`](web/package-lock.json). Full citations, SHA-256 digests, and dataset provenance are cataloged in [Sources and provenance](docs/sources.md#software-dependencies).
 
@@ -168,7 +185,7 @@ For frontend development with hot module reload, run the backend in one terminal
 
 ---
 
-## Deployment Architecture (Cloudflare Pages + Google Cloud Run)
+## Hybrid Cloud Deployment
 
 ILARGI runs a split hybrid deployment so heavy SPICE/GDAL/LOLA computations stay in a constrained Python container while the frontend remains globally fast and resilient:
 
@@ -180,7 +197,7 @@ Operational runbooks and reproduction commands are in [Deployment Guide](docs/de
 
 ---
 
-## Verification & Utility Commands
+## Verification and Utilities
 
 ### Run Automated Checks
 
